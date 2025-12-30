@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+*.sqlite3
+*.log
+*.env
+venv/
+backend/venv/
+
+# Node.js
+node_modules/
+frontend/node_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build / Distribution folders
+dist/
+build/
+*.egg-info/
