@@ -1,8 +1,19 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import OdrRequests from "./pages/odr/odr_requests";
+
 function App() {
   return (
-    <div className="min-h-screen bg-blue-500 flex items-center justify-center">
-      <h1 className="text-4xl font-bold text-white">Certify - It Works! 🎉</h1>
-    </div>
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}
+
+function AppContent() {
+  return (
+    <Routes>
+      <Route path="/odr" element={<OdrRequests />} />
+    </Routes>
   );
 }
 
