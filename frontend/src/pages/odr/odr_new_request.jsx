@@ -1,0 +1,205 @@
+import React, { useState } from "react";
+import OdrStepCounter from "../../components/common/odr_step_counter";
+import {
+  FaRegClock,
+  FaRegBell,
+  FaArrowAltCircleRight,
+  FaArrowAltCircleLeft,
+} from "react-icons/fa";
+
+const OdrNewRequest = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { number: null, label: "Welcome" },
+    { number: 1, label: "Request Details" },
+    { number: 2, label: "Submit" },
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  return (
+    <>
+      <OdrStepCounter steps={steps} currentStep={currentStep} />
+      {currentStep === 0 && (
+        <>
+          <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-8">
+            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+              <FaRegClock className="text-gray-500 text-2xl" />
+              Office Hours
+            </p>
+            <hr />
+            <p className="text-xl text-[#dc3545] mt-3 ml-5">Monday to Friday</p>
+            <p className="text-xl text-[#dc3545] ml-5">8:00 AM to 5:00 PM</p>
+            <p className="ml-5 text-xs text-gray-600">
+              * Note: Document request is open only during office hours
+            </p>
+          </div>
+
+          {/* Reminders */}
+          <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-16">
+            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+              <FaRegBell className="text-gray-500 text-2xl" />
+              Reminders
+            </p>
+            <hr />
+            <ul>
+              <li className="mt-3 ml-16 text-lg list-disc">
+                In claiming a document through a representative, Authorization
+                letter and valid IDs of Claimants and Requestor are required.
+              </li>
+              <li className="ml-16 text-lg list-disc">
+                Please bring 2 Documentary Stamps for each copy of requested
+                documents EXCEPT for authentication.
+              </li>
+              <li className="ml-16 text-lg list-disc">
+                For graduates of 2005 or earlier, submit PSA birth certificate.
+              </li>
+              <li className="ml-16 text-lg list-disc">
+                If requesting for Honorable Dismissal / Transfer Credentials,
+                please submit an original copy of Form 137 (for basic education)
+                or Transcript of Records (for colleges/GS) from the previous
+                school.
+              </li>
+              <li className="ml-16 text-lg list-disc">
+                Certification, Authentications and Verification (CAV)
+                Requirements:
+              </li>
+            </ul>
+            <div className="border border-gray-400 m-5 p-3 rounded-md mt-2">
+              <ul
+                style={{
+                  listStyleType: "circle",
+                  paddingLeft: "20px",
+                  marginBottom: "8px",
+                }}
+                className="ml-14"
+              >
+                <li>
+                  For Employment / Red Ribbon
+                  <ul
+                    style={{
+                      listStyleType: "square",
+                      paddingLeft: "50px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <li>Original TOR with general/employment purposes</li>
+                    <li>Original Diploma</li>
+                  </ul>
+                </li>
+
+                <li>
+                  For Graduate School - Not Graduated
+                  <ul
+                    style={{
+                      listStyleType: "square",
+                      paddingLeft: "50px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <li>Original TOR with general/employment purposes</li>
+                  </ul>
+                </li>
+
+                <li>
+                  For Board Examination - BS Criminology and BS Psychology
+                  <ul
+                    style={{
+                      listStyleType: "square",
+                      paddingLeft: "50px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <li>Original TOR with Board Exam purposes</li>
+                    <li>Original Diploma</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+            <ul>
+              <li className="ml-16 text-lg list-disc -mt-10">
+                Authentication Requirements:
+              </li>
+            </ul>
+            <div className="border border-gray-400 m-5 p-3 rounded-md mt-2 mb-0">
+              <ul
+                style={{
+                  listStyleType: "circle",
+                  paddingLeft: "20px",
+                  marginBottom: "8px",
+                }}
+                className="ml-14"
+              >
+                <li>
+                  For Employment Purposes
+                  <ul
+                    style={{
+                      listStyleType: "square",
+                      paddingLeft: "50px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <li>Original TOR with general/employment purposes</li>
+                    <li>Original Diploma</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Contact Numbers */}
+          <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-24">
+            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+              <FaRegClock className="text-gray-500 text-2xl" />
+              Contact Numbers
+            </p>
+            <hr />
+          </div>
+        </>
+      )}
+      {currentStep === 1 && (
+        <>
+          <div>Step 1 content here</div>
+        </>
+      )}
+
+      {/* Nav Buttons - OUTSIDE step conditions */}
+      <div className="flex justify-between m-5">
+        {currentStep > 0 && (
+          <button
+            onClick={handlePrevious}
+            className="bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300 px-6 py-2 rounded-full flex items-center gap-2"
+          >
+            <FaArrowAltCircleLeft /> Previous
+          </button>
+        )}
+
+        <button
+          onClick={handleNext}
+          disabled={currentStep === steps.length - 1}
+          className={`px-6 py-2 rounded-full flex items-center gap-2 ${
+            currentStep === steps.length - 1
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300"
+          } ${currentStep === 0 ? "ml-auto" : ""}`}
+        >
+          {currentStep === steps.length - 1 ? "Submit" : "Next"}
+          <FaArrowAltCircleRight />
+        </button>
+      </div>
+    </>
+  );
+};
+
+export default OdrNewRequest;
