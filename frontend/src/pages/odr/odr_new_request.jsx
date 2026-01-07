@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import OdrStepCounter from "../../components/common/odr_step_counter";
+import OdrCertTypes from "../../components/tables/odr_cert_types";
 import {
   FaRegClock,
   FaRegBell,
@@ -9,6 +10,7 @@ import {
 
 const OdrNewRequest = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [selectedOffice, setSelectedOffice] = useState("");
 
   const steps = [
     { number: null, label: "Welcome" },
@@ -170,11 +172,32 @@ const OdrNewRequest = () => {
       )}
       {currentStep === 1 && (
         <>
-          <div>Step 1 content here</div>
+          <div className="m-5 -translate-y-8">
+            <h1 className="text-2xl text-gray-600">Step 1: REQUEST DETAILS</h1>
+            <p className="mt-3">Office</p>
+            <select
+              name="office"
+              id="office"
+              value={selectedOffice}
+              onChange={(e) => setSelectedOffice(e.target.value)}
+              className="border border-gray-600 p-2 rounded-md w-full"
+            >
+              <option value="">-- Select Office --</option>
+              <option value="office1">Office 1</option>
+              <option value="office2">Office 2</option>
+            </select>
+          </div>
+          <div className="m-5 -translate-y-8">
+            <h2 className="ml-5 text-lg">
+              * Choose the document/s to be requested and enter the number of
+              copies you intend to have.
+            </h2>
+            <OdrCertTypes selectedOffice={selectedOffice} />
+          </div>
         </>
       )}
 
-      {/* Nav Buttons - OUTSIDE step conditions */}
+      {/* Nav Buttons */}
       <div className="flex justify-between m-5">
         {currentStep > 0 && (
           <button
