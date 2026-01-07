@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.pyd
 *.sqlite3
 *.log
 *.env
@@ -26,3 +25,18 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Database schema & seed (tracked)
+backend/database/schema.sql
+backend/database/sample_data.sql
+
+# Database backups (ignored, folder kept)
+backend/database/backups/*
+!backend/database/backups/.gitkeep
+
+# Uploads (ignored files, folder structure kept)
+backend/uploads/*
+!backend/uploads/certificates/
+!backend/uploads/qrcodes/
+!backend/uploads/signatures/
+!backend/uploads/**/.gitkeep
