@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import OdrStepCounter from "../../components/common/odr_step_counter";
 import OdrCertTypes from "../../components/tables/odr_cert_types";
+import OdrRequestForm from "./odr_reqest_form";
+import OdrSignaturePad from "../../components/common/odr_signature_pad";
 import {
   FaRegClock,
   FaRegBell,
@@ -12,6 +14,8 @@ import {
 const OdrNewRequest = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedOffice, setSelectedOffice] = useState("");
+  const [signatureData, setSignatureData] = useState(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   const steps = [
     { number: null, label: "Welcome" },
@@ -256,6 +260,41 @@ const OdrNewRequest = () => {
               copies you intend to have.
             </h2>
             <OdrCertTypes selectedOffice={selectedOffice} />
+          </div>
+          <div className="w-full m-5 -translate-y-8">
+            <OdrRequestForm />
+          </div>
+          <hr className="m-5 -translate-y-10" />
+        </>
+      )}
+      {currentStep === 2 && (
+        <>
+          <div className="m-5 -translate-y-8">
+            <h1 className="text-2xl text-gray-600">Step 2: SUBMIT</h1>
+            <div>
+              <p className="text-center mt-10 font-medium">
+                Draw your signature below
+              </p>
+              <OdrSignaturePad />
+              <div className="flex items-center justify-center gap-2 mt-10 translate-y-6">
+                <input
+                  type="checkbox"
+                  id="confirmAccuracy"
+                  checked={isConfirmed}
+                  onChange={(e) => setIsConfirmed(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                <label
+                  htmlFor="confirmAccuracy"
+                  className={`cursor-pointer font-medium ${
+                    isConfirmed ? "text-black" : "text-red-500"
+                  }`}
+                >
+                  I hereby confirm that the information provided herein is
+                  accurate.
+                </label>
+              </div>
+            </div>
           </div>
         </>
       )}
