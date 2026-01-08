@@ -30,14 +30,44 @@ const columns = [
 
 const data = [
   {
-    copies: 2,
-    requested_documents: "Birth Certificate",
-    unit_cost: "₱150.00",
+    copies: 1,
+    requested_documents: "Authentication",
+    unit_cost: "20.00 per Page",
   },
   {
     copies: 1,
-    requested_documents: "Marriage Certificate",
-    unit_cost: "₱200.00",
+    requested_documents: "Certificate of Transfer Credentials",
+    unit_cost: "100.00",
+  },
+  {
+    copies: 1,
+    requested_documents: "Certification",
+    unit_cost: "30.00",
+  },
+  {
+    copies: 1,
+    requested_documents: "Diploma",
+    unit_cost: "400.00",
+  },
+  {
+    copies: 1,
+    requested_documents: "Form 137",
+    unit_cost: "100.00",
+  },
+  {
+    copies: 1,
+    requested_documents: "Graduation Fee",
+    unit_cost: "1, 000.00",
+  },
+  {
+    copies: 1,
+    requested_documents: "Second Copy of Registration Form",
+    unit_cost: "15.00",
+  },
+  {
+    copies: 2,
+    requested_documents: "Transcript of Records (TOR)",
+    unit_cost: "50.00 per Page",
   },
 ];
 
@@ -83,13 +113,12 @@ const OdrCertTypes = ({ selectedOffice }) => {
         customStyles={customStyles}
         dense
         persistTableHead
-        noDataComponent={
-          <p className="text-center text-gray-500 text-xs py-3 px-4">
-            * 2 pages is the minimum number of pages for TOR (Transcript of
-            Records).
-          </p>
-        }
+        noDataComponent={<></>}
       />
+      <p className="text-center text-gray-500 text-xs py-3 px-4">
+        * 2 pages is the minimum number of pages for TOR (Transcript of
+        Records).
+      </p>
     </div>
   );
 };

@@ -1,4 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { useEffect } from "react";
 import OdrRequests from "./pages/odr/odr_requests";
 
 function App() {
@@ -10,6 +16,14 @@ function App() {
 }
 
 function AppContent() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/odr") {
+      document.title = "Online Document Request";
+    }
+  }, [location.pathname]);
+
   return (
     <Routes>
       <Route path="/odr" element={<OdrRequests />} />

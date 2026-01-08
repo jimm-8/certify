@@ -6,6 +6,7 @@ import {
   FaRegBell,
   FaArrowAltCircleRight,
   FaArrowAltCircleLeft,
+  FaHeadset,
 } from "react-icons/fa";
 
 const OdrNewRequest = () => {
@@ -36,8 +37,8 @@ const OdrNewRequest = () => {
       {currentStep === 0 && (
         <>
           <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-8">
-            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
-              <FaRegClock className="text-gray-500 text-2xl" />
+            <p className="flex items-center gap-2 text-xl p-2  font-medium">
+              <FaRegClock className=" text-2xl" />
               Office Hours
             </p>
             <hr />
@@ -50,8 +51,8 @@ const OdrNewRequest = () => {
 
           {/* Reminders */}
           <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-16">
-            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
-              <FaRegBell className="text-gray-500 text-2xl" />
+            <p className="flex items-center gap-2 text-xl p-2 font-medium">
+              <FaRegBell className=" text-2xl" />
               Reminders
             </p>
             <hr />
@@ -162,11 +163,58 @@ const OdrNewRequest = () => {
 
           {/* Contact Numbers */}
           <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-24">
-            <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
-              <FaRegClock className="text-gray-500 text-2xl" />
+            <p className="flex items-center gap-2 text-xl p-2 font-medium">
+              <FaHeadset className=" text-2xl" />
               Contact Numbers
             </p>
             <hr />
+            <p className="font-medium mt-3 text-center">
+              REGISTRATION SERVICES
+            </p>
+            <div className="ml-32 mt-3 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Pablo Borbon</span>
+              <span>(043) 779-8400 or 425-7160 local 1933</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Alangilan</span>
+              <span>(043) 425-0139 local 2149</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Balayan</span>
+              <span>(043) 425-7158 local 6102</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Lemery</span>
+              <span>(043) 779-8400 or 425-7160 local 5101</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Lipa</span>
+              <span>(043) 980-0387 local 3103</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU Rosario</span>
+              <span>(043) 980-0387 local 4205</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU San Juan</span>
+              <span>(043) 779-8400 or 425-7160 local 4101</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU ARASOF-Nasugbu</span>
+              <span>(043) 416-0349 local 114</span>
+            </div>
+
+            <div className="ml-32 flex mr-48 items-center py-1">
+              <span className="flex-1">BatStateU JPLPC-Malvar</span>
+              <span>(043) 778-2170 local 110</span>
+            </div>
           </div>
         </>
       )}
@@ -183,8 +231,23 @@ const OdrNewRequest = () => {
               className="border border-gray-600 p-2 rounded-md w-full"
             >
               <option value="">-- Select Office --</option>
-              <option value="office1">Office 1</option>
-              <option value="office2">Office 2</option>
+              <option value="pablo_borbon">
+                Registration Services - Pablo Borbon
+              </option>
+              <option value="alangilan">
+                Registration Services - Alangilan
+              </option>
+              <option value="balayan">Registration Services - Balayan</option>
+              <option value="lemery">Registration Services - Lemery</option>
+              <option value="lipa">Registration Services - Lipa</option>
+              <option value="rosario">Registration Services - Rosario</option>
+              <option value="san_juan">Registration Services - San Juan</option>
+              <option value="arasof_nasugbu">
+                Registration Services - ARASOF-Nasugbu
+              </option>
+              <option value="jplpc_malvar">
+                Registration Services - JPLPC-Malvar
+              </option>
             </select>
           </div>
           <div className="m-5 -translate-y-8">
