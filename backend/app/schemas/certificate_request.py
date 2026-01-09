@@ -20,9 +20,11 @@ class CertificateTypeResponse(BaseModel):
     name: str
     description: Optional[str] = None
     is_active: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     class Config:
-        from_attributes = True  # Allows SQLAlchemy models to be converted
+        from_attributes = True
 
 # Schema for creating a certificate request (what user sends us)
 class CertificateRequestCreate(BaseModel):

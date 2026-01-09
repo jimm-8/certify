@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 
-const OdrCertTypes = ({ selectedOffice }) => {
+const OdrCertTypes = ({
+  selectedOffice,
+  onCertTypeSelect,
+  selectedCertType,
+}) => {
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,6 +35,8 @@ const OdrCertTypes = ({ selectedOffice }) => {
   }, []);
 
   const handleCheckboxChange = (certId, documentName) => {
+    const newChecked = !selectedCerts[certId];
+
     setSelectedCerts((prev) => ({
       ...prev,
       [certId]: !prev[certId],
@@ -39,6 +45,9 @@ const OdrCertTypes = ({ selectedOffice }) => {
     // Check if "Certification" was clicked
     if (documentName === "Certification") {
       setCertificationChecked((prev) => !prev);
+      if (!newChecked) {
+        onCertTypeSelect(null);
+      }
     }
   };
 
@@ -183,7 +192,17 @@ const OdrCertTypes = ({ selectedOffice }) => {
             <select
               name="certificationType"
               id="certificationType"
+              value={selectedCertType?.id || ""}
+              onChange={(e) => {
+                console.log("Selected cert type ID:", e.target.value); // ✅ Debug log
+                const cert = certificateTypes.find(
+                  (c) => c.id === parseInt(e.target.value)
+                );
+                console.log("Found cert object:", cert); // ✅ Debug log
+                onCertTypeSelect(cert);
+              }}
               className="border border-gray-300 rounded px-3 py-2 w-full"
+              required // ✅ Add required attribute
             >
               <option value="">Select a certificate type</option>
               {certificateTypes.map((cert) => (

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useImperativeHandle, forwardRef } from "react";
 
-const OdrRequestForm = () => {
+const OdrRequestForm = React.forwardRef((props, ref) => {
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     currentAddress: "",
@@ -15,6 +16,37 @@ const OdrRequestForm = () => {
     yearGraduated: "",
   });
 
+  const validateForm = () => {
+    const required = [
+      "name",
+      "currentAddress",
+      "relationshipToStudent",
+      "contactNumber",
+      "emailAddress",
+      "purposeOfRequest",
+      "fullname",
+      "program",
+    ];
+
+    for (const field of required) {
+      if (!formData[field] || formData[field].trim() === "") {
+        return `${field.replace(/([A-Z])/g, " $1")} is required`;
+      }
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.emailAddress)) {
+      return "Please enter a valid email address";
+    }
+
+    const phoneRegex = /^(09|\+639)\d{9}$/;
+    if (!phoneRegex.test(formData.contactNumber.replace(/\s/g, ""))) {
+      return "Please enter a valid Philippine mobile number (09xxxxxxxxx)";
+    }
+
+    return null;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -23,10 +55,17 @@ const OdrRequestForm = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData);
-    // Add your form submission logic here
+  const getFormData = () => {
+    const error = validateForm();
+    if (error) {
+      throw new Error(error);
+    }
+    return formData;
   };
+
+  React.useImperativeHandle(ref, () => ({
+    getFormData,
+  }));
 
   const relationshipOptions = [
     "Same Person",
@@ -50,6 +89,7 @@ const OdrRequestForm = () => {
     "Bachelor of Science in Computer Science",
     "Bachelor of Science in Information Technology",
     "Bachelor of Science in Information Systems",
+    "BS Mechanical Engineering",
   ]; // Add program options if needed
 
   const purposeOptions = [
@@ -315,6 +355,6 @@ const OdrRequestForm = () => {
       </div>
     </>
   );
-};
+});
 
 export default OdrRequestForm;

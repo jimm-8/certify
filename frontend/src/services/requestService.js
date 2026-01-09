@@ -25,11 +25,12 @@ const requestService = {
    * Get all certificate types
    * @returns {Promise} List of certificate types
    */
-  getCertificateTypes: async () => {
+  async getCertificateTypes() {
     try {
       const response = await api.get("/certificate-types/");
       return response.data;
     } catch (error) {
+      console.error("Error fetching certificate types:", error);
       throw error;
     }
   },
@@ -41,9 +42,16 @@ const requestService = {
    */
   createRequest: async (requestData) => {
     try {
+      console.log("Sending request to API:", requestData);
       const response = await api.post("/requests/", requestData);
+      console.log("API response:", response.data);
       return response.data;
     } catch (error) {
+      console.error("Create request error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw error;
     }
   },

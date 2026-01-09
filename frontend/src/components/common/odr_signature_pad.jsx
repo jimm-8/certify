@@ -1,6 +1,12 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 
-const OdrSignaturePad = ({ onSave, onClear }) => {
+const OdrSignaturePad = React.forwardRef(({ onSignatureChange }, ref) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
@@ -56,6 +62,11 @@ const OdrSignaturePad = ({ onSave, onClear }) => {
 
     ctx.lineTo(x, y);
     ctx.stroke();
+
+    if (onSignatureChange) {
+      const signatureData = canvasRef.current.toDataURL("image/png");
+      onSignatureChange(signatureData);
+    }
   };
 
   const stopDrawing = () => {
@@ -67,14 +78,23 @@ const OdrSignaturePad = ({ onSave, onClear }) => {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
-    if (onClear) onClear();
+    if (onSignatureChange) {
+      onSignatureChange(null);
+    }
   };
 
-  const handleSave = () => {
-    const canvas = canvasRef.current;
-    const signatureData = canvas.toDataURL("image/png");
-    if (onSave) onSave(signatureData);
+  const getSignatureData = () => {
+    if (!hasSignature) return null;
+    return canvasRef.current.toDataURL("image/png");
   };
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      getSignatureData,
+    }),
+    [hasSignature]
+  );
 
   return (
     <div className="flex mt-3 flex-col items-center">
@@ -97,16 +117,9 @@ const OdrSignaturePad = ({ onSave, onClear }) => {
         >
           Clear
         </button>
-        <button
-          onClick={handleSave}
-          className="px-6 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          disabled={!hasSignature}
-        >
-          Save Signature
-        </button>
       </div>
     </div>
   );
-};
+});
 
 export default OdrSignaturePad;

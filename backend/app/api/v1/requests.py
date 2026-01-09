@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from app.services.email_service import EmailService
 from sqlalchemy.orm import Session
 from typing import Optional
 import random
@@ -84,15 +85,12 @@ def save_signature(signature_data: str, reference_number: str) -> str:
 
 # Endpoint 1: Create certificate request
 @router.post("/", response_model=CertificateRequestResponse, status_code=status.HTTP_201_CREATED)
-def create_certificate_request(
+async def create_certificate_request(
     request_data: CertificateRequestCreate,
     db: Session = Depends(get_db)
 ):
     """
-    Submit a new certificate request
-    
-    This endpoint allows users to submit a certificate request.
-    Returns a reference number and PIN for tracking.
+    Submit a new certificate request with signature
     """
     
     # Verify certificate type exists
@@ -110,6 +108,10 @@ def create_certificate_request(
     # Generate reference number and PIN
     reference_number = generate_reference_number(db)
     pin = generate_pin()
+    
+    # Generate verification token (for QR code)
+    from app.services.request_service import generate_verification_token
+    verification_token = generate_verification_token()
     
     # Save signature if provided
     signature_path = None
@@ -134,6 +136,7 @@ def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_path=signature_path,
+        verification_token=verification_token,
         status=RequestStatus.PENDING
     )
     
@@ -142,10 +145,27 @@ def create_certificate_request(
     db.commit()
     db.refresh(new_request)
     
+    # Send confirmation email
+    try:
+        email_service = EmailService()
+        await email_service.send_request_confirmation(
+            to_email=request_data.requestor_email,
+            reference_number=reference_number,
+            pin=pin,
+            requestor_name=request_data.requestor_name, 
+            student_name=request_data.student_name, 
+            certificate_type=cert_type.name,
+            submitted_date=new_request.created_at
+        )
+        print(f"✅ Email sent to {request_data.requestor_email}")
+    except Exception as e:
+        print(f"⚠️ Email failed but request was created: {e}")
+        # Don't fail the request if email fails
+    
     return CertificateRequestResponse(
         reference_number=reference_number,
         pin=pin,
-        message="Certificate request submitted successfully! Please save your reference number and PIN.",
+        message="Certificate request submitted successfully! Check your email for tracking details.",
         submitted_date=new_request.created_at
     )
 

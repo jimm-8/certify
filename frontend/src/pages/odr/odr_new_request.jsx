@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import OdrStepCounter from "../../components/common/odr_step_counter";
 import OdrCertTypes from "../../components/tables/odr_cert_types";
 import OdrRequestForm from "./odr_reqest_form";
 import OdrSignaturePad from "../../components/common/odr_signature_pad";
+import requestService from "../../services/requestService";
 import {
   FaRegClock,
   FaRegBell,
   FaArrowAltCircleRight,
   FaArrowAltCircleLeft,
   FaHeadset,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 const OdrNewRequest = () => {
@@ -16,6 +18,13 @@ const OdrNewRequest = () => {
   const [selectedOffice, setSelectedOffice] = useState("");
   const [signatureData, setSignatureData] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [selectedCertType, setSelectedCertType] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [savedFormData, setSavedFormData] = useState(null); // ✅ NEW: Store form data in state
+  const formRef = useRef(null);
+  const signatureRef = useRef(null);
 
   const steps = [
     { number: null, label: "Welcome" },
@@ -24,20 +33,132 @@ const OdrNewRequest = () => {
   ];
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (currentStep === 1) {
+      if (!selectedOffice) {
+        setError("Please select an office");
+        return;
+      }
+      if (!selectedCertType) {
+        setError("Please select a certificate type");
+        return;
+      }
+
+      // ✅ Validate and SAVE form data before proceeding to next step
+      try {
+        const formData = formRef.current?.getFormData();
+        setSavedFormData(formData); // ✅ Save to state
+      } catch (err) {
+        setError(err.message);
+        return;
+      }
     }
+
+    // Clear errors and advance
+    setError(null);
+    setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
+      setError(null); // Clear errors when going back
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    // ✅ Check selectedCertType FIRST
+    if (!selectedCertType || !selectedCertType.id) {
+      setError("Please select a certificate type from the dropdown");
+      return;
+    }
+
+    if (!isConfirmed) {
+      setError("Please confirm that all information is correct");
+      return;
+    }
+
+    if (!signatureData) {
+      setError("Please draw your signature");
+      return;
+    }
+
+    // ✅ Use saved form data from state
+    if (!savedFormData) {
+      setError("Form data is missing. Please go back and fill the form.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const requestData = {
+        certificate_type_id: selectedCertType.id,
+        requestor_name: savedFormData.name,
+        requestor_address: savedFormData.currentAddress,
+        requestor_relationship: savedFormData.relationshipToStudent,
+        requestor_contact: savedFormData.contactNumber,
+        requestor_email: savedFormData.emailAddress,
+        purpose: savedFormData.purposeOfRequest,
+        sr_code: savedFormData.srcCode || null,
+        student_name: savedFormData.fullname,
+        program: savedFormData.program,
+        major: savedFormData.major || null,
+        year_graduated: savedFormData.yearGraduated || null,
+        signature_data: signatureData,
+      };
+
+      console.log("Submitting request data:", requestData);
+
+      const response = await requestService.createRequest(requestData);
+
+      console.log("✅ Success! Response:", response);
+      setSuccess(response);
+    } catch (err) {
+      console.error("❌ Submit error:", err);
+      console.error("Error details:", err.response?.data);
+
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to submit request. Please try again.";
+
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
       <OdrStepCounter steps={steps} currentStep={currentStep} />
+
+      {/* Error display */}
+      {error && (
+        <div className="m-5 -translate-y-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Success display */}
+      {success && (
+        <div className="m-5 -translate-y-8 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          <p className="font-semibold">Request submitted successfully!</p>
+          <p className="mt-2">
+            Reference Number:{" "}
+            <span className="font-mono font-bold">
+              {success.reference_number}
+            </span>
+          </p>
+          <p>
+            PIN: <span className="font-mono font-bold">{success.pin}</span>
+          </p>
+          <p className="mt-2 text-sm">Check your email for tracking details.</p>
+        </div>
+      )}
+
       {currentStep === 0 && (
         <>
           <div className="border border-gray-400 m-5 p-3 rounded-md -translate-y-8">
@@ -222,6 +343,7 @@ const OdrNewRequest = () => {
           </div>
         </>
       )}
+
       {currentStep === 1 && (
         <>
           <div className="m-5 -translate-y-8">
@@ -259,14 +381,19 @@ const OdrNewRequest = () => {
               * Choose the document/s to be requested and enter the number of
               copies you intend to have.
             </h2>
-            <OdrCertTypes selectedOffice={selectedOffice} />
+            <OdrCertTypes
+              selectedOffice={selectedOffice}
+              onCertTypeSelect={setSelectedCertType}
+              selectedCertType={selectedCertType}
+            />
           </div>
           <div className="w-full m-5 -translate-y-8">
-            <OdrRequestForm />
+            <OdrRequestForm ref={formRef} />
           </div>
           <hr className="m-5 -translate-y-10" />
         </>
       )}
+
       {currentStep === 2 && (
         <>
           <div className="m-5 -translate-y-8">
@@ -275,7 +402,10 @@ const OdrNewRequest = () => {
               <p className="text-center mt-10 font-medium">
                 Draw your signature below
               </p>
-              <OdrSignaturePad />
+              <OdrSignaturePad
+                ref={signatureRef}
+                onSignatureChange={(data) => setSignatureData(data)}
+              />
               <div className="flex items-center justify-center gap-2 mt-10 translate-y-6">
                 <input
                   type="checkbox"
@@ -304,23 +434,39 @@ const OdrNewRequest = () => {
         {currentStep > 0 && (
           <button
             onClick={handlePrevious}
-            className="bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300 px-6 py-2 rounded-full flex items-center gap-2"
+            disabled={loading}
+            className="bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300 px-6 py-2 rounded-full flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaArrowAltCircleLeft /> Previous
           </button>
         )}
 
         <button
-          onClick={handleNext}
-          disabled={currentStep === steps.length - 1}
+          onClick={currentStep === steps.length - 1 ? handleSubmit : handleNext}
+          disabled={
+            currentStep === steps.length - 1
+              ? loading || !isConfirmed || !signatureData
+              : loading
+          }
           className={`px-6 py-2 rounded-full flex items-center gap-2 ${
             currentStep === steps.length - 1
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              ? loading || !isConfirmed || !signatureData
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300"
               : "bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-900 hover:text-gray-300"
           } ${currentStep === 0 ? "ml-auto" : ""}`}
         >
-          {currentStep === steps.length - 1 ? "Submit" : "Next"}
-          <FaArrowAltCircleRight />
+          {currentStep === steps.length - 1
+            ? loading
+              ? "Submitting..."
+              : "Submit"
+            : "Next"}
+
+          {currentStep === steps.length - 1 ? (
+            <FaCheckCircle />
+          ) : (
+            <FaArrowAltCircleRight />
+          )}
         </button>
       </div>
     </>
