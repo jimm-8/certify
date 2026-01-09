@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { useEffect } from "react";
 import OdrRequests from "./pages/odr/odr_requests";
+import CertifyDashboard from "./pages/certify/certify_dashboard";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function AppContent() {
 
   return (
     <Routes>
+      <Route path="/" element={<CertifyDashboard />} />
       <Route path="/odr" element={<OdrRequests />} />
     </Routes>
   );
