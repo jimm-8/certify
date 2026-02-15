@@ -105,7 +105,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
 
   return (
     <>
-      <div className="max-w-4xl">
+      <div className="max-w-4xl m-5">
         <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
           <h2 className="text-lg uppercase">
             Requesting Individual's Information
@@ -244,7 +244,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
           </div>
         </div>
       </div>
-      <div className="max-w-4xl translate-y-6">
+      <div className="max-w-4xl -translate-y-6 m-5">
         <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
           <h2 className="text-lg uppercase">Student Information</h2>
         </div>

@@ -109,10 +109,6 @@ async def create_certificate_request(
     reference_number = generate_reference_number(db)
     pin = generate_pin()
     
-    # Generate verification token (for QR code)
-    from app.services.request_service import generate_verification_token
-    verification_token = generate_verification_token()
-    
     # Save signature if provided
     signature_path = None
     if request_data.signature_data:
@@ -136,7 +132,7 @@ async def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_path=signature_path,
-        verification_token=verification_token,
+        verification_token=None,
         status=RequestStatus.PENDING
     )
     
@@ -400,6 +396,13 @@ def verify_certificate(
     This is a PUBLIC endpoint - anyone can verify if a certificate is real.
     Used for fraud prevention.
     """
+    
+    if not verification_token or verification_token == "null":
+        return CertificateVerificationResponse(
+            is_valid=False,
+            message="Invalid verification code format."
+        )
+    
     
     request = db.query(CertificateRequest).filter(
         CertificateRequest.verification_token == verification_token

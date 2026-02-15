@@ -64,6 +64,10 @@ def update_request_status(
     # Store old status for audit
     old_status = request.status
     
+    if new_status == RequestStatus.APPROVED and not request.verification_token:
+        request.verification_token = generate_verification_token()
+        print(f"✅ Generated verification token for request {request_id}")
+    
     # Update status
     request.status = new_status
     

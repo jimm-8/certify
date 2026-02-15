@@ -1,15 +1,39 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Key, LogOut } from "lucide-react";
 
 const CertifyNavbar = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const formattedDate = currentTime.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+  });
+
+  const formattedTime = currentTime.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
   return (
     <div className="w-full">
       {/* Top Bar */}
       <div className="bg-gray-700 text-white px-6 py-3 flex justify-between items-center shadow-md">
         <div className="text-lg font-medium">Batangas State University</div>
         <div className="text-right">
-          <div className="text-xs">Friday, January 09, 2026</div>
-          <div className="text-sm font-medium">02:14:13 PM</div>
+          <div className="text-xs">{formattedDate}</div>
+          <div className="text-sm font-medium">{formattedTime}</div>
         </div>
       </div>
 

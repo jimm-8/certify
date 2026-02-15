@@ -395,7 +395,7 @@ const OdrNewRequest = () => {
 
         {currentStep === 1 && (
           <>
-            <div className="m-2 sm:m-5 -translate-y-8">
+            <div className="m-5 -translate-y-8">
               <h1 className="text-xl sm:text-2xl text-gray-600">
                 Step 1: REQUEST DETAILS
               </h1>
@@ -429,7 +429,7 @@ const OdrNewRequest = () => {
                 </option>
               </select>
             </div>
-            <div className="m-2 sm:m-5 -translate-y-8">
+            <div className="m-5 -translate-y-8">
               <h2 className="ml-0 sm:ml-5 text-sm sm:text-lg mt-3">
                 * Choose the document/s to be requested and enter the number of
                 copies you intend to have.
