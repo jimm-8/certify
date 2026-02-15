@@ -15,11 +15,9 @@ const CertifyDashboard = () => {
         <CertifySidebar />
 
         {/* Content Area */}
-        <div className="flex-1 p-8 bg-gray-100">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Welcome to Dashboard
-            </h2>
+        <div className="flex-1 p-2 bg-gray-100">
+          <div className=" p-4">
+            <h2 className="text-2xl font-thin text-gray-800">Dashboard</h2>
             <p className="text-gray-600">
               Select an option from the sidebar to get started.
             </p>

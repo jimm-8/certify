@@ -1,66 +1,211 @@
 import React, { useState } from "react";
-import { Key, Menu } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  History,
+  BarChart3,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ShieldCheck,
+} from "lucide-react";
+
+const menu = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "requests",
+    label: "Requests",
+    icon: FileText,
+    children: [
+      { id: "pending", label: "Pending" },
+      { id: "processing", label: "Processing" },
+      { id: "ready", label: "Ready" },
+    ],
+  },
+  {
+    id: "history",
+    label: "History",
+    icon: History,
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    icon: BarChart3,
+  },
+  {
+    id: "audit",
+    label: "Audit Log",
+    icon: ShieldCheck,
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: Settings,
+  },
+];
 
 const CertifySidebar = () => {
-  const [activeMenu, setActiveMenu] = useState("dashboard");
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
+  const [collapsed, setCollapsed] = useState(true);
+  const [openParent, setOpenParent] = useState("requests");
+  const [activeItem, setActiveItem] = useState("pending");
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [pinnedItem, setPinnedItem] = useState(null);
+
+  const toggleParent = (id) => {
+    setOpenParent(openParent === id ? null : id);
+  };
 
   return (
-    <div className="w-80 bg-white shadow-lg flex flex-col">
-      {/* Menu Items */}
-      <nav className="flex-1 p-6">
-        {/* Dashboard */}
+    <div
+      className={`h-screen bg-[#222222] text-white flex flex-col shadow-lg transition-all duration-300
+      ${collapsed ? "w-20" : "w-64"}`}
+    >
+      {/* Toggle Button */}
+      <div
+        className={`flex items-center px-2 py-2
+        ${collapsed ? "justify-center" : "justify-end"}`}
+      >
         <button
-          onClick={() => setActiveMenu("dashboard")}
-          className={`flex items-center gap-4 w-full p-4 rounded mb-2 ${
-            activeMenu === "dashboard" ? "bg-gray-100" : "hover:bg-gray-50"
-          }`}
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-1 rounded hover:bg-[#333333] transition"
         >
-          <div className="flex gap-1 items-center">
-            <div className="w-3 h-3 bg-green-500"></div>
-            <div className="w-3 h-3 bg-green-500"></div>
-            <div className="w-3 h-3 bg-green-500"></div>
-            <div className="w-3 h-3 bg-green-500"></div>
-          </div>
-          <span className="text-lg font-medium text-gray-800">Dashboard</span>
-          {activeMenu === "dashboard" && (
-            <div className="ml-auto">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-              </svg>
-            </div>
+          {collapsed ? (
+            <PanelLeftOpen size={25} />
+          ) : (
+            <PanelLeftClose size={25} />
           )}
         </button>
+      </div>
 
-        {/* List of Request */}
-        <div className="mb-2">
-          <button
-            onClick={() =>
-              setActiveSubmenu(activeSubmenu === "requests" ? null : "requests")
-            }
-            className="flex items-center gap-4 w-full p-4 text-gray-700 hover:bg-gray-50 rounded"
-          >
-            <Menu className="w-5 h-5 text-gray-400" />
-            <span className="text-lg font-medium">List of Request</span>
-          </button>
+      {/* Navigation */}
+      <nav className="flex-1 px-2 space-y-2 relative">
+        {menu.map((item) => {
+          const Icon = item.icon;
 
-          <div className="ml-12 mt-2 border-l-2 border-gray-400 pl-8 space-y-2">
-            <button className="block w-full text-left p-2 text-lg text-gray-700 hover:bg-gray-50 rounded">
-              Pending
-            </button>
-            <button className="block w-full text-left p-2 text-lg text-gray-700 hover:bg-gray-50 rounded">
-              Processing
-            </button>
-            <button className="block w-full text-left p-2 text-lg text-gray-700 hover:bg-gray-50 rounded">
-              Ready
-            </button>
-          </div>
-        </div>
+          const isParentActive =
+            activeItem === item.id ||
+            item.children?.some((child) => child.id === activeItem);
 
-        {/* History */}
-        <button className="flex items-center gap-4 w-full p-4 text-gray-700 hover:bg-gray-50 rounded mt-4">
-          <span className="text-lg ml-9">History</span>
-        </button>
+          return (
+            <div
+              key={item.id}
+              className="relative"
+              onMouseEnter={() => collapsed && setHoveredItem(item.id)}
+              onMouseLeave={() => collapsed && setHoveredItem(null)}
+            >
+              {/* Parent */}
+              <button
+                onClick={() => {
+                  if (item.children) {
+                    if (!collapsed) {
+                      toggleParent(item.id);
+                    } else {
+                      setPinnedItem(pinnedItem === item.id ? null : item.id);
+                    }
+                  } else {
+                    setActiveItem(item.id);
+                    setPinnedItem(null);
+                  }
+                }}
+                className={`w-full flex items-center rounded-lg transition
+                hover:bg-[#333333]
+                ${
+                  collapsed
+                    ? "justify-center py-4"
+                    : "justify-between px-3 py-3"
+                }`}
+              >
+                <div
+                  className={`flex items-center ${
+                    collapsed ? "justify-center w-full" : "gap-3"
+                  } ${isParentActive ? "text-[#ee1133]" : "text-white"}`}
+                >
+                  <Icon size={22} />
+                  {!collapsed && (
+                    <span className="text-sm font-medium">{item.label}</span>
+                  )}
+                </div>
+
+                {!collapsed &&
+                  item.children &&
+                  (openParent === item.id ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronRight size={16} />
+                  ))}
+              </button>
+
+              {/* Expanded Mode Children */}
+              {!collapsed && item.children && openParent === item.id && (
+                <div className="ml-8 mt-2 space-y-1">
+                  {item.children.map((child) => (
+                    <button
+                      key={child.id}
+                      onClick={() => setActiveItem(child.id)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition
+                        ${
+                          activeItem === child.id
+                            ? "text-[#ee1133]"
+                            : "text-gray-300 hover:text-white hover:bg-[#333333]"
+                        }`}
+                    >
+                      {child.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Collapsed Hover Flyout */}
+              {collapsed &&
+                (hoveredItem === item.id || pinnedItem === item.id) && (
+                  <div
+                    className="absolute left-full top-0 ml-2 bg-[#222222]
+                    rounded-r shadow-2xl z-[999] min-w-[180px]"
+                    onMouseEnter={() => setHoveredItem(item.id)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                  >
+                    {item.children ? (
+                      <div className="py-2">
+                        <div className="px-4 py-2 text-sm font-medium text-white border-b border-[#3a3a3a]">
+                          {item.label}
+                        </div>
+                        <div className="py-1">
+                          {item.children.map((child) => (
+                            <button
+                              key={child.id}
+                              onClick={() => {
+                                setActiveItem(child.id);
+                                setPinnedItem(null);
+                                setHoveredItem(null);
+                              }}
+                              className={`block w-full text-left px-4 py-2 text-sm transition
+                              ${
+                                activeItem === child.id
+                                  ? "text-[#ee1133]"
+                                  : "text-gray-300 hover:bg-[#3a3a3a] hover:text-white"
+                              }`}
+                            >
+                              {child.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-2 text-sm font-medium text-white">
+                        {item.label}
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+          );
+        })}
       </nav>
     </div>
   );
