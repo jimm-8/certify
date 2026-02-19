@@ -3,9 +3,6 @@ import api from "./api";
 const requestService = {
   /**
    * Track certificate request by reference number and PIN
-   * @param {string} referenceNumber - Request reference number
-   * @param {string} pin - 4-digit PIN
-   * @returns {Promise} Request details
    */
   trackRequest: async (referenceNumber, pin) => {
     try {
@@ -23,7 +20,6 @@ const requestService = {
 
   /**
    * Get all certificate types
-   * @returns {Promise} List of certificate types
    */
   async getCertificateTypes() {
     try {
@@ -37,8 +33,6 @@ const requestService = {
 
   /**
    * Create new certificate request
-   * @param {Object} requestData - Request data
-   * @returns {Promise} Created request with reference number and PIN
    */
   createRequest: async (requestData) => {
     try {
@@ -48,6 +42,33 @@ const requestService = {
       return response.data;
     } catch (error) {
       console.error("Create request error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
+  },
+
+  getAllRequests: async ({
+    page = 1,
+    limit = 10,
+    status = null,
+  } = {}) => {
+    try {
+      const skip = (page - 1) * limit;
+
+      const response = await api.get("/requests/", {
+        params: {
+          skip,
+          limit,
+          status_filter: status,
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching requests:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
