@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { useEffect } from "react";
 import OdrRequests from "./pages/odr/odr_requests";
-import CertifyDashboard from "./pages/certify/certify_dashboard";
+import CertifyDashboard from "./pages/certify/dashboard/certify_dashboard";
 
 function App() {
   return (
