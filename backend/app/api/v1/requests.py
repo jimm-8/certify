@@ -199,7 +199,7 @@ def track_certificate_request(
         updated_date=request.updated_at
     )
 
-# Endpoint 3: Get all requests (for admin/registrar - we'll add authentication later)
+# Endpoint 3: Get all requests
 @router.get("/", response_model=list[CertificateRequestDetail])
 def get_all_requests(
     skip: int = 0,
@@ -207,22 +207,19 @@ def get_all_requests(
     status_filter: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """
-    Get all certificate requests (Admin/Registrar only)
-    
-    Returns a paginated list of all certificate requests.
-    Can filter by status.
-    """
-    
     query = db.query(CertificateRequest)
-    
-    # Filter by status if provided
+
     if status_filter:
-        query = query.filter(CertificateRequest.status == status_filter)
-    
-    # Get requests with pagination
+        try:
+            status_enum = RequestStatus[status_filter.upper()]  # convert string → enum
+            query = query.filter(CertificateRequest.status == status_enum)
+        except KeyError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status '{status_filter}'. Valid values: {[s.name for s in RequestStatus]}"
+            )
+
     requests = query.order_by(CertificateRequest.created_at.desc()).offset(skip).limit(limit).all()
-    
     return requests
 
 # Endpoint 4: Get single request details

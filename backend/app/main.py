@@ -2,27 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 
-# Import all models - this is CRITICAL for table creation
 import app.models.certificate_request
 import app.models.student
 import app.models.audit_log
 
-# Import API routers
 from app.api.v1 import requests, templates, students, mock_student_db, signatures
 
-# Now create tables
-print("🔨 Creating database tables...")
-Base.metadata.create_all(bind=engine)
-print("✅ Database tables created!")
-
-# Create the FastAPI app
 app = FastAPI(
     title="Certify API",
     description="Certificate Management System",
     version="1.0.0"
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
@@ -30,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+print("🔨 Creating database tables...")
+Base.metadata.create_all(bind=engine)
+print("✅ Database tables created!")
 
 @app.get("/")
 def read_root():
@@ -39,7 +34,6 @@ def read_root():
         "docs": "/docs"
     }
 
-# Include routers
 app.include_router(requests.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(students.router, prefix="/api/v1")
