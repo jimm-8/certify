@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
+from fastapi.staticfiles import StaticFiles
+
 
 import app.models.certificate_request
 import app.models.student

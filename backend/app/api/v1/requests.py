@@ -131,7 +131,7 @@ async def create_certificate_request(
         program=request_data.program,
         major=request_data.major,
         year_graduated=request_data.year_graduated,
-        signature_path=signature_path,
+        signature_data=request_data.signature_data,
         verification_token=None,
         status=RequestStatus.PENDING
     )
@@ -244,19 +244,12 @@ def get_request_detail(
 
 # Endpoint 5: Update request status
 @router.patch("/{request_id}/status", response_model=CertificateRequestDetail)
-def update_status(
+async def update_status(                         
     request_id: int,
     status_update: StatusUpdateRequest,
     db: Session = Depends(get_db)
 ):
-    """
-    Update the status of a certificate request
-    
-    Registrar can change request status following the workflow rules.
-    Automatically creates audit logs.
-    """
-    
-    updated_request = update_request_status(
+    updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
         new_status=status_update.new_status,
@@ -265,7 +258,6 @@ def update_status(
         rejection_reason=status_update.rejection_reason,
         rejection_notes=status_update.rejection_notes
     )
-    
     return updated_request
 
 # Endpoint 6: Update student data on request
@@ -429,26 +421,18 @@ def verify_certificate(
 
 # Endpoint 12: Mark as completed (when QR is scanned at release)
 @router.post("/{request_id}/complete", response_model=CertificateRequestDetail)
-def mark_as_completed(
+async def mark_as_completed(         
     request_id: int,
     user_name: str = "Registrar",
     db: Session = Depends(get_db)
 ):
-    """
-    Mark certificate as completed
-    
-    Called when QR code is scanned during certificate release,
-    or manually marked by registrar.
-    """
-    
-    updated_request = update_request_status(
+    updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
         new_status=RequestStatus.COMPLETED,
         user_name=user_name,
         notes="Certificate released to student"
     )
-    
     return updated_request
 
 # Endpoint 13: Generate certificate PDF

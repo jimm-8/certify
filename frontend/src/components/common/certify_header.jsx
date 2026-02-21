@@ -58,6 +58,7 @@ const CertifyHeader = ({ onTabChange }) => {
 
   const handleTabClick = (index) => {
     setActiveTab(index);
+    setDropdownOpen(false);
     if (onTabChange) onTabChange(index);
   };
 
@@ -98,14 +99,17 @@ const CertifyHeader = ({ onTabChange }) => {
             </div>
           ))}
         </div>
-        <div className="w-px self-stretch bg-gray-200 flex-shrink-0 mx-1" />
+        <div className="w-px self-stretch bg-gray-200 flex-shrink-0" />
         <div className="relative flex items-center" ref={buttonRef}>
           <button
-            onClick={() => setDropdownOpen((prev) => !prev)}
+            onClick={() => {
+              setActiveTab(null);
+              setDropdownOpen((prev) => !prev);
+            }}
             className={`p-2 rounded-md transition-colors flex-shrink-0 ${
               dropdownOpen
-                ? "text-blue-600 bg-blue-50"
-                : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                ? "text-[#ee1133] "
+                : "text-gray-400 hover:text-[#ee1133]"
             }`}
           >
             <BsThreeDotsVertical size={16} />

@@ -1,9 +1,7 @@
 import api from "./api";
 
 const requestService = {
-  /**
-   * Track certificate request by reference number and PIN
-   */
+  // track
   trackRequest: async (referenceNumber, pin) => {
     try {
       const response = await api.get("/requests/track", {
@@ -17,10 +15,7 @@ const requestService = {
       throw error;
     }
   },
-
-  /**
-   * Get all certificate types
-   */
+  // certificate types
   async getCertificateTypes() {
     try {
       const response = await api.get("/certificate-types/");
@@ -30,10 +25,7 @@ const requestService = {
       throw error;
     }
   },
-
-  /**
-   * Create new certificate request
-   */
+  // requests
   createRequest: async (requestData) => {
     try {
       console.log("Sending request to API:", requestData);
@@ -49,12 +41,8 @@ const requestService = {
       throw error;
     }
   },
-
-  getAllRequests: async ({
-    page = 1,
-    limit = 10,
-    status = null,
-  } = {}) => {
+  // get all requests
+  getAllRequests: async ({ page = 1, limit = 10, status = null } = {}) => {
     try {
       const skip = (page - 1) * limit;
 
@@ -73,6 +61,59 @@ const requestService = {
         response: error.response?.data,
         status: error.response?.status,
       });
+      throw error;
+    }
+  },
+  // update request status
+  updateStatus: async (id, newStatus, notes = "", userName = "") => {
+    try {
+      const response = await api.patch(`/requests/${id}/status`, {
+        new_status: newStatus,
+        notes,
+        user_name: userName,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error updating request status:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
+  },
+  // get request notes
+  getRequestNotes: async (requestId) => {
+    try {
+      const response = await api.get(`/requests/${requestId}/notes`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching request notes:", error);
+      throw error;
+    }
+  },
+  // download certificate
+  downloadCertificate: async (requestId) => {
+    try {
+      const response = await api.get(
+        `/requests/${requestId}/download-certificate`,
+        {
+          responseType: "blob",
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error downloading certificate:", error);
+      throw error;
+    }
+  },
+  // send ready email
+  sendReadyEmail: async (requestId) => {
+    try {
+      const response = await api.post(`/requests/${requestId}/notify`);
+      return response.data;
+    } catch (error) {
+      console.error("Error sending email:", error);
       throw error;
     }
   },
