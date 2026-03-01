@@ -1,7 +1,16 @@
-import React, { useState, useImperativeHandle, forwardRef } from "react";
+import React, { useState } from "react";
+import { FaExclamationCircle } from "react-icons/fa";
+
+// Reusable inline field error
+const FieldError = ({ message }) =>
+  message ? (
+    <p className="flex items-center gap-1 text-red-500 text-xs mt-1">
+      <FaExclamationCircle className="shrink-0" />
+      {message}
+    </p>
+  ) : null;
 
 const OdrRequestForm = React.forwardRef((props, ref) => {
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     currentAddress: "",
@@ -16,56 +25,8 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     yearGraduated: "",
   });
 
-  const validateForm = () => {
-    const required = [
-      "name",
-      "currentAddress",
-      "relationshipToStudent",
-      "contactNumber",
-      "emailAddress",
-      "purposeOfRequest",
-      "fullname",
-      "program",
-    ];
-
-    for (const field of required) {
-      if (!formData[field] || formData[field].trim() === "") {
-        return `${field.replace(/([A-Z])/g, " $1")} is required`;
-      }
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.emailAddress)) {
-      return "Please enter a valid email address";
-    }
-
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    if (!phoneRegex.test(formData.contactNumber.replace(/\s/g, ""))) {
-      return "Please enter a valid Philippine mobile number (09xxxxxxxxx)";
-    }
-
-    return null;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const getFormData = () => {
-    const error = validateForm();
-    if (error) {
-      throw new Error(error);
-    }
-    return formData;
-  };
-
-  React.useImperativeHandle(ref, () => ({
-    getFormData,
-  }));
+  // Per-field error state
+  const [errors, setErrors] = useState({});
 
   const relationshipOptions = [
     "Same Person",
@@ -90,7 +51,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     "Bachelor of Science in Information Technology",
     "Bachelor of Science in Information Systems",
     "BS Mechanical Engineering",
-  ]; // Add program options if needed
+  ];
 
   const purposeOptions = [
     "Employment",
@@ -103,8 +64,106 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     "Others",
   ];
 
+  // Validate a single field and return an error string (or "")
+  const validateField = (name, value) => {
+    const trimmed = typeof value === "string" ? value.trim() : value;
+
+    const requiredFields = [
+      "name",
+      "currentAddress",
+      "relationshipToStudent",
+      "contactNumber",
+      "emailAddress",
+      "purposeOfRequest",
+      "fullname",
+      "program",
+    ];
+
+    if (requiredFields.includes(name) && !trimmed) {
+      const labels = {
+        name: "Name",
+        currentAddress: "Current Address",
+        relationshipToStudent: "Relationship to the student",
+        contactNumber: "Contact Number",
+        emailAddress: "Email Address",
+        purposeOfRequest: "Purpose of request",
+        fullname: "Full name",
+        program: "Program",
+      };
+      return `${labels[name] || name} is required.`;
+    }
+
+    if (name === "emailAddress" && trimmed) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmed))
+        return "Please enter a valid email address.";
+    }
+
+    if (name === "contactNumber" && trimmed) {
+      const phoneRegex = /^(09|\+639)\d{9}$/;
+      if (!phoneRegex.test(trimmed.replace(/\s/g, "")))
+        return "Enter a valid PH mobile number (e.g. 09XXXXXXXXX).";
+    }
+
+    return "";
+  };
+
+  // Validate all fields and return field-level error map
+  const validateAll = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach((key) => {
+      const err = validateField(key, formData[key]);
+      if (err) newErrors[key] = err;
+    });
+    return newErrors;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error as user types / selects
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const err = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: err }));
+  };
+
+  // Called by parent via ref
+  const getFormData = () => {
+    const newErrors = validateAll();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      throw new Error("Please fix the highlighted fields before continuing.");
+    }
+    return formData;
+  };
+
+  React.useImperativeHandle(ref, () => ({ getFormData }));
+
+  // Helper: classes for input based on error state
+  const inputClass = (field) =>
+    `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 h-10 transition-colors ${
+      errors[field]
+        ? "border-red-400 bg-red-50 focus:ring-red-300"
+        : "border-gray-300 focus:ring-teal-500"
+    }`;
+
+  const selectClass = (field) =>
+    `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 transition-colors ${
+      errors[field]
+        ? "border-red-400 bg-red-50 focus:ring-red-300"
+        : "border-gray-300 focus:ring-teal-500"
+    }`;
+
   return (
     <>
+      {/* ── Requesting Individual's Information ─────────────── */}
       <div className="max-w-4xl m-5">
         <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
           <h2 className="text-lg uppercase">
@@ -119,7 +178,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="name"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Name
+              Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -127,9 +186,10 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("name")}
             />
+            <FieldError message={errors.name} />
           </div>
 
           {/* Current Address */}
@@ -138,7 +198,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="currentAddress"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Current Address
+              Current Address <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -146,9 +206,10 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               name="currentAddress"
               value={formData.currentAddress}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("currentAddress")}
             />
+            <FieldError message={errors.currentAddress} />
           </div>
 
           {/* Relationship to the student */}
@@ -157,7 +218,8 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="relationshipToStudent"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Relationship to the student
+              Relationship to the student{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -166,14 +228,15 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               list="relationshipOptions"
               value={formData.relationshipToStudent}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("relationshipToStudent")}
             />
             <datalist id="relationshipOptions">
               {relationshipOptions.map((option, index) => (
                 <option key={index} value={option} />
               ))}
             </datalist>
+            <FieldError message={errors.relationshipToStudent} />
           </div>
 
           {/* Contact Number */}
@@ -182,17 +245,19 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="contactNumber"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Contact Number
+              Contact Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
               id="contactNumber"
               name="contactNumber"
+              placeholder="09XXXXXXXXX"
               value={formData.contactNumber}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("contactNumber")}
             />
+            <FieldError message={errors.contactNumber} />
           </div>
 
           {/* Email Address */}
@@ -201,7 +266,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="emailAddress"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Email Address
+              Email Address <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -209,30 +274,37 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               name="emailAddress"
               value={formData.emailAddress}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-              required
+              onBlur={handleBlur}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 transition-colors ${
+                errors.emailAddress
+                  ? "border-red-400 bg-red-50 focus:ring-red-300"
+                  : "border-gray-300 focus:ring-teal-500"
+              }`}
             />
-            <p className="mt-1 text-xs text-gray-500">
-              * Valid and active email is required. The Reference No. for
-              request tracking will be sent to this email address.
-            </p>
+            <FieldError message={errors.emailAddress} />
+            {!errors.emailAddress && (
+              <p className="mt-1 text-xs text-gray-500">
+                * Valid and active email is required. The Reference No. for
+                request tracking will be sent to this email address.
+              </p>
+            )}
           </div>
 
-          {/* Purpose/s of request */}
+          {/* Purpose of request */}
           <div className="mb-6">
             <label
               htmlFor="purposeOfRequest"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Purpose/s of request
+              Purpose/s of request <span className="text-red-500">*</span>
             </label>
             <select
               id="purposeOfRequest"
               name="purposeOfRequest"
               value={formData.purposeOfRequest}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-              required
+              onBlur={handleBlur}
+              className={selectClass("purposeOfRequest")}
             >
               <option value="">Select purpose</option>
               {purposeOptions.map((option, index) => (
@@ -241,22 +313,26 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
                 </option>
               ))}
             </select>
+            <FieldError message={errors.purposeOfRequest} />
           </div>
         </div>
       </div>
+
+      {/* ── Student Information ──────────────────────────────── */}
       <div className="max-w-4xl -translate-y-6 m-5">
         <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
           <h2 className="text-lg uppercase">Student Information</h2>
         </div>
 
         <div className="bg-[#F8F8FF] rounded-b-sm p-6">
-          {/* SRCODE */}
+          {/* SRCODE (optional) */}
           <div className="mb-6">
             <label
               htmlFor="srcCode"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              SRCODE (Optional)
+              SRCODE{" "}
+              <span className="text-gray-400 font-normal">(Optional)</span>
             </label>
             <input
               type="text"
@@ -274,7 +350,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               htmlFor="fullname"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Fullname
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -282,35 +358,36 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               name="fullname"
               value={formData.fullname}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("fullname")}
             />
+            <FieldError message={errors.fullname} />
           </div>
 
-          {/* Program */}
           {/* Program */}
           <div className="mb-6">
             <label
               htmlFor="program"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Program
+              Program <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               id="program"
               name="program"
               list="programOptions"
-              value={formData.program} // ✅ Fixed: was formData.programOptions
+              value={formData.program}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
+              onBlur={handleBlur}
+              className={inputClass("program")}
             />
             <datalist id="programOptions">
               {programOptions.map((option, index) => (
                 <option key={index} value={option} />
               ))}
             </datalist>
+            <FieldError message={errors.program} />
           </div>
 
           {/* Major */}
@@ -325,11 +402,9 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               type="text"
               id="major"
               name="major"
-              list="majorOptions"
               value={formData.major}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
             />
           </div>
 
@@ -345,11 +420,13 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               type="text"
               id="yearGraduated"
               name="yearGraduated"
+              placeholder="e.g. 2023"
               value={formData.yearGraduated}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
-              required
             />
+            <FieldError message={errors.yearGraduated} />
           </div>
         </div>
       </div>

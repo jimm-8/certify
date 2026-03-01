@@ -42,7 +42,7 @@ def generate_certificate_pdf(
         )
     
     # Check if request is in correct status
-    if request.status not in [RequestStatus.PROCESSING, RequestStatus.FOR_REVIEW]:
+    if request.status not in [RequestStatus.PROCESSING]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot generate certificate for request in {request.status.value} status"

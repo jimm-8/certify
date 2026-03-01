@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from typing import Optional
 import secrets
 import os
+from app.services.email_service import EmailService
 
 from app.models.certificate_request import CertificateRequest, RequestStatus, RequestNote
 from app.models.audit_log import AuditLog
@@ -12,8 +13,7 @@ VALID_TRANSITIONS = {
     RequestStatus.SUBMITTED: [RequestStatus.PENDING],
     RequestStatus.PENDING: [RequestStatus.APPROVED, RequestStatus.REJECTED],
     RequestStatus.APPROVED: [RequestStatus.PROCESSING],
-    RequestStatus.PROCESSING: [RequestStatus.FOR_REVIEW],
-    RequestStatus.FOR_REVIEW: [RequestStatus.FOR_RELEASING, RequestStatus.APPROVED],  # Can go back to approved if issues
+    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],  # Can go back to approved if issues
     RequestStatus.FOR_RELEASING: [RequestStatus.COMPLETED],
     RequestStatus.COMPLETED: [],  # Final state
     RequestStatus.REJECTED: []  # Final state
@@ -27,7 +27,7 @@ def generate_verification_token() -> str:
     """Generate unique verification token for QR code"""
     return secrets.token_urlsafe(32)
 
-def update_request_status(
+async def update_request_status(
     db: Session,
     request_id: int,
     new_status: RequestStatus,
@@ -137,6 +137,20 @@ def update_request_status(
 
     db.commit()
     db.refresh(request)
+    
+    if new_status == RequestStatus.FOR_RELEASING:
+        try:
+            email_service = EmailService()
+            await email_service.send_ready_for_release(
+                to_email=request.requestor_email,
+                reference_number=request.reference_number,
+                requestor_name=request.requestor_name,
+                student_name=request.student_name,
+                certificate_type=request.certificate_type_name,
+            )
+            print(f"✅ Release email sent to {request.requestor_email}")
+        except Exception as e:
+            print(f"⚠️ Release email failed: {e}")
     
     return request
 

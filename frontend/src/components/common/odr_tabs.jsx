@@ -14,7 +14,7 @@ import OdrNewRequest from "../../pages/odr/odr_new_request";
 
 const OdrTabs = () => {
   const currentHour = new Date().getHours();
-  const isOpenHours = currentHour >= 8 && currentHour < 17;
+  const isOpenHours = currentHour >= 8 && currentHour < 24;
 
   return (
     <>

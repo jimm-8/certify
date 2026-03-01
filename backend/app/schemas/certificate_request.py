@@ -9,7 +9,6 @@ class RequestStatusEnum(str, Enum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     PROCESSING = "PROCESSING"
-    FOR_REVIEW = "FOR_REVIEW"
     FOR_RELEASING = "FOR_RELEASING"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
@@ -121,6 +120,7 @@ class CertificateRequestDetail(BaseModel):
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
+    signature_data: Optional[str] = None
     
     # Timestamps
     created_at: datetime

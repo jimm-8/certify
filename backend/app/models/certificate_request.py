@@ -9,7 +9,6 @@ class RequestStatus(str, enum.Enum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     PROCESSING = "PROCESSING"
-    FOR_REVIEW = "FOR_REVIEW"
     FOR_RELEASING = "FOR_RELEASING"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
@@ -49,7 +48,7 @@ class CertificateRequest(Base):
     major = Column(String(255), nullable=True)
     year_graduated = Column(String(10), nullable=True)
     
-    signature_path = Column(String(500), nullable=True)
+    signature_data = Column(Text, nullable=True)
 
     verification_token = Column(String(100), unique=True, nullable=True, index=True)
     pdf_path = Column(String(500), nullable=True)

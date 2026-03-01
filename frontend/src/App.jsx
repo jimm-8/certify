@@ -5,8 +5,9 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useEffect } from "react";
+import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
-import CertifyDashboard from "./pages/certify/dashboard/certify_dashboard";
+import CertifyIndex from "./pages/certify/index";
 
 function App() {
   return (
@@ -27,7 +28,17 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/" element={<CertifyDashboard />} />
+      {/* With Navbar */}
+      <Route
+        path="/"
+        element={
+          <MainLayout>
+            <CertifyIndex />
+          </MainLayout>
+        }
+      />
+
+      {/* Without Navbar */}
       <Route path="/odr" element={<OdrRequests />} />
     </Routes>
   );
