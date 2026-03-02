@@ -43,7 +43,7 @@ const CertifyNavbar = () => {
 
   return (
     <div className="w-full">
-      <div className="bg-[#ee1133] text-white px-6 py-2 flex justify-between items-center shadow-md">
+      <div className="bg-[#343A3F] text-white px-6 py-2 flex justify-between items-center shadow-md">
         <div
           style={{ fontWeight: 900 }}
           className="text-4xl font-inter font-black italic"

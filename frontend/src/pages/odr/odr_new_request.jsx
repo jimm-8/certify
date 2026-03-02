@@ -23,6 +23,18 @@ const FieldError = ({ message }) =>
     </p>
   ) : null;
 
+const officeToCampusMap = {
+  pablo_borbon: "Pablo Borbon",
+  alangilan: "Alangilan",
+  balayan: "Balayan",
+  lemery: "Lemery",
+  lipa: "Lipa",
+  rosario: "Rosario",
+  san_juan: "San Juan",
+  arasof_nasugbu: "ARASOF",
+  jplpc_malvar: "JPLPC",
+};
+
 const OdrNewRequest = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedOffice, setSelectedOffice] = useState("");
@@ -35,6 +47,7 @@ const OdrNewRequest = () => {
   const [savedFormData, setSavedFormData] = useState(null);
   const formRef = useRef(null);
   const signatureRef = useRef(null);
+  const [programs, setPrograms] = useState([]);
 
   // Step 1 field errors (office + certType; form fields handled inside OdrRequestForm)
   const [step1Errors, setStep1Errors] = useState({ office: "", certType: "" });
@@ -169,6 +182,33 @@ const OdrNewRequest = () => {
       return () => clearTimeout(timer); // cleanup if component unmounts early
     }
   }, [success]);
+
+  useEffect(() => {
+    if (!selectedOffice) {
+      setPrograms([]);
+      return;
+    }
+
+    setPrograms([]);
+
+    const fetchPrograms = async () => {
+      try {
+        const campusName = officeToCampusMap[selectedOffice];
+        if (!campusName) {
+          setPrograms([]);
+          return;
+        }
+
+        const data = await requestService.getPrograms(campusName);
+        setPrograms(data);
+      } catch (err) {
+        console.error(err);
+        setPrograms([]);
+      }
+    };
+
+    fetchPrograms();
+  }, [selectedOffice]);
 
   return (
     <>
@@ -461,7 +501,11 @@ const OdrNewRequest = () => {
             </div>
 
             <div className="w-full m-2 sm:m-5 -translate-y-8">
-              <OdrRequestForm ref={formRef} />
+              <OdrRequestForm
+                ref={formRef}
+                programs={programs}
+                selectedOffice={selectedOffice}
+              />
             </div>
             <hr className="m-2 sm:m-5 -translate-y-10" />
           </>

@@ -15,6 +15,7 @@
     "@mui/material": "^7.3.6",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "pdf-lib": "^1.17.1",

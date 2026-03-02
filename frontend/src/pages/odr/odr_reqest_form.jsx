@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FaExclamationCircle } from "react-icons/fa";
 
 // Reusable inline field error
@@ -10,7 +10,8 @@ const FieldError = ({ message }) =>
     </p>
   ) : null;
 
-const OdrRequestForm = React.forwardRef((props, ref) => {
+const OdrRequestForm = React.forwardRef(
+  ({ programs = [], selectedOffice = "" }, ref) => {
   const [formData, setFormData] = useState({
     name: "",
     currentAddress: "",
@@ -46,13 +47,6 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     "Mother",
   ];
 
-  const programOptions = [
-    "Bachelor of Science in Computer Science",
-    "Bachelor of Science in Information Technology",
-    "Bachelor of Science in Information Systems",
-    "BS Mechanical Engineering",
-  ];
-
   const purposeOptions = [
     "Employment",
     "Further Studies",
@@ -63,6 +57,22 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     "Immigration",
     "Others",
   ];
+
+  const programOptions = useMemo(() => {
+    return [...new Set(programs.map((p) => p.name).filter(Boolean))].sort();
+  }, [programs]);
+
+  const majorOptions = useMemo(() => {
+    if (!formData.program) return [];
+    return [
+      ...new Set(
+        programs
+          .filter((p) => p.name === formData.program)
+          .map((p) => p.major)
+          .filter(Boolean),
+      ),
+    ].sort();
+  }, [programs, formData.program]);
 
   // Validate a single field and return an error string (or "")
   const validateField = (name, value) => {
@@ -91,6 +101,18 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
         program: "Program",
       };
       return `${labels[name] || name} is required.`;
+    }
+
+    if (name === "program" && trimmed && !programOptions.includes(trimmed)) {
+      return "Please select a valid program from the list.";
+    }
+
+    if (name === "major" && majorOptions.length > 0 && !trimmed) {
+      return "Major is required for this program.";
+    }
+
+    if (name === "major" && trimmed && !majorOptions.includes(trimmed)) {
+      return "Please select a valid major from the list.";
     }
 
     if (name === "emailAddress" && trimmed) {
@@ -144,7 +166,29 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
     return formData;
   };
 
-  React.useImperativeHandle(ref, () => ({ getFormData }));
+    React.useImperativeHandle(ref, () => ({ getFormData }));
+
+    useEffect(() => {
+      if (!formData.program) return;
+
+      const programStillValid = programOptions.includes(formData.program);
+      if (!programStillValid) {
+        setFormData((prev) => ({ ...prev, program: "", major: "" }));
+        setErrors((prev) => ({ ...prev, program: "", major: "" }));
+        return;
+      }
+
+      if (formData.major && !majorOptions.includes(formData.major)) {
+        setFormData((prev) => ({ ...prev, major: "" }));
+        setErrors((prev) => ({ ...prev, major: "" }));
+      }
+    }, [
+      selectedOffice,
+      formData.program,
+      formData.major,
+      programOptions,
+      majorOptions,
+    ]);
 
   // Helper: classes for input based on error state
   const inputClass = (field) =>
@@ -378,13 +422,21 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
               name="program"
               list="programOptions"
               value={formData.program}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData((prev) => ({
+                  ...prev,
+                  program: value,
+                  major: "",
+                }));
+                setErrors((prev) => ({ ...prev, program: "", major: "" }));
+              }}
               onBlur={handleBlur}
               className={inputClass("program")}
             />
             <datalist id="programOptions">
-              {programOptions.map((option, index) => (
-                <option key={index} value={option} />
+              {programOptions.map((name) => (
+                <option key={name} value={name} />
               ))}
             </datalist>
             <FieldError message={errors.program} />
@@ -398,14 +450,31 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
             >
               Major
             </label>
+
             <input
               type="text"
               id="major"
               name="major"
+              list="majorOptions"
               value={formData.major}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
+              onBlur={handleBlur}
+              disabled={majorOptions.length === 0}
+              className={`${inputClass("major")} ${
+                majorOptions.length === 0
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : ""
+              }`}
+              placeholder={
+                majorOptions.length === 0 ? "No major available" : "Select major"
+              }
             />
+            <datalist id="majorOptions">
+              {majorOptions.map((major) => (
+                <option key={major} value={major} />
+              ))}
+            </datalist>
+            <FieldError message={errors.major} />
           </div>
 
           {/* Year Graduated */}
@@ -432,6 +501,7 @@ const OdrRequestForm = React.forwardRef((props, ref) => {
       </div>
     </>
   );
-});
+  },
+);
 
 export default OdrRequestForm;
