@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import BulkRejectModal from "../../components/common/bulkRejectModal";
-import { BsSearch, BsCalendar3, BsChevronDown, BsEye } from "react-icons/bs";
+import { BsSearch, BsCalendar3, BsChevronDown } from "react-icons/bs";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -20,40 +19,7 @@ const getDateFrom = (days) => {
   return d.toISOString().split("T")[0];
 };
 
-const customStyles = {
-  headRow: {
-    style: {
-      backgroundColor: "#f9fafb",
-      borderBottomWidth: "1px",
-      borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
-      fontWeight: "600",
-      color: "#6b7280",
-      textTransform: "uppercase",
-    },
-  },
-  rows: {
-    style: {
-      fontSize: "0.875rem",
-      color: "#374151",
-      "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
-    },
-  },
-  pagination: {
-    style: {
-      fontSize: "0.875rem",
-      color: "#6b7280",
-      borderTopWidth: "1px",
-      borderTopColor: "#e5e7eb",
-    },
-  },
-};
-
-const statusColors = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  APPROVED: "bg-blue-100 text-blue-700",
-  REJECTED: "bg-red-100 text-red-600",
-};
+const ROWS_PER_PAGE = 15;
 
 const Checking = () => {
   const [requests, setRequests] = useState([]);
@@ -71,6 +37,8 @@ const Checking = () => {
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
   const [bulkRejectLoading, setBulkRejectLoading] = useState(false);
   const [bulkRejectNotes, setBulkRejectNotes] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [actionLoading, setActionLoading] = useState({});
 
   const fetchRequests = async () => {
     try {
@@ -88,15 +56,10 @@ const Checking = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  useEffect(() => { fetchRequests(); }, []);
 
   useEffect(() => {
-    requestService
-      .getCertificateTypes()
-      .then(setCertificateTypes)
-      .catch(console.error);
+    requestService.getCertificateTypes().then(setCertificateTypes).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -112,32 +75,56 @@ const Checking = () => {
 
   const filteredRequests = requests.filter((r) => {
     const matchesSearch = Object.values(r).some((val) =>
-      String(val).toLowerCase().includes(search.toLowerCase()),
+      String(val).toLowerCase().includes(search.toLowerCase())
     );
     const dateFrom = getDateFrom(selectedFilter.days);
     const matchesDate = dateFrom
       ? new Date(r.created_at).toISOString().split("T")[0] >= dateFrom
       : true;
-    const matchesType = selectedType
-      ? r.certificate_type_name === selectedType
-      : true;
-    const matchesProgram = selectedProgram
-      ? r.program === selectedProgram
-      : true;
-
+    const matchesType = selectedType ? r.certificate_type_name === selectedType : true;
+    const matchesProgram = selectedProgram ? r.program === selectedProgram : true;
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
 
-  const handleView = (row) => setSelectedRequest(row);
+  // Pagination
+  const totalPages = Math.ceil(filteredRequests.length / ROWS_PER_PAGE);
+  const paginated = filteredRequests.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
 
   const handleApprove = async (req) => {
+    setActionLoading((prev) => ({ ...prev, [`approve_${req.id}`]: true }));
+    try {
+      await requestService.updateStatus(req.id, "APPROVED", "All documents verified");
+      fetchRequests();
+    } catch (error) {
+      console.error("Failed to approve:", error);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`approve_${req.id}`]: false }));
+    }
+  };
+
+  const handleReject = async (req) => {
+    setActionLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
+    try {
+      await requestService.updateStatus(req.id, "REJECTED", "Rejected by checker");
+      fetchRequests();
+    } catch (error) {
+      console.error("Failed to reject:", error);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
+    }
+  };
+
+  const handleEmail = (req) => {
+    window.location.href = `mailto:${req.email || ""}?subject=Certificate Request Update`;
+  };
+
+  const handleModalApprove = async (req) => {
     setModalLoading(true);
     try {
-      await requestService.updateStatus(
-        req.id,
-        "APPROVED",
-        "All documents verified",
-      );
+      await requestService.updateStatus(req.id, "APPROVED", "All documents verified");
       setSelectedRequest(null);
       fetchRequests();
     } catch (error) {
@@ -147,7 +134,7 @@ const Checking = () => {
     }
   };
 
-  const handleDecline = async (req, notes) => {
+  const handleModalDecline = async (req, notes) => {
     setModalLoading(true);
     try {
       await requestService.updateStatus(req.id, "REJECTED", notes);
@@ -165,12 +152,8 @@ const Checking = () => {
     try {
       await Promise.all(
         filteredRequests.map((r) =>
-          requestService.updateStatus(
-            r.id,
-            "APPROVED",
-            "All documents verified",
-          ),
-        ),
+          requestService.updateStatus(r.id, "APPROVED", "All documents verified")
+        )
       );
       fetchRequests();
     } catch (error) {
@@ -185,8 +168,8 @@ const Checking = () => {
     try {
       await Promise.all(
         filteredRequests.map((r) =>
-          requestService.updateStatus(r.id, "REJECTED", bulkRejectNotes),
-        ),
+          requestService.updateStatus(r.id, "REJECTED", bulkRejectNotes)
+        )
       );
       setBulkRejectOpen(false);
       setBulkRejectNotes("");
@@ -198,58 +181,11 @@ const Checking = () => {
     }
   };
 
-  const columns = [
-    {
-      name: "Reference No.",
-      selector: (row) => row.reference_number,
-      sortable: true,
-    },
-    {
-      name: "Certificate Type",
-      selector: (row) => row.certificate_type_name,
-      sortable: true,
-    },
-    {
-      name: "Student Name",
-      selector: (row) => row.student_name,
-      sortable: true,
-    },
-    { name: "Program", selector: (row) => row.program, sortable: true },
-    { name: "Purpose", selector: (row) => row.purpose, sortable: true },
-    {
-      name: "Date Requested",
-      selector: (row) => new Date(row.created_at).toLocaleDateString(),
-      sortable: true,
-    },
-    {
-      name: "Status",
-      selector: (row) => row.status,
-      cell: (row) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[row.status] || "bg-gray-100 text-gray-600"}`}
-        >
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      name: "Action",
-      ignoreRowClick: true,
-      cell: (row) => (
-        <button
-          onClick={() => handleView(row)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#ee1133] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
-        >
-          <BsEye size={13} />
-        </button>
-      ),
-    },
-  ];
-
   return (
     <div className="bg-white w-full rounded-md border border-gray-200 shadow-sm -mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
+
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
         {/* LEFT — Bulk Actions */}
         <div className="flex items-center gap-2">
           <button
@@ -262,7 +198,6 @@ const Checking = () => {
             )}
             Approve All
           </button>
-
           <button
             onClick={() => setBulkRejectOpen(true)}
             disabled={filteredRequests.length === 0}
@@ -276,27 +211,21 @@ const Checking = () => {
         <div className="flex items-center gap-2">
           <select
             value={selectedProgram}
-            onChange={(e) => setSelectedProgram(e.target.value)}
+            onChange={(e) => { setSelectedProgram(e.target.value); setCurrentPage(1); }}
             className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
           >
             <option value="">All Programs</option>
-            {programs.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
+            {programs.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
           <select
             value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
+            onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
             className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
           >
             <option value="">All Certificate Types</option>
             {certificateTypes.map((ct) => (
-              <option key={ct.id} value={ct.name}>
-                {ct.name}
-              </option>
+              <option key={ct.id} value={ct.name}>{ct.name}</option>
             ))}
           </select>
 
@@ -312,16 +241,11 @@ const Checking = () => {
             </button>
             {dropdownOpen && (
               <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden">
-                <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
-                  Filter
-                </div>
+                <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">Filter</div>
                 {filterOptions.map((option) => (
                   <button
                     key={option.label}
-                    onClick={() => {
-                      setSelectedFilter(option);
-                      setDropdownOpen(false);
-                    }}
+                    onClick={() => { setSelectedFilter(option); setDropdownOpen(false); setCurrentPage(1); }}
                     className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${
                       selectedFilter.label === option.label
                         ? "bg-blue-600 text-white font-medium"
@@ -341,7 +265,7 @@ const Checking = () => {
               type="text"
               placeholder="Search..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               className="text-xs px-3 py-1.5 focus:outline-none w-40"
             />
             <div className="w-px self-stretch bg-gray-300" />
@@ -353,37 +277,149 @@ const Checking = () => {
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No requests found.
-            </div>
-          }
-        />
+      <div className="border border-gray-200 rounded overflow-hidden">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              {["SR Code", "Requester Name", "Section", "Campus", "Certificate Type", "Action"].map((col) => (
+                <th
+                  key={col}
+                  className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-xs text-gray-400">
+                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-[#ee1133]" />
+                </td>
+              </tr>
+            ) : paginated.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-xs text-gray-400">
+                  No requests found.
+                </td>
+              </tr>
+            ) : (
+              paginated.map((row, i) => (
+                <tr
+                  key={row.id || i}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedRequest(row)}
+                >
+                  <td className="px-4 py-2.5 text-xs font-mono text-gray-500 whitespace-nowrap">
+                    {row.reference_number || row.sr_code || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
+                    {row.student_name || row.requester_name || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
+                    {row.section || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
+                    {row.campus || "Alangilan"}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700">
+                    {row.certificate_type_name || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5">
+                      {/* Accept */}
+                      <button
+                        onClick={() => handleApprove(row)}
+                        disabled={actionLoading[`approve_${row.id}`]}
+                        className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading[`approve_${row.id}`] ? "..." : "Accept"}
+                      </button>
+                      {/* Reject */}
+                      <button
+                        onClick={() => handleReject(row)}
+                        disabled={actionLoading[`reject_${row.id}`]}
+                        className="px-3 py-1 text-xs font-semibold text-white bg-[#ee1133] rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading[`reject_${row.id}`] ? "..." : "Reject"}
+                      </button>
+                      {/* Email */}
+                      <button
+                        onClick={() => handleEmail(row)}
+                        className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
+                      >
+                        Email
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination */}
+      {!loading && filteredRequests.length > 0 && (
+        <div className="flex items-center justify-between mt-3 px-1">
+          <span className="text-xs text-gray-400">
+            Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}–{Math.min(currentPage * ROWS_PER_PAGE, filteredRequests.length)} of {filteredRequests.length} results
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              ‹ Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === "..." ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-xs text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item)}
+                    className={`px-2.5 py-1 text-xs border rounded transition-colors ${
+                      currentPage === item
+                        ? "bg-[#ee1133] text-white border-[#ee1133]"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              Next ›
+            </button>
+          </div>
+        </div>
+      )}
 
       <RequestModal
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
-        onApprove={handleApprove}
-        onDecline={handleDecline}
+        onApprove={handleModalApprove}
+        onDecline={handleModalDecline}
         loading={modalLoading}
       />
 
       <BulkRejectModal
         open={bulkRejectOpen}
-        onClose={() => {
-          setBulkRejectOpen(false);
-          setBulkRejectNotes("");
-        }}
+        onClose={() => { setBulkRejectOpen(false); setBulkRejectNotes(""); }}
         onConfirm={handleBulkReject}
         loading={bulkRejectLoading}
         notes={bulkRejectNotes}

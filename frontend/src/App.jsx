@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
 import CertifyIndex from "./pages/certify/index";
+import CertifyDashboard from './pages/certify/dashboard';
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function AppContent() {
 
       {/* Without Navbar */}
       <Route path="/odr" element={<OdrRequests />} />
+
+      {/* Dashboard */}
+      <Route path="/dashboard" element={<CertifyDashboard />} />
     </Routes>
   );
 }
