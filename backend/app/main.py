@@ -8,7 +8,7 @@ import app.models.certificate_request
 import app.models.student
 import app.models.audit_log
 
-from app.api.v1 import requests, templates, students, mock_student_db, signatures
+from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard
 
 app = FastAPI(
     title="Certify API",
@@ -41,6 +41,8 @@ app.include_router(templates.router, prefix="/api/v1")
 app.include_router(students.router, prefix="/api/v1")
 app.include_router(mock_student_db.router, prefix="/api/v1")
 app.include_router(signatures.router, prefix="/api/v1")
+app.include_router(program.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():

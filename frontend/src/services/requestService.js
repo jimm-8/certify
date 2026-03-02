@@ -117,6 +117,19 @@ const requestService = {
       throw error;
     }
   },
+
+  getPrograms: async (campus = null) => {
+    try {
+      if (!campus) return [];
+      const response = await api.get(
+        `/programs/by-campus/${encodeURIComponent(campus)}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+      throw error;
+    }
+  },
 };
 
 export default requestService;

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.models.student import Program
+from app.models.program import Program
 from app.schemas.student import ProgramResponse
 
 # Create router
