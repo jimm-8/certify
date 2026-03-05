@@ -8,6 +8,14 @@ from typing import Any
 
 class CertificateTemplateEngine:
     """Resolves and renders certificate templates from app/templates."""
+    DEFAULT_TEMPLATE = "Cert-of-Enrollment-Current.html"
+    COMMON_FALLBACKS = (
+        "Cert-of-Enrollment-Current.html",
+        "Cert-of-Enrollment-Previous.html",
+        "Cert-of-ID-Issuance-Current.html",
+        "Cert-of-NSTP-Serial-Num.html",
+    )
+    LEGACY_FILL_PATTERN = r"<span\s+class=\"([^\"]*fill[^\"]*)\"([^>]*)></span>"
 
     def __init__(self, templates_dir: str | Path | None = None):
         if templates_dir is None:
@@ -16,63 +24,8 @@ class CertificateTemplateEngine:
 
     def resolve_template_path(self, certificate_type_name: str, context: dict[str, Any] | None = None) -> Path:
         key = self._normalize(certificate_type_name)
-
-        if "coursedescription" in key:
-            filename = "Cert-of-Course-Desc.html"
-        elif "enrolment" in key or "enrollment" in key:
-            filename = "Cert-of-Enrollment-Current.html"
-        elif "gradingsystem" in key:
-            filename = "Cert-of-Grades.html"
-        elif "graduation" in key:
-            has_year = bool((context or {}).get("year_graduated"))
-            filename = "Cert-of-Grad-Has-Graduated.html" if has_year else "Cert-of-Grad-CandidateforGrad.html"
-        elif "idissuance" in key:
-            filename = "Cert-of-ID-Issuance-Current.html"
-        elif "nstpserialnumber" in key:
-            filename = "Cert-of-NSTP-Serial-Num.html"
-        elif "completedacademicrequirements" in key:
-            filename = "Cert-of-Completed-Acad-Req.html"
-        elif "earnedunits" in key:
-            filename = "Cert-of-Earned-Units.html"
-        elif "englishmedium" in key:
-            filename = "Cert-of-English-Memorandum.html"
-        elif "gwa" in key:
-            filename = "Cert-of-GWA.html"
-        elif "grades" in key:
-            filename = "Cert-of-Grades.html"
-        elif "honorgraduate" in key:
-            filename = "Cert-of-Honor-Grad.html"
-        elif "cav" in key or "authenticationandverification" in key:
-            filename = "Cert-of-Trans-Credentials.html"
-        else:
-            filename = "Cert-of-Enrollment-Current.html"
-
-        fallback_candidates = [filename]
-        if "graduation" in key or "honorgraduate" in key or "completedacademicrequirements" in key:
-            fallback_candidates.extend(
-                [
-                    "Cert-of-Grad-Has-Graduated.html",
-                    "Cert-of-Grad-CandidateforGrad.html",
-                ]
-            )
-        elif "grades" in key or "gwa" in key or "earnedunits" in key or "cav" in key or "authenticationandverification" in key:
-            fallback_candidates.extend(
-                [
-                    "Cert-of-Grades.html",
-                    "Cert-of-Course-Desc.html",
-                ]
-            )
-
-        fallback_candidates.extend(
-            [
-                "Cert-of-Enrollment-Current.html",
-                "Cert-of-Enrollment-Previous.html",
-                "Cert-of-ID-Issuance-Current.html",
-                "Cert-of-NSTP-Serial-Num.html",
-            ]
-        )
-        # Preserve order while removing duplicates.
-        fallback_candidates = list(dict.fromkeys(fallback_candidates))
+        primary = self._resolve_primary_template(key, context or {})
+        fallback_candidates = self._build_fallback_candidates(key, primary)
 
         for candidate in fallback_candidates:
             path = self.templates_dir / candidate
@@ -142,18 +95,70 @@ class CertificateTemplateEngine:
         return pattern.sub(repl, text)
 
     def _replace_legacy_fill_lines(self, text: str, context: dict[str, Any]) -> str:
-        values = [str(v) for v in context.get("legacy_fill_values", []) if v not in (None, "")]
+        # Preserve positional mapping (including empty values) so fields do not shift.
+        values = ["" if v is None else str(v) for v in context.get("legacy_fill_values", [])]
         index = 0
 
         def repl(match: re.Match[str]) -> str:
             nonlocal index
+            classes = match.group(1)
+            extra_attrs = match.group(2) or ""
             if index >= len(values):
                 return match.group(0)
             value = html.escape(values[index])
             index += 1
-            return f"<span class=\"fill-text\">{value}</span>"
+            if value:
+                return f"<span class=\"{classes}\"{extra_attrs}>{value}</span>"
+            return f"<span class=\"{classes}\"{extra_attrs}></span>"
 
-        return re.sub(r"<span\s+class=\"fill[^\"]*\"\s*></span>", repl, text)
+        return re.sub(self.LEGACY_FILL_PATTERN, repl, text)
+
+    def count_fill_slots(self, template_path: Path) -> int:
+        raw_html = template_path.read_text(encoding="utf-8")
+        return len(re.findall(self.LEGACY_FILL_PATTERN, raw_html))
+
+    def _resolve_primary_template(self, normalized_type_key: str, context: dict[str, Any]) -> str:
+        key = normalized_type_key
+        if "coursedescription" in key:
+            return "Cert-of-Course-Desc.html"
+        if "enrolment" in key or "enrollment" in key:
+            return "Cert-of-Enrollment-Current.html"
+        if "gradingsystem" in key or "grades" in key:
+            return "Cert-of-Grades.html"
+        if "graduation" in key:
+            has_year = bool(context.get("year_graduated"))
+            return "Cert-of-Grad-Has-Graduated.html" if has_year else "Cert-of-Grad-CandidateforGrad.html"
+        if "idissuance" in key:
+            return "Cert-of-ID-Issuance-Current.html"
+        if "nstpserialnumber" in key:
+            return "Cert-of-NSTP-Serial-Num.html"
+        if "completedacademicrequirements" in key:
+            return "Cert-of-Completed-Acad-Req.html"
+        if "earnedunits" in key:
+            return "Cert-of-Earned-Units.html"
+        if "englishmedium" in key:
+            return "Cert-of-English-Memorandum.html"
+        if "gwa" in key:
+            return "Cert-of-GWA.html"
+        if "honorgraduate" in key:
+            return "Cert-of-Honor-Grad.html"
+        if "cav" in key or "authenticationandverification" in key:
+            return "Cert-of-Trans-Credentials.html"
+        return self.DEFAULT_TEMPLATE
+
+    def _build_fallback_candidates(self, normalized_type_key: str, primary_template: str) -> list[str]:
+        key = normalized_type_key
+        candidates = [primary_template]
+
+        if "graduation" in key or "honorgraduate" in key or "completedacademicrequirements" in key:
+            candidates.extend(["Cert-of-Grad-Has-Graduated.html", "Cert-of-Grad-CandidateforGrad.html"])
+        elif "grades" in key or "gwa" in key or "earnedunits" in key or "cav" in key or "authenticationandverification" in key:
+            candidates.extend(["Cert-of-Grades.html", "Cert-of-Course-Desc.html"])
+        elif "enrolment" in key or "enrollment" in key:
+            candidates.extend(["Cert-of-Enrollment-Current.html", "Cert-of-Enrollment-Previous.html"])
+
+        candidates.extend(self.COMMON_FALLBACKS)
+        return list(dict.fromkeys(candidates))
 
     @staticmethod
     def _find_first_text(text: str, class_name: str) -> str:
