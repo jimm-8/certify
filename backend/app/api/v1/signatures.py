@@ -65,7 +65,7 @@ async def upload_signature(
             detail=f"Failed to save file: {str(e)}"
         )
     
-    # PROCESS IMAGE: Remove background using AI
+    # PROCESS IMAGE: Normalize and optimize (non-AI)
     from app.utils.image_processor import ImageProcessor
     
     try:
@@ -75,8 +75,8 @@ async def upload_signature(
         processed_filename = f"processed_{new_filename}"
         processed_path = os.path.join(UPLOAD_DIR, processed_filename)
         
-        # Remove background and optimize
-        print(f"🤖 Processing signature with AI...")
+        # Normalize and optimize
+        print(f"🤖 Processing signature image...")
         processed_path = processor.optimize_signature(
             input_path=file_path,
             output_path=processed_path,
@@ -91,12 +91,12 @@ async def upload_signature(
         file_path = processed_path
         new_filename = os.path.basename(processed_path)
         
-        print(f"✅ AI processing complete!")
+        print(f"✅ Signature processing complete.")
         
     except Exception as e:
-        print(f"⚠️ AI processing failed, using original: {e}")
-        # If AI fails, continue with original image
-        # Don't raise error - system still works without background removal
+        print(f"⚠️ Image processing failed, using original: {e}")
+        # If processing fails, continue with original image
+        # Don't raise error - system still works without optional processing
 
     # Create signature record
     signature = Signature(
@@ -115,7 +115,7 @@ async def upload_signature(
     db.commit()
     db.refresh(signature)
 
-    print(f"✅ Signature uploaded and processed with AI: {signature.name}")
+    print(f"✅ Signature uploaded: {signature.name}")
     
     return signature
 
