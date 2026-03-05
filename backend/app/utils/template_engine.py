@@ -47,13 +47,47 @@ class CertificateTemplateEngine:
         else:
             filename = "Cert-of-Enrollment-Current.html"
 
-        path = self.templates_dir / filename
-        if not path.exists():
-            raise FileNotFoundError(f"Template file not found: {path}")
-        return path
+        fallback_candidates = [filename]
+        if "graduation" in key or "honorgraduate" in key or "completedacademicrequirements" in key:
+            fallback_candidates.extend(
+                [
+                    "Cert-of-Grad-Has-Graduated.html",
+                    "Cert-of-Grad-CandidateforGrad.html",
+                ]
+            )
+        elif "grades" in key or "gwa" in key or "earnedunits" in key or "cav" in key or "authenticationandverification" in key:
+            fallback_candidates.extend(
+                [
+                    "Cert-of-Grades.html",
+                    "Cert-of-Course-Desc.html",
+                ]
+            )
+
+        fallback_candidates.extend(
+            [
+                "Cert-of-Enrollment-Current.html",
+                "Cert-of-Enrollment-Previous.html",
+                "Cert-of-ID-Issuance-Current.html",
+                "Cert-of-NSTP-Serial-Num.html",
+            ]
+        )
+        # Preserve order while removing duplicates.
+        fallback_candidates = list(dict.fromkeys(fallback_candidates))
+
+        for candidate in fallback_candidates:
+            path = self.templates_dir / candidate
+            if self._is_usable_template(path):
+                return path
+
+        raise FileNotFoundError(
+            f"No usable template found for '{certificate_type_name}'. "
+            f"Checked: {', '.join(str(self.templates_dir / item) for item in fallback_candidates)}"
+        )
 
     def render_template(self, template_path: Path, context: dict[str, Any]) -> str:
         raw_html = template_path.read_text(encoding="utf-8")
+        if not raw_html.strip():
+            raise ValueError(f"Template file is empty: {template_path}")
 
         rendered = self._replace_curly_placeholders(raw_html, context)
         rendered = self._replace_legacy_fill_lines(rendered, context)
@@ -160,3 +194,12 @@ class CertificateTemplateEngine:
             else:
                 return None
         return current
+
+    @staticmethod
+    def _is_usable_template(path: Path) -> bool:
+        if not path.exists():
+            return False
+        try:
+            return path.stat().st_size > 0
+        except OSError:
+            return False

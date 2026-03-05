@@ -18,7 +18,6 @@ class CertificateTemplateService:
         context = self._build_context(request)
         template_path = self.template_engine.resolve_template_path(request.certificate_type_name, context)
         rendered_html = self.template_engine.render_template(template_path, context)
-        template_header_lines, template_title, template_body_lines, template_footer = self.template_engine.extract_render_content(rendered_html)
 
         certificate_data = {
             "student_name": request.student_name,
@@ -31,10 +30,8 @@ class CertificateTemplateService:
             "purpose": request.purpose,
             "verification_token": request.verification_token,
             "signatures": signatures or [],
-            "template_title": template_title,
-            "template_body_lines": template_body_lines,
-            "template_header_lines": template_header_lines,
-            "template_footer": template_footer,
+            "rendered_html": rendered_html,
+            "template_base_path": str(template_path.parent),
             "source_template": template_path.name,
             "issue_date": datetime.now().strftime("%B %d, %Y"),
         }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status
 from app.services.email_service import EmailService
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -485,23 +485,21 @@ def download_certificate(
             detail="Request not found"
         )
     
-    # For now, construct path from reference number
-    # Later we'll use the pdf_path field from database
-    pdf_dir = "uploads/certificates"
-    
-    # Find the PDF file
-    import glob
-    pattern = os.path.join(pdf_dir, f"{request.reference_number}_*.pdf")
-    files = glob.glob(pattern)
-    
-    if not files:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Certificate PDF not found. Please generate it first."
-        )
-    
-    pdf_path = files[0]  # Get the first matching file
-    
+    pdf_path = request.pdf_path
+    if not pdf_path:
+        pdf_dir = "uploads/certificates"
+        pattern = os.path.join(pdf_dir, f"{request.reference_number}_*.pdf")
+        files = glob.glob(pattern)
+
+        if not files:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Certificate PDF not found. Please generate it first."
+            )
+
+        files.sort(key=os.path.getmtime, reverse=True)
+        pdf_path = files[0]
+
     if not os.path.exists(pdf_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

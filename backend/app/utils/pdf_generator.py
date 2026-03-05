@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 import qrcode
+from xhtml2pdf import pisa
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -110,6 +111,16 @@ class CertificateGenerator:
 
         filepath = os.path.join(self.output_dir, filename)
 
+        rendered_html = certificate_data.get("rendered_html")
+        template_base_path = certificate_data.get("template_base_path")
+        if rendered_html:
+            self._generate_from_html(
+                rendered_html=rendered_html,
+                output_path=filepath,
+                base_path=template_base_path,
+            )
+            return filepath
+
         c = canvas.Canvas(filepath, pagesize=letter)
         width, height = letter
 
@@ -216,6 +227,29 @@ class CertificateGenerator:
 
         c.save()
         return filepath
+
+    @staticmethod
+    def _generate_from_html(rendered_html: str, output_path: str, base_path: str | None = None) -> None:
+        def link_callback(uri: str, rel: str) -> str:
+            if uri.startswith(("http://", "https://", "data:")):
+                return uri
+            if os.path.isabs(uri) and os.path.exists(uri):
+                return uri
+            if base_path:
+                candidate = os.path.abspath(os.path.join(base_path, uri))
+                if os.path.exists(candidate):
+                    return candidate
+            return uri
+
+        with open(output_path, "wb") as output_file:
+            result = pisa.CreatePDF(
+                src=rendered_html,
+                dest=output_file,
+                path=base_path or "",
+                link_callback=link_callback,
+            )
+        if result.err:
+            raise ValueError("Failed to render certificate from HTML template")
 
     def generate_simple_certificate(
         self,

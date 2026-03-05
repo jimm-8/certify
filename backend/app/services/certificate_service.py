@@ -61,6 +61,8 @@ def generate_certificate_pdf(
             detail=f"Failed to generate certificate: {str(exc)}",
         )
 
+    request.pdf_path = pdf_path
+
     audit_log = AuditLog(
         request_id=request_id,
         action="CERTIFICATE_GENERATED",
@@ -71,6 +73,7 @@ def generate_certificate_pdf(
     )
     db.add(audit_log)
     db.commit()
+    db.refresh(request)
 
     return pdf_path
 
