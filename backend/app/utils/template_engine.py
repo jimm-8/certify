@@ -137,7 +137,8 @@ class CertificateTemplateEngine:
         if "earnedunits" in key:
             return "Cert-of-Earned-Units.html"
         if "englishmedium" in key:
-            return "Cert-of-English-Memorandum.html"
+            has_year = bool(context.get("year_graduated"))
+            return "Cert-of-English-Medium-Graduated.html" if has_year else "Cert-of-English-Medium-Earned.html"
         if "gwa" in key:
             return "Cert-of-GWA.html"
         if "honorgraduate" in key:
@@ -154,6 +155,8 @@ class CertificateTemplateEngine:
 
         if "graduation" in key or "honorgraduate" in key or "completedacademicrequirements" in key:
             candidates.extend(["Cert-of-Grad-Has-Graduated.html", "Cert-of-Grad-CandidateforGrad.html"])
+        elif "englishmedium" in key:
+            candidates.extend(["Cert-of-English-Medium-Graduated.html", "Cert-of-English-Medium-Earned.html"])
         elif "grades" in key or "gwa" in key or "earnedunits" in key or "cav" in key or "authenticationandverification" in key:
             candidates.extend(["Cert-of-Grades.html", "Cert-of-Course-Desc.html"])
         elif "enrolment" in key or "enrollment" in key:

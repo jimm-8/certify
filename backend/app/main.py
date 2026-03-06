@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 import app.models.certificate_request
 import app.models.student
 import app.models.audit_log
+import app.models.certificate_dependency_data
+import app.models.registrar_simulation
 
 from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard
 
