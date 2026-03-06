@@ -142,6 +142,8 @@ class CertificateTemplateEngine:
             return "Cert-of-GWA.html"
         if "honorgraduate" in key:
             return "Cert-of-Honor-Grad.html"
+        if "transfercredentials" in key:
+            return "Cert-of-Trans-Credentials.html"
         if "cav" in key or "authenticationandverification" in key:
             return "Cert-of-Trans-Credentials.html"
         return self.DEFAULT_TEMPLATE

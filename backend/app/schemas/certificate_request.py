@@ -14,6 +14,17 @@ class RequestStatusEnum(str, Enum):
     REJECTED = "REJECTED"
 
 # Schema for certificate type (what we send back)
+class CertificateDependencyField(BaseModel):
+    key: str
+    label: str
+
+
+class CertificateDependencyVariant(BaseModel):
+    key: str
+    label: str
+    fields: list[CertificateDependencyField] = Field(default_factory=list)
+
+
 class CertificateTypeResponse(BaseModel):
     id: int
     name: str
@@ -21,6 +32,7 @@ class CertificateTypeResponse(BaseModel):
     is_active: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    dependency_variants: list[CertificateDependencyVariant] = Field(default_factory=list)
     
     class Config:
         from_attributes = True

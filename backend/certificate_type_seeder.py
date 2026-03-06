@@ -12,6 +12,7 @@ def seed_certificate_types():
         "Certificate of Graduation",
         "Certificate of ID Issuance",
         "Certificate of NSTP Serial Number",
+        "Certificate of Transfer Credentials",
         "Certification of Completed Academic Requirements",
         "Certification of Earned Units",
         "Certification of English Medium",

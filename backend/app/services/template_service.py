@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from app.certificate_dependencies import DEFAULT_FILL_DEPENDENCIES, TEMPLATE_FILL_DEPENDENCIES
 from app.utils.pdf_generator import CertificateGenerator
 from app.utils.template_engine import CertificateTemplateEngine
 
@@ -73,62 +74,36 @@ class CertificateTemplateService:
         }
 
     def _build_legacy_fill_values(self, request, context: dict[str, Any], template_path) -> list[str]:
-        day = context["day"]
-        month = context["month"]
         semester = context["semester"]
         academic_year = context["academic_year"]
         ay_start, ay_end = self._split_academic_year(academic_year)
 
-        student_name = request.student_name or ""
-        program = request.program or ""
-        major = request.major or ""
-        requestor_name = request.requestor_name or ""
-        purpose = request.purpose or ""
-        year_graduated = request.year_graduated or ""
-        sr_code = request.sr_code or ""
-        ref_number = request.reference_number or ""
-
-        by_template: dict[str, list[str]] = {
-            "Cert-of-Enrollment-Current.html": [
-                student_name, major, program, major, semester, academic_year,
-                requestor_name, day, month, purpose,
-            ],
-            "Cert-of-Enrollment-Previous.html": [
-                student_name, program, major, semester, academic_year,
-                semester, academic_year, semester, academic_year,
-                requestor_name, day, month, purpose,
-            ],
-            "Cert-of-Grad-Has-Graduated.html": [
-                student_name, program, year_graduated, ref_number,
-                requestor_name, day, month,
-            ],
-            "Cert-of-Grad-CandidateforGrad.html": [
-                student_name, program, semester, academic_year, day, month,
-            ],
-            "Cert-of-Grades.html": [
-                student_name, program, major, semester, academic_year,
-                semester, academic_year, semester, academic_year,
-                requestor_name, day, month,
-            ],
-            "Cert-of-ID-Issuance-Current.html": [
-                student_name, semester, academic_year, sr_code, day, month, requestor_name,
-            ],
-            "Cert-of-ID-Issuance-Previous.html": [
-                student_name, semester, semester, sr_code, day, month, requestor_name,
-            ],
-            "Cert-of-NSTP-Serial-Num.html": [
-                student_name, program, sr_code, requestor_name, day, month,
-            ],
-            "Cert-of-Course-Desc.html": [
-                student_name, program, semester, ay_start, ay_end, semester, ay_start, ay_end,
-                program, ay_start, ay_end, "", "", "", "", requestor_name, day, month, purpose,
-            ],
+        values_by_dependency = {
+            "student_name": request.student_name or "",
+            "program": request.program or "",
+            "major": request.major or "",
+            "degree": request.program or "",
+            "college_name": request.major or "",
+            "year_level": request.major or "",
+            "requestor_name": request.requestor_name or "",
+            "purpose_of_request": request.purpose or "",
+            "date_of_graduation": request.year_graduated or "",
+            "id_number": request.sr_code or "",
+            "nstp_serial_number": request.sr_code or "",
+            "nstp_component": request.program or "",
+            "board_resolution_number": request.reference_number or "",
+            "academic_year": academic_year,
+            "academic_year_start": ay_start,
+            "academic_year_end": ay_end,
+            "semester": semester,
+            "issuance_day": context["day"],
+            "issuance_month": context["month"],
+            "course_code_all": "",
+            "credits_all": "",
         }
 
-        values = by_template.get(
-            template_path.name,
-            [student_name, program, major, sr_code, year_graduated, requestor_name, day, month, purpose, academic_year, ref_number],
-        )
+        template_dependencies = TEMPLATE_FILL_DEPENDENCIES.get(template_path.name, DEFAULT_FILL_DEPENDENCIES)
+        values = [values_by_dependency.get(dep_key, "") for dep_key in template_dependencies]
 
         slot_count = self.template_engine.count_fill_slots(template_path)
         return self._fit_values_to_slots(values, slot_count)
