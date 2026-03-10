@@ -114,8 +114,7 @@
         .content {
             font-size: 14pt;
             line-height: 2.5;
-            text-align: justify;
-            text-justify: inter-word;
+            text-align: left;
         }
 
         .paragraph {
@@ -127,8 +126,14 @@
         .fill {
             display: inline-block;
             border-bottom: 1px solid #000;
-            height: 0.9em;
-            vertical-align: center;
+            padding: 0 6px;
+            height: 1em;
+            line-height: 1;
+            text-align: center;
+            vertical-align: baseline;
+            white-space: nowrap;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         .fill-short {
@@ -185,11 +190,11 @@
             <div class="university">BATANGAS STATE UNIVERSITY</div>
             <div class="subtitle">The National Engineering University</div>
 
-            <div class="details">
-                <div class="campus">Name of Campus</div>
-                <div class="address">Campus Address</div>
-                <div>Telephone Number</div>
-                <div>E-mail Address | Website Address</div>
+        <div class="details">
+                <div class="campus">{{ campus_name }}</div>
+                <div class="address">{{ campus_address }}</div>
+                <div>{{ campus_contact }}</div>
+                <div>{{ campus_email_website }}</div>
             </div>
         </div>
 
@@ -208,23 +213,23 @@
 
                 <div class="paragraph">
                     This certifies that <strong>Mr./Ms.</strong>
-                    <span class="fill fill-long"></span>
+                    <span class="fill fill-long">{{ student_name }}</span>
                     who is enrolled this
-                    <span class="fill fill-short"></span>
+                    <span class="fill fill-short">{{ semester }}</span>
                     Semester, AY
-                    <span class="fill fill-short"></span>
+                    <span class="fill fill-medium">{{ academic_year }}</span>
                     is a holder of ID No.
-                    <span class="fill fill-medium"></span>
+                    <span class="fill fill-medium">{{ id_number }}</span>
                     issued by this University.
                 </div>
 
                 <div class="paragraph">
                     Issued this
-                    <span class="fill fill-short"></span>
+                    <span class="fill fill-short">{{ issuance_day }}</span>
                     day of
-                    <span class="fill fill-medium"></span>
+                    <span class="fill fill-medium">{{ issuance_month }}</span>
                     upon request of <strong>Mr./Ms.</strong>
-                    <span class="fill fill-long"></span>
+                    <span class="fill fill-long">{{ requestor_name }}</span>
                     for whatever legal purpose it may serve him/her.
                 </div>
 

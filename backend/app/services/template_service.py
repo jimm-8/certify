@@ -121,6 +121,12 @@ class CertificateTemplateService:
             "course_description_all_2": "",
         }
 
+        # Expose dependency values as named template variables for Jinja templates.
+        # This enables templates to use {{ student_name }}, {{ academic_year }}, etc.
+        for key, value in values_by_dependency.items():
+            if key not in context and value is not None:
+                context[key] = value
+
         template_dependencies = TEMPLATE_FILL_DEPENDENCIES.get(template_path.name, DEFAULT_FILL_DEPENDENCIES)
         values = [values_by_dependency.get(dep_key, "") for dep_key in template_dependencies]
 

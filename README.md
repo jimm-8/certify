@@ -92,7 +92,7 @@ A comprehensive web-based certificate management system designed for educational
 - **Database**: PostgreSQL 14+
 - **ORM**: SQLAlchemy 2.0.25
 - **Authentication**: JWT (python-jose)
-- **PDF Generation**: ReportLab 4.0.9
+- **PDF Generation**: ReportLab 4.0.9 (fallback), optional Playwright/Chromium for high-fidelity HTML/CSS templates
 - **QR Codes**: qrcode 7.4.2
 - **Image Processing**: Pillow 10.2.0
 - **Password Hashing**: passlib with bcrypt
@@ -151,6 +151,24 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+
+#### (Optional) Install Chromium for pixel-perfect PDFs
+
+If you want generated PDFs to closely match the HTML templates (modern CSS like flexbox), install Playwright's Chromium browser:
+
+```bash
+python -m playwright install chromium
+```
+
+Without Chromium, the backend falls back to `xhtml2pdf` / `reportlab`, which may not render complex CSS templates identically.
+
+## 🧩 Certificate Templates
+
+Certificate templates live in `backend/app/templates` and are rendered with Jinja2.
+
+- Use explicit variables like `{{ student_name }}`, `{{ academic_year }}`, `{{ campus_name }}` (recommended).
+- Older templates that use empty `<span class="... fill ..."></span>` blanks still work via `legacy_fill_values`.
+- Enable strict validation (fail fast on missing variables) with `CERTIFY_TEMPLATE_STRICT=1`.
 
 #### Set Up Environment Variables
 

@@ -1,11 +1,20 @@
 from __future__ import annotations
 import os
+import logging
+import base64
+import mimetypes
 from datetime import datetime
+from pathlib import Path
 import qrcode
 from xhtml2pdf import pisa
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import tempfile
+from reportlab.lib.units import inch
+import re
+
+logger = logging.getLogger(__name__)
 
 
 class CertificateGenerator:
@@ -230,15 +239,194 @@ class CertificateGenerator:
 
     @staticmethod
     def _generate_from_html(rendered_html: str, output_path: str, base_path: str | None = None) -> None:
+        # Ensure common logo filename alias exists so templates referencing
+        # 'Batangas_State_Logo.png' will resolve to the available 'bsu.png'.
+        if base_path:
+            try:
+                tpl_dir = Path(base_path)
+                logo_expected = tpl_dir / "Batangas_State_Logo.png"
+                alt_logo = tpl_dir / "bsu.png"
+                if not logo_expected.exists() and alt_logo.exists():
+                    try:
+                        # copy as a convenience -- safe and idempotent
+                        import shutil
+
+                        shutil.copyfile(str(alt_logo), str(logo_expected))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        def _dir_as_base_href(path: str | None) -> str:
+            base_dir = Path(path).resolve() if path else Path(os.getcwd()).resolve()
+            href = base_dir.as_uri()
+            # Important for relative URL resolution: a directory base must end with '/'
+            return href if href.endswith("/") else (href + "/")
+
+        def _inject_base_href(html: str, base_href: str) -> str:
+            # If the template already defines a base, don't override it.
+            if re.search(r"<\s*base\b", html, flags=re.IGNORECASE):
+                return html
+
+            head_match = re.search(r"<\s*head\b[^>]*>", html, flags=re.IGNORECASE)
+            if head_match:
+                insert_at = head_match.end()
+                return f"{html[:insert_at]}\n    <base href=\"{base_href}\">\n{html[insert_at:]}"
+
+            # Fallback: prepend a minimal head so relative resources still resolve.
+            return f"<head><base href=\"{base_href}\"></head>\n{html}"
+
+        def _inline_known_local_images(html: str, base_dir: Path) -> str:
+            # xhtml2pdf can be picky about relative/absolute paths on Windows.
+            # Inlining the logo as a data URI makes rendering reliable across engines.
+            known = {"batangas_state_logo.png", "bsu.png"}
+
+            def repl(match: re.Match[str]) -> str:
+                quote = match.group("q")
+                uri = match.group("uri").strip()
+                if uri.startswith(("http://", "https://", "data:")):
+                    return match.group(0)
+
+                try:
+                    candidate = (base_dir / uri).resolve()
+                except Exception:
+                    return match.group(0)
+
+                if candidate.name.lower() not in known or not candidate.exists():
+                    return match.group(0)
+
+                mime = mimetypes.guess_type(str(candidate))[0] or "image/png"
+                try:
+                    data = base64.b64encode(candidate.read_bytes()).decode("ascii")
+                except Exception:
+                    return match.group(0)
+
+                return f"src={quote}data:{mime};base64,{data}{quote}"
+
+            return re.sub(r"""src=(?P<q>["'])(?P<uri>[^"']+)(?P=q)""", repl, html, flags=re.IGNORECASE)
+
+        base_href = _dir_as_base_href(base_path)
+        rendered_html = _inject_base_href(rendered_html, base_href)
+        if base_path:
+            rendered_html = _inline_known_local_images(rendered_html, Path(base_path))
+
+        renderer = (os.getenv("CERTIFY_PDF_RENDERER", "auto") or "auto").strip().lower()
+        debug = (os.getenv("CERTIFY_PDF_DEBUG", "0") or "0").strip().lower() in {"1", "true", "yes", "on"}
+        if renderer not in {"auto", "playwright", "weasyprint", "xhtml2pdf"}:
+            renderer = "auto"
+
+        def _log(msg: str) -> None:
+            if debug:
+                logger.info(msg)
+
+        def _raise_or_fallback(stage: str, exc: Exception) -> None:
+            if renderer == stage:
+                raise RuntimeError(f"PDF render failed using {stage}: {exc}") from exc
+            _log(f"{stage} failed, falling back: {exc}")
+
+        # Prefer Playwright (Chromium) for rendering modern CSS accurately when available.
+        if renderer in {"auto", "playwright"}:
+            try:
+                from playwright.sync_api import sync_playwright
+
+                with sync_playwright() as pw:
+                    browser = pw.chromium.launch()
+                    context = browser.new_context(viewport={"width": 816, "height": 1056})
+                    page = context.new_page()
+
+                    # Load HTML and let local assets (images/css/fonts) resolve via <base href="file:///.../">
+                    page.set_content(rendered_html, wait_until="load")
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=5000)
+                    except Exception:
+                        pass
+
+                    # Ensure @page rules are applied as in print output.
+                    try:
+                        page.emulate_media(media="print")
+                    except Exception:
+                        pass
+
+                    # Attempt to print directly to PDF using CSS @page sizes and zero margins.
+                    try:
+                        # prefer_css_page_size allows templates' @page size to be respected
+                        try:
+                            page.pdf(
+                                path=output_path,
+                                print_background=True,
+                                prefer_css_page_size=True,
+                                margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
+                            )
+                        except TypeError:
+                            # Older Playwright versions may not support prefer_css_page_size
+                            page.pdf(
+                                path=output_path,
+                                print_background=True,
+                                margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
+                            )
+                        browser.close()
+                        _log("Rendered PDF via Playwright (page.pdf).")
+                        return
+                    except Exception:
+                        # If direct PDF printing fails, fall back to image embedding approach
+                        pass
+
+                    # Render to a high-resolution PNG and embed into a PDF using reportlab.
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                        png_path = tmp.name
+                    # Use fullPage screenshot to capture entire document; ensure background printed
+                    page.screenshot(path=png_path, full_page=True)
+                    browser.close()
+
+                    # Create PDF with reportlab sized to 8.5in x 13in and draw the image to fill the page
+                    pdf_w = 8.5 * inch
+                    pdf_h = 11 * inch
+                    c = canvas.Canvas(output_path, pagesize=(pdf_w, pdf_h))
+                    try:
+                        c.drawImage(png_path, 0, 0, width=pdf_w, height=pdf_h)
+                    except Exception as exc:
+                        print(f"Failed to draw PNG onto PDF: {exc}")
+                    c.save()
+                    try:
+                        os.remove(png_path)
+                    except Exception:
+                        pass
+                    _log("Rendered PDF via Playwright (screenshot -> reportlab).")
+                    return
+            except Exception as exc:
+                _raise_or_fallback("playwright", exc)
+
+        # Try to use WeasyPrint for better CSS support when available.
+        if renderer in {"auto", "weasyprint"}:
+            try:
+                from weasyprint import HTML
+
+                base_url = base_path or os.getcwd()
+                HTML(string=rendered_html, base_url=base_url).write_pdf(output_path)
+                _log("Rendered PDF via WeasyPrint.")
+                return
+            except Exception as exc:
+                _raise_or_fallback("weasyprint", exc)
+
         def link_callback(uri: str, rel: str) -> str:
             if uri.startswith(("http://", "https://", "data:")):
                 return uri
-            if os.path.isabs(uri) and os.path.exists(uri):
-                return uri
+            # If the template references a logo filename that differs from the actual file
+            # (some templates use 'Batangas_State_Logo.png' while the repo contains 'bsu.png'),
+            # try to map that name to an existing file in the templates dir.
             if base_path:
                 candidate = os.path.abspath(os.path.join(base_path, uri))
                 if os.path.exists(candidate):
                     return candidate
+
+                # common fallback mapping for logo
+                if os.path.basename(uri).lower().startswith("batangas_state_logo"):
+                    alt = os.path.join(base_path, "bsu.png")
+                    if os.path.exists(alt):
+                        return alt
+
+            if os.path.isabs(uri) and os.path.exists(uri):
+                return uri
             return uri
 
         with open(output_path, "wb") as output_file:
@@ -250,6 +438,7 @@ class CertificateGenerator:
             )
         if result.err:
             raise ValueError("Failed to render certificate from HTML template")
+        _log("Rendered PDF via xhtml2pdf.")
 
     def generate_simple_certificate(
         self,
