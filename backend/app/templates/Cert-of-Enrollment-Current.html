@@ -227,7 +227,10 @@
           <div class="campus">{{ campus_name }}</div>
           <div class="address">{{ campus_address }}</div>
           <div class="tel">Tel Nos.: (+63 43) 425-0139 local 2149</div>
-          <div class="email-web">Email Address: {{ campus_email }} <span>&nbsp;|&nbsp;</span> Website Address: http://www.batstate-u.edu.ph</div>
+          <div class="email-web">
+            Email Address: {{ campus_email }} <span>&nbsp;|&nbsp;</span> Website
+            Address: http://www.batstate-u.edu.ph
+          </div>
         </div>
       </div>
 
@@ -240,7 +243,7 @@
         <div class="content">
           <div class="paragraph">
             <span class="tab"></span>This is to certify that
-            <strong>Mr./Ms.</strong>
+            <strong>{{ student_honorific }}</strong>
             <span class="fill fill-long uppercase">{{ student_name }}</span>
             is currently enrolled in this University as a
             <span class="fill fill-medium">{{ year_level }}</span>
@@ -258,10 +261,13 @@
             of
             <span class="bold">Mr./Ms.</span>
             <span class="fill fill-long bold">{{ requestor_name }}</span>
-            this <span class="fill fill-short bold" id="issuanceDay"></span> day
-            of
+            this
+            <span id="issuanceDay" class="fill fill-short bold"
+              >{{ issuance_day }}</span
+            >
+            day of
             <span class="fill fill-medium"
-              >{{ issuance_month }} {{ issueance_year }}</span
+              >{{ issuance_month }} {{ issuance_year }}</span
             >
             for
             <span class="fill fill-medium">{{ purpose_of_request }}</span>
@@ -288,7 +294,7 @@
         return n + "<sup>" + suffix + "</sup>";
       }
 
-      let day = 10;
+      let day = document.getElementById("issuanceDay").textContent;
       document.getElementById("issuanceDay").innerHTML = getOrdinal(day);
     </script>
   </body>

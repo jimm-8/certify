@@ -12,26 +12,34 @@ def run():
     engine = CertificateTemplateEngine()
     gen = CertificateGenerator(output_dir="uploads/cert_test")
 
-    template_name = "Cert-of-Enrollment-Current.html"
+    template_name = "Cert-of-Completed-Acad-Req.html"
     tpl_path = engine.resolve_template_path(template_name, {})
     context = {
+        "student_sex": "Male",
+        "student_honorific": "Mr.",
         "student_name": "Juan Dela Cruz",
         "year_level": "3rd",
         "program": "BS Computer Science",
         "college_name": "College of Informatics and Computing Sciences",
         "semester": "1st",
         "academic_year": "2025-2026",
+        "enrollment_from_semester": "1st",
+        "enrollment_from_academic_year": "2023-2024",
+        "enrollment_to_semester": "2nd",
+        "enrollment_to_academic_year": "2024-2025",
+        "enrollment_is_single_semester": True,
         "requestor_name": "Juan Dela Cruz",
+        "requestor_relationship": "Self",
         "issuance_day": "10",
         "issuance_month": "March",
-        "issueance_year": "2024",
+        "issuance_year": "2026",
         "purpose_of_request": "Scholarship",
         "campus_name": "Alangilan Campus",
         "campus_address": "Golden Country Homes, Alangilan, Batangas City, Batangas, Philippines, 4200",
         "campus_contact": "(+63) 43 425 0139 local 2149",
         "campus_email": "registrar.alangilan@g.batstate-u.edu.ph",
         "school_website": "batstate-u.edu.ph",
-        "legacy_fill_values": ["Juan Dela Cruz", "3rd", "BSCS", "CICS", "1st", "2025-2026", "Juan Dela Cruz", "10", "March", "Scholarship"],
+        "legacy_fill_values": [],
     }
 
     rendered = engine.render_template(tpl_path, context)

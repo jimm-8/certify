@@ -50,6 +50,14 @@ class CertificateTemplateEngine:
         )
 
     def resolve_template_path(self, certificate_type_name: str, context: dict[str, Any] | None = None) -> Path:
+        # Allow callers (e.g. debug scripts) to pass an explicit template filename.
+        # The rest of this resolver expects a certificate type name and maps it to a template.
+        raw = (certificate_type_name or "").strip()
+        if raw.lower().endswith(".html"):
+            direct = self.templates_dir / raw
+            if self._is_usable_template(direct):
+                return direct
+
         key = self._normalize(certificate_type_name)
         primary = self._resolve_primary_template(key, context or {})
         fallback_candidates = self._build_fallback_candidates(key, primary)

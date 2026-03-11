@@ -11,6 +11,7 @@ from sqlalchemy import case
 from sqlalchemy import func
 from app.utils.pdf_generator import CertificateGenerator
 from app.utils.template_engine import CertificateTemplateEngine
+import re
 
 
 class CertificateTemplateService:
@@ -69,17 +70,47 @@ class CertificateTemplateService:
             "month": month_text,
             "year": str(now.year),
             "date_today": full_date,
+            "issuance_year": str(now.year),
             "semester": "1st",
             "academic_year": f"{now.year}-{now.year + 1}",
             "campus_name": "Alangilan Campus",
             "campus_address": "Golden Country Homes, Alangilan, Batangas City",
             "campus_contact": "(+63) 43 425 0139",
+            "campus_email": "registrar@g.batstate-u.edu.ph",
+            "school_website": "batstate-u.edu.ph",
             "campus_email_website": "registrar@g.batstate-u.edu.ph | batstate-u.edu.ph",
             "legacy_fill_values": [],
         }
 
     def _build_legacy_fill_values(self, request, context: dict[str, Any], template_path) -> list[str]:
         snapshot = self._get_student_snapshot(request)
+        context["student_sex"] = snapshot.get("sex", "")
+        context["student_honorific"] = self._honorific_for_sex(snapshot.get("sex", ""))
+
+        requestor_full_name = str(getattr(request, "requestor_name", "") or "")
+        context["requestor_full_name"] = requestor_full_name
+        requestor_display_name = self._format_requestor_display_name(
+            relationship=str(getattr(request, "requestor_relationship", "") or ""),
+            requestor_name=requestor_full_name,
+            fallback_surname=str(snapshot.get("last_name", "") or "") or self._extract_surname(str(getattr(request, "student_name", "") or "")),
+        )
+        context["requestor_display_name"] = requestor_display_name
+        # Backwards-compatible: templates and legacy fill slots typically use {{ requestor_name }}.
+        context["requestor_name"] = requestor_display_name
+
+        from_semester, from_academic_year, to_semester, to_academic_year = self._get_enrollment_range(
+            request,
+            default_semester=context.get("semester", "1st"),
+            default_academic_year=context.get("academic_year", ""),
+        )
+        context["enrollment_from_semester"] = from_semester
+        context["enrollment_from_academic_year"] = from_academic_year
+        context["enrollment_to_semester"] = to_semester
+        context["enrollment_to_academic_year"] = to_academic_year
+        context["enrollment_is_single_semester"] = bool(
+            from_semester == to_semester and from_academic_year == to_academic_year
+        )
+
         semester = snapshot.get("latest_semester", context["semester"])
         academic_year = snapshot.get("latest_academic_year", context["academic_year"])
         ay_start, ay_end = self._split_academic_year(academic_year)
@@ -93,7 +124,7 @@ class CertificateTemplateService:
             "degree": request.program or "",
             "college_name": request.major or "",
             "year_level": snapshot.get("year_level_text", request.major or ""),
-            "requestor_name": request.requestor_name or "",
+            "requestor_name": requestor_display_name,
             "purpose_of_request": request.purpose or "",
             "date_of_graduation": snapshot.get("date_of_graduation", request.year_graduated or ""),
             "id_number": request.sr_code or "",
@@ -106,6 +137,7 @@ class CertificateTemplateService:
             "semester": semester,
             "issuance_day": context["day"],
             "issuance_month": context["month"],
+            "issuance_year": context.get("year", ""),
             "credits": snapshot.get("earned_credits", ""),
             "gwa": snapshot.get("gwa", ""),
             "latin_honor": snapshot.get("latin_honor", ""),
@@ -349,12 +381,50 @@ class CertificateTemplateService:
                 snapshot["gwa"] = f"{float(avg_gwa):.2f}"
 
             student_record = db.query(StudentRecord).filter(StudentRecord.sr_code == sr_code).first()
-            if student_record and student_record.address:
-                snapshot["address"] = student_record.address
+            if student_record:
+                if student_record.address:
+                    snapshot["address"] = student_record.address
+                snapshot["sex"] = str(student_record.sex or "")
+                snapshot["last_name"] = str(student_record.last_name or "")
 
             return snapshot
         finally:
             db.close()
+
+    @staticmethod
+    def _honorific_for_sex(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in {"male", "m"}:
+            return "Mr."
+        if normalized in {"female", "f"}:
+            return "Ms."
+        return "Mr./Ms."
+
+    @staticmethod
+    def _extract_surname(full_name: str) -> str:
+        name = str(full_name or "").strip()
+        if not name:
+            return ""
+        if "," in name:
+            return name.split(",", 1)[0].strip()
+
+        tokens = [t for t in re.split(r"\s+", name) if t]
+        if len(tokens) >= 3 and tokens[-3].lower() == "de" and tokens[-2].lower() == "la":
+            return " ".join(tokens[-3:])
+        if len(tokens) >= 2 and tokens[-2].lower() in {"de", "del", "dela", "da", "dos", "das", "di", "van", "von"}:
+            return " ".join(tokens[-2:])
+        return tokens[-1] if tokens else ""
+
+    @classmethod
+    def _format_requestor_display_name(cls, relationship: str, requestor_name: str, fallback_surname: str) -> str:
+        rel = str(relationship or "").strip().lower()
+        full = str(requestor_name or "").strip()
+        if rel in {"self", "same person", "same_person", "sameperson"}:
+            surname = str(fallback_surname or "").strip()
+            if surname:
+                return surname
+            return cls._extract_surname(full)
+        return full
 
     @staticmethod
     def _get_enrollment_range(
