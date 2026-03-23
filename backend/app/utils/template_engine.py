@@ -1,9 +1,20 @@
 from __future__ import annotations
 
 import html
+import os
 import re
 from pathlib import Path
 from typing import Any
+
+try:
+    from jinja2 import Environment, FileSystemLoader, StrictUndefined, Undefined, meta, select_autoescape
+except Exception:  # pragma: no cover
+    Environment = None  # type: ignore[assignment]
+    FileSystemLoader = None  # type: ignore[assignment]
+    StrictUndefined = None  # type: ignore[assignment]
+    Undefined = None  # type: ignore[assignment]
+    meta = None  # type: ignore[assignment]
+    select_autoescape = None  # type: ignore[assignment]
 
 
 class CertificateTemplateEngine:
@@ -17,12 +28,36 @@ class CertificateTemplateEngine:
     )
     LEGACY_FILL_PATTERN = r"<span\s+class=\"([^\"]*fill[^\"]*)\"([^>]*)></span>"
 
-    def __init__(self, templates_dir: str | Path | None = None):
+    def __init__(self, templates_dir: str | Path | None = None, strict_undefined: bool | None = None):
         if templates_dir is None:
             templates_dir = Path(__file__).resolve().parents[1] / "templates"
         self.templates_dir = Path(templates_dir)
 
+        if strict_undefined is None:
+            strict_undefined = os.getenv("CERTIFY_TEMPLATE_STRICT", "0").strip().lower() in {"1", "true", "yes", "on"}
+        self.strict_undefined = bool(strict_undefined)
+
+        self._jinja_env = self._build_jinja_env()
+
+    def _build_jinja_env(self) -> Environment | None:
+        if Environment is None or FileSystemLoader is None:
+            return None
+        undefined_cls = StrictUndefined if self.strict_undefined and StrictUndefined is not None else Undefined
+        return Environment(
+            loader=FileSystemLoader(str(self.templates_dir)),
+            autoescape=select_autoescape(["html", "xml"]) if select_autoescape is not None else True,
+            undefined=undefined_cls,  # type: ignore[arg-type]
+        )
+
     def resolve_template_path(self, certificate_type_name: str, context: dict[str, Any] | None = None) -> Path:
+        # Allow callers (e.g. debug scripts) to pass an explicit template filename.
+        # The rest of this resolver expects a certificate type name and maps it to a template.
+        raw = (certificate_type_name or "").strip()
+        if raw.lower().endswith(".html"):
+            direct = self.templates_dir / raw
+            if self._is_usable_template(direct):
+                return direct
+
         key = self._normalize(certificate_type_name)
         primary = self._resolve_primary_template(key, context or {})
         fallback_candidates = self._build_fallback_candidates(key, primary)
@@ -42,7 +77,7 @@ class CertificateTemplateEngine:
         if not raw_html.strip():
             raise ValueError(f"Template file is empty: {template_path}")
 
-        rendered = self._replace_curly_placeholders(raw_html, context)
+        rendered = self._render_with_jinja(template_path, raw_html, context)
         rendered = self._replace_legacy_fill_lines(rendered, context)
 
         rendered = rendered.replace("Name of Campus", html.escape(str(context.get("campus_name", "Alangilan Campus"))))
@@ -51,6 +86,54 @@ class CertificateTemplateEngine:
         rendered = rendered.replace("E-mail Address | Website Address", html.escape(str(context.get("campus_email_website", "registrar@g.batstate-u.edu.ph | batstate-u.edu.ph"))))
 
         return rendered
+
+    def validate_template_context(self, template_path: Path, context: dict[str, Any]) -> set[str]:
+        """Return missing variables required by the template (best-effort).
+
+        When CERTIFY_TEMPLATE_STRICT=1, missing variables will raise at render time.
+        """
+        if self._jinja_env is None or meta is None:
+            return set()
+
+        try:
+            rel = self._template_relpath(template_path)
+            source = self._jinja_env.loader.get_source(self._jinja_env, rel)[0]  # type: ignore[union-attr]
+        except Exception:
+            source = template_path.read_text(encoding="utf-8")
+
+        try:
+            ast = self._jinja_env.parse(source)
+            required = set(meta.find_undeclared_variables(ast))
+        except Exception:
+            return set()
+
+        # Treat top-level context keys as available. (Nested attributes are evaluated at runtime.)
+        available = set(context.keys()) | {"range", "dict", "lipsum", "cycler", "joiner", "namespace"}
+        return {name for name in required if name not in available}
+
+    def _template_relpath(self, template_path: Path) -> str:
+        try:
+            return str(template_path.resolve().relative_to(self.templates_dir.resolve())).replace("\\", "/")
+        except Exception:
+            return template_path.name
+
+    def _render_with_jinja(self, template_path: Path, raw_html: str, context: dict[str, Any]) -> str:
+        # Use Jinja2 for robust templating (conditionals, loops, filters, and better errors).
+        # Fall back to the legacy {{ key }} replacer if Jinja2 isn't available.
+        if self._jinja_env is None:
+            return self._replace_curly_placeholders(raw_html, context)
+
+        try:
+            rel = self._template_relpath(template_path)
+            template = self._jinja_env.get_template(rel)
+            return template.render(**context)
+        except Exception:
+            # Template may not be within templates_dir, or Jinja parsing failed.
+            try:
+                template = self._jinja_env.from_string(raw_html)
+                return template.render(**context)
+            except Exception as exc:
+                raise ValueError(f"Failed to render template '{template_path.name}': {exc}") from exc
 
     def extract_render_content(self, rendered_html: str) -> tuple[list[str], str, list[str], str]:
         header_lines: list[str] = []

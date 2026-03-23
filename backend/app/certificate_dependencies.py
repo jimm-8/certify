@@ -309,7 +309,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "purpose_of_request",
     ],
     "Cert-of-Grad-Has-Graduated.html": [
-        "student_name",
         "program",
         "date_of_graduation",
         "board_resolution_number",
@@ -318,7 +317,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-Grad-CandidateforGrad.html": [
-        "student_name",
         "program",
         "semester",
         "academic_year",
@@ -326,7 +324,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-Grades.html": [
-        "student_name",
         "program",
         "college_name",
         "semester",
@@ -349,7 +346,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "requestor_name",
     ],
     "Cert-of-ID-Issuance-Previous.html": [
-        "student_name",
         "year_attended_start",
         "year_attended_end",
         "id_number",
@@ -358,7 +354,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "requestor_name",
     ],
     "Cert-of-NSTP-Serial-Num.html": [
-        "student_name",
         "nstp_component",
         "nstp_serial_number",
         "requestor_name",
@@ -366,7 +361,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-Earned-Units.html": [
-        "student_name",
         "credits",
         "program",
         "semester",
@@ -377,7 +371,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-Completed-Acad-Req.html": [
-        "student_name",
         "credits",
         "program",
         "semester",
@@ -389,7 +382,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
     ],
     "Cert-of-English-Medium-Earned.html": [
         "campus_address",
-        "student_name",
         "program",
         "attendance_period",
         "requestor_name",
@@ -398,7 +390,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
     ],
     "Cert-of-English-Medium-Graduated.html": [
         "campus_address",
-        "student_name",
         "program",
         "date_of_graduation",
         "regulation",
@@ -407,7 +398,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-GWA.html": [
-        "student_name",
         "program",
         "date_of_graduation",
         "board_resolution_number",
@@ -417,7 +407,6 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-Honor-Grad.html": [
-        "student_name",
         "address",
         "latin_honor",
         "program",

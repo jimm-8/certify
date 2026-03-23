@@ -9,6 +9,9 @@ import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
 import CertifyIndex from "./pages/certify/index";
 import CertifyDashboard from './pages/certify/dashboard';
+import TemplatePreview from "./pages/templates/TemplatePreview";
+import Login from "./pages/auth/Login";
+import UserManagement from "./pages/admin/UserManagement";
 
 function App() {
   return (
@@ -44,6 +47,26 @@ function AppContent() {
 
       {/* Dashboard */}
       <Route path="/dashboard" element={<CertifyDashboard />} />
+
+      <Route
+        path="/templates/preview"
+        element={
+          <MainLayout>
+            <TemplatePreview />
+          </MainLayout>
+        }
+      />
+
+      <Route path="/login" element={<Login />} />
+
+      <Route
+        path="/admin/users"
+        element={
+          <MainLayout>
+            <UserManagement />
+          </MainLayout>
+        }
+      />
     </Routes>
   );
 }
