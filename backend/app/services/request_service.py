@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from typing import Optional
 import secrets
 import os
+from datetime import datetime
 from app.services.email_service import EmailService
 
 from app.models.certificate_request import CertificateRequest, RequestStatus, RequestNote
@@ -26,6 +27,20 @@ def can_transition_to(current_status: RequestStatus, new_status: RequestStatus) 
 def generate_verification_token() -> str:
     """Generate unique verification token for QR code"""
     return secrets.token_urlsafe(32)
+
+def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
+    """Generate OR number in format: YY-MM-#### (monthly sequence)."""
+    now = now or datetime.now()
+    year = now.strftime("%y")
+    month = now.strftime("%m")
+    prefix = f"{year}-{month}-"
+
+    count = db.query(CertificateRequest).filter(
+        CertificateRequest.or_number.like(f"{prefix}%")
+    ).count()
+
+    next_num = count + 1
+    return f"{prefix}{next_num:04d}"
 
 async def update_request_status(
     db: Session,
@@ -105,6 +120,8 @@ async def update_request_status(
         db.add(note)
     
     if new_status == RequestStatus.PROCESSING:
+        if not request.or_number:
+            request.or_number = generate_or_number(db)
         try:
             from app.services.certificate_service import generate_certificate_pdf
             pdf_path = generate_certificate_pdf(db, request_id, user_name)

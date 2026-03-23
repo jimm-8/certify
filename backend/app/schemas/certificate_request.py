@@ -89,7 +89,7 @@ class CertificateRequestResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "reference_number": "REF-20241222-0001",
+                "reference_number": "25-0218-01234",
                 "pin": "1234",
                 "message": "Request submitted successfully",
                 "submitted_date": "2024-12-22T10:30:00"
@@ -114,6 +114,7 @@ class CertificateRequestDetail(BaseModel):
     reference_number: str
     status: RequestStatusEnum
     certificate_type_name: str
+    or_number: Optional[str] = None
     
     # Requestor info
     requestor_name: str

@@ -31,6 +31,7 @@ class CertificateRequest(Base):
     id = Column(Integer, primary_key=True, index=True)
     reference_number = Column(String(50), unique=True, nullable=False, index=True)
     pin = Column(String(4), nullable=False)
+    or_number = Column(String(20), nullable=True, index=True)
     
     certificate_type_id = Column(Integer, nullable=False)
     certificate_type_name = Column(String(255), nullable=False)

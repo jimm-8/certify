@@ -37,16 +37,19 @@ router = APIRouter(prefix="/requests", tags=["Certificate Requests"])
 
 # Helper function to generate reference number
 def generate_reference_number(db: Session) -> str:
-    """Generate unique reference number in format: REF-YYYYMMDD-XXXX"""
-    today = datetime.now().strftime("%Y%m%d")
-    
-    # Count requests today to get the next number
-    count = db.query(CertificateRequest).filter(
-        CertificateRequest.reference_number.like(f"REF-{today}-%")
-    ).count()
-    
-    next_num = count + 1
-    return f"REF-{today}-{next_num:04d}"  # Format: REF-20241222-0001
+    """Generate unique reference number in format: YY-MMDD-#####"""
+    now = datetime.now()
+    year = now.strftime("%y")
+    month_day = now.strftime("%m%d")
+
+    while True:
+        random_suffix = f"{random.randint(0, 99999):05d}"
+        ref = f"{year}-{month_day}-{random_suffix}"
+        exists = db.query(CertificateRequest).filter(
+            CertificateRequest.reference_number == ref
+        ).first()
+        if not exists:
+            return ref
 
 # Helper function to generate PIN
 def generate_pin() -> str:

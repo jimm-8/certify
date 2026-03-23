@@ -20,8 +20,13 @@ class CertificateTemplateService:
         self.template_engine = CertificateTemplateEngine()
         self.pdf_generator = CertificateGenerator()
 
-    def generate_for_request(self, request, signatures: list[dict[str, Any]] | None = None) -> str:
-        context = self._build_context(request)
+    def generate_for_request(
+        self,
+        request,
+        signatures: list[dict[str, Any]] | None = None,
+        extra_context: dict[str, Any] | None = None,
+    ) -> str:
+        context = self._build_context(request, extra_context=extra_context)
         template_path = self.template_engine.resolve_template_path(request.certificate_type_name, context)
         context["legacy_fill_values"] = self._build_legacy_fill_values(request, context, template_path)
         rendered_html = self.template_engine.render_template(template_path, context)
@@ -45,12 +50,12 @@ class CertificateTemplateService:
 
         return self.pdf_generator.generate_certificate(certificate_data)
 
-    def _build_context(self, request) -> dict[str, Any]:
+    def _build_context(self, request, extra_context: dict[str, Any] | None = None) -> dict[str, Any]:
         now = datetime.now()
         month_text = now.strftime("%B")
         full_date = now.strftime("%B %d, %Y")
 
-        return {
+        context = {
             "student_name": request.student_name,
             "sr_code": request.sr_code or "",
             "program": request.program,
@@ -77,6 +82,9 @@ class CertificateTemplateService:
             "campus_email_website": "registrar@g.batstate-u.edu.ph | batstate-u.edu.ph",
             "legacy_fill_values": [],
         }
+        if extra_context:
+            context.update(extra_context)
+        return context
 
     def _build_legacy_fill_values(self, request, context: dict[str, Any], template_path) -> list[str]:
         snapshot = self._get_student_snapshot(request)

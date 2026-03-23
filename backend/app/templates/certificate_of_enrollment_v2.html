@@ -1,0 +1,236 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Certificate of Enrolments</title>
+
+    <style>
+      @page {
+        size: 8.5in 13in;
+        margin: 0;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        background: #e5e5e5;
+      }
+
+      .paper {
+        width: 8.5in;
+        min-height: 11in;
+        background: #fff;
+        padding: 0.5in;
+        box-sizing: border-box;
+        font-family: "Times New Roman", serif;
+      }
+
+      /* ================= HEADER ================= */
+
+      .header {
+        position: relative;
+        text-align: center;
+      }
+
+      .logo {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 132.48px;
+        height: 124.8px;
+      }
+
+      .republic {
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .university {
+        font-size: 21.33px;
+        font-weight: bold;
+      }
+      .subtitle {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        font-weight: bold;
+        color: #d10000;
+      }
+      .details {
+        font-size: 16px;
+      }
+      .details .campus {
+        font-size: 16px;
+        font-weight: bold;
+      }
+      .details .address {
+        font-weight: bold;
+        font-size: 13.33px;
+      }
+      .telNo {
+        font-size: 13.33px;
+      }
+      .email {
+        font-size: 13.33px;
+      }
+
+      .divider {
+        border-top: 1pt solid #000;
+        margin: 2px 0 14px 0;
+      }
+
+      /* ================= TITLES ================= */
+
+      .registrar {
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 45px;
+      }
+
+      .cert-title {
+        text-align: center;
+        font-size: 16pt;
+        font-weight: bold;
+        margin-bottom: 45px;
+      }
+
+      /* ================= BODY ================= */
+
+      .text-body {
+        margin-left: 0.4in;
+        margin-right: 0.4in;
+      }
+
+      .content {
+        font-size: 14pt;
+        line-height: 2.5;
+        text-align: justify;
+        text-justify: inter-word;
+      }
+
+      .paragraph {
+        text-indent: 0.5in;
+        margin-bottom: 2px;
+      }
+
+      /* Base field — inline, no line by default */
+      .f {
+        display: inline;
+      }
+
+      /* Line only when truly empty — needs block for fixed width */
+      .f.blank {
+        display: inline-block;
+        border-bottom: 1px solid #000;
+        height: 0.9em;
+        vertical-align: bottom;
+      }
+
+      .f-short {
+        width: 0.8in;
+      }
+      .f-medium {
+        width: 1.3in;
+      }
+      .f-long {
+        width: 2in;
+      }
+
+      /* ================= SIGNATURE ================= */
+
+      .signature {
+        margin-top: 100px;
+        width: 3.5in;
+        margin-left: 3.5in;
+        text-align: center;
+        font-size: 12pt;
+        margin-bottom: 100px;
+      }
+
+      .signature-line {
+        width: 100%;
+        border-top: 1px solid #000;
+        margin-bottom: 6px;
+      }
+
+      .footer-note {
+        margin-left: 0.4in;
+        margin-top: 10px;
+        font-size: 13.33px;
+        font-style: italic;
+        margin-bottom: 50px;
+      }
+
+      .ref {
+        font-size: 13.33px;
+        margin-left: 0.4in;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="paper">
+      <!-- Header -->
+      <div class="header">
+        <img src="bsu.png" class="logo" />
+        <div class="republic">Republic of the Philippines</div>
+        <div class="university">BATANGAS STATE UNIVERSITY</div>
+        <div class="subtitle">The National Engineering University</div>
+        <div class="details">
+          <div class="campus"><span data-f="campus_name"></span> Campus</div>
+          <div class="address"><span data-f="campus_address"></span></div>
+          <div class="telNo"><span data-f="campus_telNo"></span></div>
+          <div class="email">
+            <span data-f="campus_email"></span> | Website Address:
+            https://www.batstate-u.edu.ph
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="registrar">OFFICE OF THE REGISTRAR</div>
+      <div class="cert-title">CERTIFICATE OF ENROLMENTS</div>
+
+      <div class="text-body">
+        <div class="content">
+          <div class="paragraph">
+            This is to certify that <span class="bold">Mr./Ms.</span>
+            <span class="fill fill-long"></span>
+            has enrolled in
+            <span class="fill fill-long"></span>
+            under the College of
+            <span class="fill fill-long"></span>
+            during <span class="fill fill-short"></span> Semester, AY
+            <span class="fill fill-short"></span> (if the student has been
+            enrolled for only one semester) from
+            <span class="fill fill-short"></span> Semester, AY
+            <span class="fill fill-short"></span> to
+            <span class="fill fill-short"></span> Semester, AY
+            <span class="fill fill-short"></span>
+            (if the student has been enrolled for several semesters).
+          </div>
+
+          <div class="paragraph">
+            This certification is issued upon request of
+            <span class="bold">Mr./Ms.</span>
+            <span class="fill fill-long"></span>
+            this <span class="fill fill-short"></span> day of
+            <span class="fill fill-medium"></span> for
+            <span class="fill fill-medium"></span>
+            purposes only.
+          </div>
+        </div>
+      </div>
+
+      <div class="signature">
+        <div class="signature-line"></div>
+        <strong>NAME OF AUTHORIZED OFFICIAL</strong><br />
+        Designation
+      </div>
+
+      <div class="footer-note">Not valid without university dry seal</div>
+    </div>
+  </body>
+</html>
