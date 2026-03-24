@@ -252,10 +252,12 @@ async def update_status(
     status_update: StatusUpdateRequest,
     db: Session = Depends(get_db)
 ):
+    # Convert schema enum to model enum to satisfy transition checks
+    new_status = RequestStatus(status_update.new_status.value)
     updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
-        new_status=status_update.new_status,
+        new_status=new_status,
         user_name=status_update.user_name,
         notes=status_update.notes,
         rejection_reason=status_update.rejection_reason,

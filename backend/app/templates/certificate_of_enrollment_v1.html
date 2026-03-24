@@ -28,17 +28,24 @@
 
       /* ================= HEADER ================= */
 
-      .header {
-        position: relative;
-        text-align: center;
+      .header-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .logo-cell {
+        width: 1.25in;
+        vertical-align: top;
       }
 
       .logo {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 132.48px;
-        height: 124.8px;
+        width: 1.2in;
+        height: auto;
+      }
+
+      .header-center {
+        text-align: center;
+        line-height: 1.15;
       }
 
       .republic {
@@ -57,6 +64,7 @@
       }
       .details {
         font-size: 16px;
+        line-height: 1.35;
       }
       .details .campus {
         font-size: 16px;
@@ -173,21 +181,28 @@
   <body>
     <div class="paper">
       <!-- Header -->
-      <div class="header">
-        <img src="bsu.png" class="logo" />
-        <div class="republic">Republic of the Philippines</div>
-        <div class="university">BATANGAS STATE UNIVERSITY</div>
-        <div class="subtitle">The National Engineering University</div>
-        <div class="details">
-          <div class="campus"><span data-f="campus_name"></span> Campus</div>
-          <div class="address"><span data-f="campus_address"></span></div>
-          <div class="telNo"><span data-f="campus_telNo"></span></div>
-          <div class="email">
-            <span data-f="campus_email"></span> | Website Address:
-            https://www.batstate-u.edu.ph
-          </div>
-        </div>
-      </div>
+      <table class="header-table">
+        <tr>
+          <td class="logo-cell">
+            <img src="bsu.png" class="logo" />
+          </td>
+          <td class="header-center">
+            <div class="republic">Republic of the Philippines</div>
+            <div class="university">BATANGAS STATE UNIVERSITY</div>
+            <div class="subtitle">The National Engineering University</div>
+            <div class="details">
+              <div class="campus">
+                {{ campus_name }}{% if campus_name %} Campus{% endif %}
+              </div>
+              <div class="address">{{ campus_address }}</div>
+              <div class="telNo">{{ campus_telNo }}</div>
+              <div class="email">
+                {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
       <div class="divider"></div>
 
       <div class="registrar">OFFICE OF THE REGISTRAR</div>
@@ -197,25 +212,25 @@
         <div class="content">
           <div class="paragraph">
             This is to certify that <strong>Mr./Ms.</strong>
-            <span class="f f-long" data-f="student_name"></span>
+            <span class="f f-long{% if not student_name %} blank{% endif %}">{{ student_name }}</span>
             is currently enrolled in this University as a
-            <span class="f f-medium" data-f="student_year"></span>
+            <span class="f f-medium{% if not student_year %} blank{% endif %}">{{ student_year }}</span>
             year student of
-            <span class="f f-long" data-f="course_name"></span>
+            <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
             in the College of
-            <span class="f f-long" data-f="college_name"></span>
-            this <span class="f f-short" data-f="current_sem"></span>
+            <span class="f f-long{% if not college_name %} blank{% endif %}">{{ college_name }}</span>
+            this <span class="f f-short{% if not current_sem %} blank{% endif %}">{{ current_sem }}</span>
             Semester, Academic Year
-            <span class="f f-short" data-f="academic_year"></span>.
+            <span class="f f-short{% if not academic_year %} blank{% endif %}">{{ academic_year }}</span>.
           </div>
 
           <div class="paragraph">
             This certification is issued upon request of
             <strong>Mr./Ms.</strong>
-            <span class="f f-long" data-f="requestor_name"></span>
-            this <span class="f f-short" data-f="date_issued_day"></span> day of
-            <span class="f f-medium" data-f="date_issued_month"></span> for
-            <span class="f f-medium" data-f="request_purpose"></span>
+            <span class="f f-long{% if not requestor_name %} blank{% endif %}">{{ requestor_name }}</span>
+            this <span class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day }}</span> day of
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span> for
+            <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose }}</span>
             purposes only.
           </div>
         </div>
@@ -235,46 +250,5 @@
       </div>
     </div>
 
-    <script>
-      const data = {
-        campus_name: "{{ campus_name }}",
-        campus_address: "{{ campus_address }}",
-        campus_telNo: "{{ campus_telNo }}",
-        campus_email: "{{ campus_email }}",
-
-        student_name: "{{ student_name }}",
-        student_year: "{{ student_year }}",
-        course_name: "{{ course_name }}",
-        college_name: "{{ college_name }}",
-        current_sem: "{{ current_sem }}",
-        academic_year: "{{ academic_year }}",
-
-        requestor_name: "{{ requestor_name }}",
-        date_issued_day: "{{ date_issued_day }}",
-        date_issued_month: "{{ date_issued_month }}",
-        request_purpose: "{{ request_purpose }}",
-      };
-
-      function getOrdinal(n) {
-        const num = parseInt(n, 10);
-        if (isNaN(num)) return "";
-        const s = ["th", "st", "nd", "rd"];
-        const v = num % 100;
-        return s[(v - 20) % 10] || s[v] || s[0];
-      }
-
-      document.querySelectorAll("[data-f]").forEach((el) => {
-        const value = (data[el.dataset.f] ?? "").trim();
-
-        if (value === "") {
-          el.classList.add("blank");
-          el.innerHTML = "&nbsp;";
-        } else if (key === "date_issued_day" && /^\d+$/.test(value)) {
-          el.innerHTML = value + "<sup>" + getOrdinal(value) + "</sup>";
-        } else {
-          el.textContent = value;
-        }
-      });
-    </script>
   </body>
 </html>

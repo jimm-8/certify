@@ -47,39 +47,46 @@ class CertificateEngine:
     )
 
     @staticmethod
-    def generate(certificate_type: str, data: dict):
+    def generate(certificate_type: str, data: dict) -> bytes:
         """
-        Generates a PDF certificate from HTML template
+        Generates a PDF certificate from an HTML template using Playwright.
         """
         from jinja2 import Environment, FileSystemLoader, select_autoescape
-        from io import BytesIO
-        from xhtml2pdf import pisa
+        import asyncio
+        import base64
+        import mimetypes
+        import sys
+        import re
+        from pathlib import Path
 
         # ----------------------------------------
         # 1. LOAD TEMPLATE
         # ----------------------------------------
-        template_key = CertificateEngine._resolve_certificate_key(certificate_type, data)
+        template_key = CertificateEngine._resolve_certificate_key(
+            certificate_type, data
+        )
         template_name = CertificateEngine.TEMPLATE_MAP.get(template_key)
 
         if not template_name:
-            raise Exception("Template not found for certificate type")
+            raise Exception(
+                f"Template not found for certificate type: '{certificate_type}' (resolved key: '{template_key}')"
+            )
 
         env = Environment(
             loader=FileSystemLoader(CertificateEngine.TEMPLATE_DIR),
-            autoescape=select_autoescape(["html", "xml"])
+            autoescape=select_autoescape(["html", "xml"]),
         )
-
         template = env.get_template(template_name)
 
         # ----------------------------------------
         # 2. GENERATE QR CODE (BASE64)
         # ----------------------------------------
         verification_code = data.get("verification_code")
-
         if verification_code:
-            verify_url = f"http://localhost:8000/certificates/verify/{verification_code}"
-            qr_base64 = generate_qr_base64(verify_url)
-            data["qr_code"] = qr_base64
+            verify_url = (
+                f"http://localhost:8000/certificates/verify/{verification_code}"
+            )
+            data["qr_code"] = generate_qr_base64(verify_url)
 
         # ----------------------------------------
         # 3. RENDER HTML
@@ -87,18 +94,92 @@ class CertificateEngine:
         html_content = template.render(**data)
 
         # ----------------------------------------
-        # 4. GENERATE PDF
+        # 4. GENERATE PDF (Playwright)
         # ----------------------------------------
-        try:
-            from weasyprint import HTML
-            return HTML(string=html_content).write_pdf()
-        except Exception:
-            # Fallback to xhtml2pdf for environments where WeasyPrint deps are missing.
-            output = BytesIO()
-            result = pisa.CreatePDF(src=html_content, dest=output)
-            if result.err:
-                raise Exception("Failed to generate PDF with WeasyPrint and xhtml2pdf")
-            return output.getvalue()
+        def _inject_base_href(html: str, base_href: str) -> str:
+            if re.search(r"<\s*base\b", html, flags=re.IGNORECASE):
+                return html
+            head_match = re.search(r"<\s*head\b[^>]*>", html, flags=re.IGNORECASE)
+            if head_match:
+                insert_at = head_match.end()
+                return f"{html[:insert_at]}\n    <base href=\"{base_href}\">\n{html[insert_at:]}"
+            return f"<head><base href=\"{base_href}\"></head>\n{html}"
+
+        def _inline_known_local_images(html: str, base_dir: Path) -> str:
+            known = {"batangas_state_logo.png", "bsu.png"}
+
+            def repl(match: re.Match[str]) -> str:
+                quote = match.group("q")
+                uri = match.group("uri").strip()
+                if uri.startswith(("http://", "https://", "data:")):
+                    return match.group(0)
+
+                try:
+                    candidate = (base_dir / uri).resolve()
+                except Exception:
+                    return match.group(0)
+
+                if candidate.name.lower() not in known or not candidate.exists():
+                    return match.group(0)
+
+                mime = mimetypes.guess_type(str(candidate))[0] or "image/png"
+                try:
+                    data = base64.b64encode(candidate.read_bytes()).decode("ascii")
+                except Exception:
+                    return match.group(0)
+
+                return f"src={quote}data:{mime};base64,{data}{quote}"
+
+            return re.sub(r"""src=(?P<q>["'])(?P<uri>[^"']+)(?P=q)""", repl, html, flags=re.IGNORECASE)
+
+        tpl_dir = Path(CertificateEngine.TEMPLATE_DIR).resolve()
+        base_href = tpl_dir.as_uri()
+        if not base_href.endswith("/"):
+            base_href += "/"
+        html_content = _inject_base_href(html_content, base_href)
+        html_content = _inline_known_local_images(html_content, tpl_dir)
+
+        # Playwright needs a Proactor event loop on Windows for subprocesses.
+        if sys.platform.startswith("win"):
+            try:
+                policy = asyncio.get_event_loop_policy()
+                if not isinstance(policy, asyncio.WindowsProactorEventLoopPolicy):
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            except Exception:
+                pass
+
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch()
+            context = browser.new_context(viewport={"width": 816, "height": 1056})
+            page = context.new_page()
+            page.set_content(html_content, wait_until="load")
+            try:
+                page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                pass
+            try:
+                page.emulate_media(media="print")
+            except Exception:
+                pass
+            try:
+                pdf_bytes = page.pdf(
+                    print_background=True,
+                    prefer_css_page_size=True,
+                    margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
+                )
+            except TypeError:
+                pdf_bytes = page.pdf(
+                    print_background=True,
+                    margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
+                )
+            browser.close()
+        return pdf_bytes
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     @staticmethod
     def _resolve_certificate_key(certificate_type: str, data: dict) -> str:

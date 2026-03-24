@@ -44,6 +44,7 @@ class CertificateDependencyEngine:
         "CERTIFICATION_AUTHENTICATION_AND_VERIFICATION": [
             "student",
             "program",
+            "campus",
             "graduation_record",
             "certificate_request",
             "institution",
@@ -51,18 +52,21 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_GRADUATION_V1": [
             "student",
             "program",
+            "campus",
             "enrollment",
             "certificate_request",
         ],
         "CERTIFICATE_OF_GRADUATION_V2": [
             "student",
             "program",
+            "campus",
             "graduation_record",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ENROLLMENT_V1": [
             "student",
             "program",
+            "campus",
             "college",
             "enrollment",
             "certificate_request",
@@ -70,6 +74,7 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_ENROLLMENT_V2": [
             "student",
             "program",
+            "campus",
             "college",
             "enrollments",
             "certificate_request",
@@ -77,6 +82,7 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_EARNED_UNITS": [
             "student",
             "program",
+            "campus",
             "student_courses",
             "enrollment",
             "certificate_request",
@@ -98,6 +104,7 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_COMPLETED_ACAD_REQUIREMENTS": [
             "student",
             "program",
+            "campus",
             "student_courses",
             "enrollment",
             "certificate_request",
@@ -105,6 +112,7 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_HONOR_GRADUATE": [
             "student",
             "program",
+            "campus",
             "graduation_record",
             "enrollment",
             "certificate_request",
@@ -112,29 +120,37 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_COURSE_DESCRIPTION": [
             "student",
             "program",
+            "campus",
             "student_courses",
             "courses",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ID_ISSUANCE_V1": [
             "student",
+            "program",
+            "campus",
             "student_id_record",
             "enrollment",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ID_ISSUANCE_V2": [
             "student",
+            "program",
+            "campus",
             "student_id_record",
             "certificate_request",
         ],
         "CERTIFICATE_OF_NSTP_SERIAL_NUMBER": [
             "student",
+            "program",
+            "campus",
             "nstp_record",
             "certificate_request",
         ],
         "CERTIFICATE_OF_GWA": [
             "student",
             "program",
+            "campus",
             "graduation_record",
             "academic_summary",
             "certificate_request",
@@ -142,11 +158,13 @@ class CertificateDependencyEngine:
         "CERTIFICATE_OF_TRANSFER_CREDENTIALS": [
             "student",
             "program",
+            "campus",
             "certificate_request",
         ],
         "CERTIFICATION_OF_GRADES": [
             "student",
             "program",
+            "campus",
             "college",
             "student_courses",
             "enrollments",

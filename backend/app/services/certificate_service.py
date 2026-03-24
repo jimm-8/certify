@@ -68,6 +68,7 @@ def generate_certificate_pdf(
     college = dependencies.get("college")
     campus = dependencies.get("campus")
     enrollment = dependencies.get("enrollment")
+    enrollments = dependencies.get("enrollments") or []
     graduation_record = dependencies.get("graduation_record")
 
     default_signature = (
@@ -101,6 +102,43 @@ def generate_certificate_pdf(
                 year_level = str(enrollment.year_level)
         current_semester = str(enrollment.semester or "")
         academic_year = str(enrollment.academic_year or "")
+
+    def _semester_order(value: str) -> int:
+        normalized = str(value or "").strip().lower()
+        if normalized == "1st":
+            return 1
+        if normalized == "2nd":
+            return 2
+        if normalized == "summer":
+            return 3
+        return 9
+
+    def _ay_start(ay: str) -> int:
+        text = str(ay or "").strip()
+        try:
+            return int(text.split("-", 1)[0])
+        except Exception:
+            return 0
+
+    enrollment_from_semester = ""
+    enrollment_from_academic_year = ""
+    enrollment_to_semester = ""
+    enrollment_to_academic_year = ""
+    if enrollments:
+        sorted_enrollments = sorted(
+            enrollments,
+            key=lambda row: (
+                _ay_start(getattr(row, "academic_year", "")),
+                _semester_order(getattr(row, "semester", "")),
+                getattr(row, "year_level", 0) or 0,
+            ),
+        )
+        first = sorted_enrollments[0]
+        last = sorted_enrollments[-1]
+        enrollment_from_semester = str(getattr(first, "semester", "") or "")
+        enrollment_from_academic_year = str(getattr(first, "academic_year", "") or "")
+        enrollment_to_semester = str(getattr(last, "semester", "") or "")
+        enrollment_to_academic_year = str(getattr(last, "academic_year", "") or "")
 
     date_of_graduation = ""
     if graduation_record and getattr(graduation_record, "date_of_graduation", None):
@@ -138,26 +176,55 @@ def generate_certificate_pdf(
         "college_name": college_name,
         "current_sem": current_semester,
         "academic_year": academic_year,
+        "enrollment_from_semester": enrollment_from_semester,
+        "enrollment_from_academic_year": enrollment_from_academic_year,
+        "enrollment_to_semester": enrollment_to_semester,
+        "enrollment_to_academic_year": enrollment_to_academic_year,
         "requestor_name": request.requestor_name,
         "date_issued_day": day_text,
         "date_issued_month": month_text,
         "request_purpose": request.purpose,
     }
 
+    output_dir = "uploads/certificates"
+    os.makedirs(output_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{request.reference_number}_{timestamp}.pdf"
+    pdf_path = os.path.join(output_dir, filename)
+
     try:
         pdf_bytes = CertificateEngine.generate(resolved_key, data)
-        output_dir = "uploads/certificates"
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{request.reference_number}_{timestamp}.pdf"
-        pdf_path = os.path.join(output_dir, filename)
         with open(pdf_path, "wb") as file:
             file.write(pdf_bytes)
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate certificate: {str(exc)}",
-        )
+        # Fallback: render a simplified PDF without the HTML renderer.
+        try:
+            from app.utils.template_engine import CertificateTemplateEngine
+            from app.utils.pdf_generator import CertificateGenerator
+
+            engine = CertificateTemplateEngine()
+            template_path = engine.resolve_template_path(resolved_key, data)
+            rendered_html = engine.render_template(template_path, data)
+            header_lines, title, body_lines, footer = engine.extract_render_content(rendered_html)
+
+            generator = CertificateGenerator(output_dir=output_dir)
+            certificate_data = {
+                "reference_number": request.reference_number,
+                "purpose": request.purpose,
+                "verification_token": request.verification_token,
+                "issue_date": datetime.now().strftime("%B %d, %Y"),
+                "template_header_lines": header_lines,
+                "template_title": title,
+                "template_body_lines": body_lines,
+                "template_footer": footer,
+                "source_template": template_path.name,
+            }
+            pdf_path = generator.generate_certificate(certificate_data, filename=filename)
+        except Exception as fallback_exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to generate certificate: {str(exc)}",
+            ) from fallback_exc
 
     request.pdf_path = pdf_path
 

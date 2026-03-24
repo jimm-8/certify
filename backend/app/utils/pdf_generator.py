@@ -6,7 +6,6 @@ import mimetypes
 from datetime import datetime
 from pathlib import Path
 import qrcode
-from xhtml2pdf import pisa
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -277,7 +276,6 @@ class CertificateGenerator:
             return f"<head><base href=\"{base_href}\"></head>\n{html}"
 
         def _inline_known_local_images(html: str, base_dir: Path) -> str:
-            # xhtml2pdf can be picky about relative/absolute paths on Windows.
             # Inlining the logo as a data URI makes rendering reliable across engines.
             known = {"batangas_state_logo.png", "bsu.png"}
 
@@ -312,7 +310,7 @@ class CertificateGenerator:
 
         renderer = (os.getenv("CERTIFY_PDF_RENDERER", "auto") or "auto").strip().lower()
         debug = (os.getenv("CERTIFY_PDF_DEBUG", "0") or "0").strip().lower() in {"1", "true", "yes", "on"}
-        if renderer not in {"auto", "playwright", "weasyprint", "xhtml2pdf"}:
+        if renderer not in {"auto", "playwright"}:
             renderer = "auto"
 
         def _log(msg: str) -> None:
@@ -327,6 +325,17 @@ class CertificateGenerator:
         # Prefer Playwright (Chromium) for rendering modern CSS accurately when available.
         if renderer in {"auto", "playwright"}:
             try:
+                # Playwright needs a Proactor event loop on Windows for subprocesses.
+                if os.name == "nt":
+                    try:
+                        import asyncio
+
+                        policy = asyncio.get_event_loop_policy()
+                        if not isinstance(policy, asyncio.WindowsProactorEventLoopPolicy):
+                            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                    except Exception:
+                        pass
+
                 from playwright.sync_api import sync_playwright
 
                 with sync_playwright() as pw:
@@ -396,49 +405,7 @@ class CertificateGenerator:
             except Exception as exc:
                 _raise_or_fallback("playwright", exc)
 
-        # Try to use WeasyPrint for better CSS support when available.
-        if renderer in {"auto", "weasyprint"}:
-            try:
-                from weasyprint import HTML
-
-                base_url = base_path or os.getcwd()
-                HTML(string=rendered_html, base_url=base_url).write_pdf(output_path)
-                _log("Rendered PDF via WeasyPrint.")
-                return
-            except Exception as exc:
-                _raise_or_fallback("weasyprint", exc)
-
-        def link_callback(uri: str, rel: str) -> str:
-            if uri.startswith(("http://", "https://", "data:")):
-                return uri
-            # If the template references a logo filename that differs from the actual file
-            # (some templates use 'Batangas_State_Logo.png' while the repo contains 'bsu.png'),
-            # try to map that name to an existing file in the templates dir.
-            if base_path:
-                candidate = os.path.abspath(os.path.join(base_path, uri))
-                if os.path.exists(candidate):
-                    return candidate
-
-                # common fallback mapping for logo
-                if os.path.basename(uri).lower().startswith("batangas_state_logo"):
-                    alt = os.path.join(base_path, "bsu.png")
-                    if os.path.exists(alt):
-                        return alt
-
-            if os.path.isabs(uri) and os.path.exists(uri):
-                return uri
-            return uri
-
-        with open(output_path, "wb") as output_file:
-            result = pisa.CreatePDF(
-                src=rendered_html,
-                dest=output_file,
-                path=base_path or "",
-                link_callback=link_callback,
-            )
-        if result.err:
-            raise ValueError("Failed to render certificate from HTML template")
-        _log("Rendered PDF via xhtml2pdf.")
+        raise RuntimeError("PDF render failed: no renderer succeeded.")
 
     def generate_simple_certificate(
         self,
