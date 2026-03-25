@@ -6,7 +6,7 @@
 
     <style>
       @page {
-        size: 8.5in 13in;
+        size: 8.5in 11in;
         margin: 0;
       }
 
@@ -28,25 +28,23 @@
 
       /* ================= HEADER ================= */
 
-      .header-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .logo-cell {
-        width: 1.25in;
-        vertical-align: top;
+      .header {
+        position: relative;
+        text-align: center;
       }
 
       .logo {
-        width: 1.2in;
-        height: auto;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 132.48px;
+        height: 124.8px;
       }
 
-      .header-center {
+      /* .header-center {
         text-align: center;
         line-height: 1.15;
-      }
+      } */
 
       .republic {
         font-size: 16px;
@@ -64,7 +62,7 @@
       }
       .details {
         font-size: 16px;
-        line-height: 1.35;
+        /* line-height: 1.35; */
       }
       .details .campus {
         font-size: 16px;
@@ -95,6 +93,14 @@
         margin-bottom: 45px;
       }
 
+      .bold {
+        font-weight: bold;
+      }
+
+      .fill {
+        display: inline;
+      }
+
       .cert-title {
         text-align: center;
         font-size: 16pt;
@@ -121,12 +127,22 @@
         margin-bottom: 2px;
       }
 
-      /* Base field — inline, no line by default */
+      .bold {
+        font-weight: bold;
+      }
+
+      .name {
+        text-transform: uppercase;
+      }
+
       .f {
         display: inline;
       }
 
-      /* Line only when truly empty — needs block for fixed width */
+      .fill {
+        display: inline;
+      }
+
       .f.blank {
         display: inline-block;
         border-bottom: 1px solid #000;
@@ -147,7 +163,7 @@
       /* ================= SIGNATURE ================= */
 
       .signature {
-        margin-top: 100px;
+        margin-top: 130px;
         width: 3.5in;
         margin-left: 3.5in;
         text-align: center;
@@ -167,6 +183,7 @@
         font-size: 13.33px;
         font-style: italic;
         margin-bottom: 50px;
+        text-align: left;
       }
 
       .ref {
@@ -174,6 +191,7 @@
         margin-left: 0.4in;
         margin-top: 0;
         margin-bottom: 0;
+        text-align: left;
       }
     </style>
   </head>
@@ -181,12 +199,10 @@
   <body>
     <div class="paper">
       <!-- Header -->
-      <table class="header-table">
-        <tr>
-          <td class="logo-cell">
+      <div class="header">
+          <div class="logo-cell">
             <img src="bsu.png" class="logo" />
-          </td>
-          <td class="header-center">
+          </div>
             <div class="republic">Republic of the Philippines</div>
             <div class="university">BATANGAS STATE UNIVERSITY</div>
             <div class="subtitle">The National Engineering University</div>
@@ -196,13 +212,11 @@
               </div>
               <div class="address">{{ campus_address }}</div>
               <div class="telNo">{{ campus_telNo }}</div>
-              <div class="email">
-                {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph
+              <div class="email">Email Address: 
+                {{ campus_email }} | Website Address:
+                https://www.batstate-u.edu.ph
               </div>
-            </div>
-          </td>
-        </tr>
-      </table>
+          </div>
       <div class="divider"></div>
 
       <div class="registrar">OFFICE OF THE REGISTRAR</div>
@@ -212,12 +226,12 @@
         <div class="content">
           <div class="paragraph">
             This is to certify that <strong>Mr./Ms.</strong>
-            <span class="f f-long{% if not student_name %} blank{% endif %}">{{ student_name }}</span>
+            <span class="f f-long{% if not student_name %} blank{% endif %} name">{{ student_name }}</span>
             is currently enrolled in this University as a
             <span class="f f-medium{% if not student_year %} blank{% endif %}">{{ student_year }}</span>
             year student of
             <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
-            in the College of
+            in the 
             <span class="f f-long{% if not college_name %} blank{% endif %}">{{ college_name }}</span>
             this <span class="f f-short{% if not current_sem %} blank{% endif %}">{{ current_sem }}</span>
             Semester, Academic Year
@@ -227,7 +241,7 @@
           <div class="paragraph">
             This certification is issued upon request of
             <strong>Mr./Ms.</strong>
-            <span class="f f-long{% if not requestor_name %} blank{% endif %}">{{ requestor_name }}</span>
+            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
             this <span class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day }}</span> day of
             <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span> for
             <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose }}</span>

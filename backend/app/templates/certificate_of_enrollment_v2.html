@@ -131,7 +131,10 @@
         font-weight: bold;
       }
 
-      /* Base field — inline, no line by default */
+      .name {
+        text-transform: uppercase;
+      }
+
       .f {
         display: inline;
       }
@@ -140,7 +143,6 @@
         display: inline;
       }
 
-      /* Line only when truly empty — needs block for fixed width */
       .f.blank {
         display: inline-block;
         border-bottom: 1px solid #000;
@@ -161,7 +163,7 @@
       /* ================= SIGNATURE ================= */
 
       .signature {
-        margin-top: 100px;
+        margin-top: 130px;
         width: 3.5in;
         margin-left: 3.5in;
         text-align: center;
@@ -210,7 +212,7 @@
               </div>
               <div class="address">{{ campus_address }}</div>
               <div class="telNo">{{ campus_telNo }}</div>
-              <div class="email">
+              <div class="email">Email Address:
                 {{ campus_email }} | Website Address:
                 https://www.batstate-u.edu.ph
               </div>
@@ -224,14 +226,14 @@
         <div class="content">
           <div class="paragraph">
             This is to certify that <span class="bold">Mr./Ms.</span>
-            <span class="f f-long{% if not student_name %} blank{% endif %}"
+            <span class="f f-long{% if not student_name %} blank{% endif %} name"
               >{{ student_name }}</span
             >
             has enrolled in
             <span class="f f-long{% if not course_name %} blank{% endif %}"
               >{{ course_name }}</span
             >
-            under the College of
+            under the 
             <span class="f f-long{% if not college_name %} blank{% endif %}"
               >{{ college_name }}</span
             >
@@ -260,7 +262,7 @@
           <div class="paragraph">
             This certification is issued upon request of
             <span class="bold">Mr./Ms.</span>
-            <span class="f f-long{% if not requestor_name %} blank{% endif %}"
+            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold"
               >{{ requestor_name }}</span
             >
             this
@@ -284,8 +286,8 @@
 
       <div class="signature">
         <div class="signature-line"></div>
-        <strong>NAME OF AUTHORIZED OFFICIAL</strong><br />
-        Designation
+        <strong>{{ name_official }}</strong><br />
+        {{ official_title }}
       </div>
 
       <div class="footer-note">Not valid without university dry seal</div>
@@ -296,29 +298,29 @@
       </div>
     </div>
     <script>
-function getOrdinalSuffix(day) {
-    if (day % 100 >= 11 && day % 100 <= 13) return 'th';
+      function getOrdinalSuffix(day) {
+          if (day % 100 >= 11 && day % 100 <= 13) return 'th';
 
-    switch (day % 10) {
-        case 1: return 'st';
-        case 2: return 'nd';
-        case 3: return 'rd';
-        default: return 'th';
-    }
-}
+          switch (day % 10) {
+              case 1: return 'st';
+              case 2: return 'nd';
+              case 3: return 'rd';
+              default: return 'th';
+          }
+      }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const el = document.getElementById("dateDay");
+      document.addEventListener("DOMContentLoaded", function () {
+          const el = document.getElementById("dateDay");
 
-    if (!el) return;
+          if (!el) return;
 
-    const day = parseInt(el.textContent.trim());
+          const day = parseInt(el.textContent.trim());
 
-    if (!isNaN(day)) {
-        const suffix = getOrdinalSuffix(day);
-        el.innerHTML = `${day}<sup>${suffix}</sup>`;
-    }
-});
-</script>
+          if (!isNaN(day)) {
+              const suffix = getOrdinalSuffix(day);
+              el.innerHTML = `${day}<sup>${suffix}</sup>`;
+          }
+      });
+    </script>
   </body>
 </html>
