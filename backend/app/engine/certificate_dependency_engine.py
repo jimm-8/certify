@@ -1,23 +1,23 @@
 from typing import Optional, Union
 from datetime import datetime
 
-from sqlalchemy import case, func
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from app.certificate_dependencies import normalize_certificate_name
 from app.models.certificate_request import CertificateRequest
-from app.models.certificate_dependency_data import (
-    EarnedUnitsRecord,
-    GWARecord,
-    GraduationRecord,
-    IDIssuanceRecord,
-    NSTPSerialRecord,
-)
 from app.models.campus import Campus
 from app.models.college import College
 from app.models.program import Program
-from app.models.registrar_simulation import CourseCatalog, Enrollment, Grade, Graduate, NSTPRecord, SemesterGWA
+from app.models.enrollment import Enrollment
+from app.models.grade import Grade
+from app.models.nstp_record import NSTPRecord
 from app.models.student import Student
+from app.models.course import Course
+from app.models.student_course import StudentCourse
+from app.models.academic_summary import AcademicSummary
+from app.models.graduation_record import GraduationRecordNew
+from app.models.student_id_record import StudentIdRecord
 
 
 class CertificateDependencyEngine:
@@ -202,10 +202,16 @@ class CertificateDependencyEngine:
         student = CertificateDependencyEngine._resolve_student(db, student_id, request)
         sr_code = student.sr_code if student else (request.sr_code if request else None)
 
+        student_full_name = None
+        if student:
+            parts = [getattr(student, "first_name", None), getattr(student, "middle_name", None), getattr(student, "last_name", None)]
+            student_full_name = " ".join([p for p in parts if p]).strip() or None
+
         resolved_key = CertificateDependencyEngine._resolve_versioned_key(
             db=db,
             base_key=certificate_type_key,
             sr_code=sr_code,
+            student_name=student_full_name or (request.student_name if request else None),
         )
         dependency_list = CertificateDependencyEngine.CERTIFICATE_DEPENDENCIES.get(resolved_key)
 
@@ -260,7 +266,11 @@ class CertificateDependencyEngine:
                 )
 
             elif dependency == "graduation_record":
-                dependencies["graduation_record"] = CertificateDependencyEngine._get_graduation_record(db, sr_code)
+                dependencies["graduation_record"] = CertificateDependencyEngine._get_graduation_record(
+                    db,
+                    sr_code,
+                    student_name=student_full_name or (request.student_name if request else None),
+                )
 
             elif dependency == "academic_summary":
                 dependencies["academic_summary"] = CertificateDependencyEngine._get_academic_summary(db, sr_code)
@@ -269,15 +279,15 @@ class CertificateDependencyEngine:
                 dependencies["student_courses"] = CertificateDependencyEngine._get_student_courses(db, sr_code)
 
             elif dependency == "courses":
-                dependencies["courses"] = db.query(CourseCatalog).all()
+                dependencies["courses"] = db.query(Course).all()
 
             elif dependency == "nstp_record":
                 dependencies["nstp_record"] = CertificateDependencyEngine._get_nstp_record(db, sr_code)
 
             elif dependency == "student_id_record":
                 dependencies["student_id_record"] = (
-                    db.query(IDIssuanceRecord)
-                    .filter(IDIssuanceRecord.sr_code == sr_code)
+                    db.query(StudentIdRecord)
+                    .filter(StudentIdRecord.sr_code == sr_code)
                     .first()
                     if sr_code
                     else None
@@ -303,6 +313,7 @@ class CertificateDependencyEngine:
         db: Session,
         base_key: str,
         sr_code: Optional[str],
+        student_name: Optional[str] = None,
     ) -> str:
         if base_key in CertificateDependencyEngine.CERTIFICATE_DEPENDENCIES:
             return base_key
@@ -312,39 +323,20 @@ class CertificateDependencyEngine:
         if not (has_v1 or has_v2):
             return base_key
 
-        graduation_record = CertificateDependencyEngine._get_graduation_record(db, sr_code)
-        is_graduated = graduation_record is not None
+        graduation_record = CertificateDependencyEngine._get_graduation_record(db, sr_code, student_name=student_name)
+        is_candidate = CertificateDependencyEngine._is_candidate_record(graduation_record)
 
         if base_key == "CERTIFICATE_OF_GRADUATION":
-            return f"{base_key}_V2" if is_graduated else f"{base_key}_V1"
+            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ENROLLMENT":
-            enrollment = CertificateDependencyEngine._get_latest_enrollment(db, sr_code)
-            current_semester, current_ay = CertificateDependencyEngine._current_academic_term()
-            is_current = (
-                enrollment is not None
-                and str(enrollment.semester) == current_semester
-                and str(enrollment.academic_year) == current_ay
-            )
-            return f"{base_key}_V1" if is_current else f"{base_key}_V2"
+            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ENGLISH_MEDIUM":
-            has_earned_units = CertificateDependencyEngine._has_earned_units(db, sr_code)
-            if is_graduated:
-                return f"{base_key}_V2"
-            if has_earned_units:
-                return f"{base_key}_V1"
-            return f"{base_key}_V1"
+            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ID_ISSUANCE":
-            enrollment = CertificateDependencyEngine._get_latest_enrollment(db, sr_code)
-            current_semester, current_ay = CertificateDependencyEngine._current_academic_term()
-            is_current = (
-                enrollment is not None
-                and str(enrollment.semester) == current_semester
-                and str(enrollment.academic_year) == current_ay
-            )
-            return f"{base_key}_V1" if (is_current and not is_graduated) else f"{base_key}_V2"
+            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if has_v2:
             return f"{base_key}_V2"
@@ -374,14 +366,7 @@ class CertificateDependencyEngine:
         if not sr_code:
             return False
         has_grade = db.query(Grade.id).filter(Grade.student_id == sr_code).first()
-        if has_grade:
-            return True
-        fallback = (
-            db.query(EarnedUnitsRecord.id)
-            .filter(EarnedUnitsRecord.sr_code == sr_code)
-            .first()
-        )
-        return fallback is not None
+        return has_grade is not None
 
     @staticmethod
     def _resolve_student(
@@ -410,31 +395,52 @@ class CertificateDependencyEngine:
         )
 
     @staticmethod
-    def _get_graduation_record(db: Session, sr_code: Optional[str]):
-        if not sr_code:
-            return None
-        graduate = db.query(Graduate).filter(Graduate.student_id == sr_code).first()
-        if graduate:
-            return graduate
-        return db.query(GraduationRecord).filter(GraduationRecord.sr_code == sr_code).first()
+    def _get_graduation_record(db: Session, sr_code: Optional[str], student_name: Optional[str] = None):
+        if sr_code:
+            record = db.query(GraduationRecordNew).filter(GraduationRecordNew.sr_code == sr_code).first()
+            if record:
+                return record
+        if student_name:
+            return (
+                db.query(GraduationRecordNew)
+                .filter(GraduationRecordNew.student_name == student_name)
+                .order_by(GraduationRecordNew.id.desc())
+                .first()
+            )
+        return None
+
+    @staticmethod
+    def _is_candidate_record(record) -> bool:
+        if not record:
+            return False
+        try:
+            is_graduated = bool(getattr(record, "is_graduated", False))
+        except Exception:
+            is_graduated = False
+        status = str(getattr(record, "status", "") or "").strip().lower()
+        return (not is_graduated) and status == "candidate"
 
     @staticmethod
     def _get_academic_summary(db: Session, sr_code: Optional[str]) -> dict:
         if not sr_code:
             return {}
-        avg_gwa = db.query(func.avg(SemesterGWA.gwa)).filter(SemesterGWA.student_id == sr_code).scalar()
-        if avg_gwa is None:
-            fallback = (
-                db.query(GWARecord)
-                .filter(GWARecord.sr_code == sr_code)
-                .order_by(GWARecord.id.desc())
-                .first()
-            )
-            if fallback and fallback.gwa is not None:
-                avg_gwa = fallback.gwa
-        if avg_gwa is None:
-            return {}
-        return {"gwa": float(avg_gwa)}
+        summary = (
+            db.query(AcademicSummary)
+            .filter(AcademicSummary.sr_code == sr_code)
+            .order_by(AcademicSummary.academic_year.desc(), AcademicSummary.semester.desc())
+            .first()
+        )
+        if summary:
+            return {
+                "gwa": summary.gwa,
+                "total_units_earned": summary.total_units_earned,
+                "cumulative_units_earned": summary.cumulative_units_earned,
+                "academic_year": summary.academic_year,
+                "semester": summary.semester,
+                "status": summary.status,
+            }
+
+        return {}
 
     @staticmethod
     def _get_student_courses(db: Session, sr_code: Optional[str]) -> list[dict[str, str]]:
@@ -442,14 +448,18 @@ class CertificateDependencyEngine:
             return []
         rows = (
             db.query(
-                CourseCatalog.course_code,
-                CourseCatalog.course_title,
-                CourseCatalog.units,
+                Course.course_code,
+                Course.course_title,
+                Course.units,
+                Course.course_description,
                 Grade.grade,
+                Enrollment.academic_year,
+                Enrollment.semester,
             )
-            .join(Grade, Grade.course_id == CourseCatalog.id)
+            .join(Grade, Grade.course_id == Course.id)
+            .join(Enrollment, Enrollment.id == Grade.enrollment_id)
             .filter(Grade.student_id == sr_code)
-            .order_by(CourseCatalog.course_code.asc())
+            .order_by(Course.course_code.asc())
             .all()
         )
         return [
@@ -457,9 +467,12 @@ class CertificateDependencyEngine:
                 "course_code": str(code or ""),
                 "course_title": str(title or ""),
                 "units": str(units or ""),
+                "course_description": str(description or ""),
                 "grade": str(grade or ""),
+                "academic_year": str(academic_year or ""),
+                "semester": str(semester or ""),
             }
-            for code, title, units, grade in rows
+            for code, title, units, description, grade, academic_year, semester in rows
         ]
 
     @staticmethod
@@ -467,6 +480,4 @@ class CertificateDependencyEngine:
         if not sr_code:
             return None
         record = db.query(NSTPRecord).filter(NSTPRecord.student_id == sr_code).first()
-        if record:
-            return record
-        return db.query(NSTPSerialRecord).filter(NSTPSerialRecord.sr_code == sr_code).first()
+        return record

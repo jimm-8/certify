@@ -4,6 +4,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models.student import Student
+from app.models.program import Program
 from app.schemas.student import StudentResponse
 
 # Create router
@@ -53,7 +54,9 @@ def search_students(
         )
     
     if program:
-        query = query.filter(Student.program.ilike(f"%{program}%"))
+        query = query.join(Program, Student.program_id == Program.id).filter(
+            Program.name.ilike(f"%{program}%")
+        )
     
     students = query.offset(skip).limit(limit).all()
     

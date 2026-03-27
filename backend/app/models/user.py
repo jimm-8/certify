@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -12,6 +12,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False, server_default="user")
+    permissions = Column(Text, nullable=True)
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True)
     is_active = Column(Boolean, default=True)
 

@@ -13,6 +13,8 @@ class Program(Base):
     major = Column(String(255), nullable=True)
     college_id = Column(Integer, ForeignKey("colleges.id"), nullable=False)
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=False)
+    course_board_resolution_num = Column(String(50), nullable=True)
+    course_academic_year = Column(String(20), nullable=True)
 
     is_active = Column(Integer, default=1)
 

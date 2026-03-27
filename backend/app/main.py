@@ -7,8 +7,9 @@ from fastapi.staticfiles import StaticFiles
 import app.models.certificate_request
 import app.models.student
 import app.models.audit_log
-import app.models.certificate_dependency_data
-import app.models.registrar_simulation
+import app.models.enrollment
+import app.models.grade
+import app.models.nstp_record
 
 from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users
 
@@ -20,15 +21,17 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-print("🔨 Creating database tables...")
-Base.metadata.create_all(bind=engine)
-print("✅ Database tables created!")
 
 @app.get("/")
 def read_root():

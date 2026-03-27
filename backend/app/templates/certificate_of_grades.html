@@ -309,11 +309,21 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>{{course_code}} - {{ course_title }}</td>
-                <td>{{ course_units }}</td>
-                <td>{{ course_grades }}</td>
-              </tr>
+              {% if grades_detail %}
+                {% for row in grades_detail %}
+                <tr>
+                  <td>{{ row.course_code }} - {{ row.course_title }}</td>
+                  <td>{{ row.units }}</td>
+                  <td>{{ row.grade }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td>{{course_code}} - {{ course_title }}</td>
+                  <td>{{ course_units }}</td>
+                  <td>{{ course_grades }}</td>
+                </tr>
+              {% endif %}
             </tbody>
           </table>
 
@@ -338,7 +348,14 @@
       </div>
 
       <div class="signature">
-          <div class="signature-line"></div>
+          {% if signature_path %}
+          <img
+            src="{{ signature_path }}"
+            alt="Signature"
+            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
+          />
+          {% endif %}
+<div class="signature-line"></div>
           <strong>{{ name_official }}</strong><br />
           {{ official_title }}
         </div>

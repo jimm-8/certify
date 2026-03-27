@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, JSON, Boolean, DateTime
-from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 from app.database import Base
 
 class CertificateTemplate(Base):
@@ -26,8 +25,6 @@ class CertificateTemplate(Base):
     # Required fields for this certificate
     required_fields = Column(JSON, default=[])
     
-    # Relationships
-    requests = relationship("CertificateRequest", back_populates="template")
-    
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())

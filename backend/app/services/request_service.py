@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from app.services.email_service import EmailService
 
-from app.models.certificate_request import CertificateRequest, RequestStatus, RequestNote
+from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.audit_log import AuditLog
 
 # Define valid status transitions
@@ -48,8 +48,6 @@ async def update_request_status(
     new_status: RequestStatus,
     user_name: str = "System",
     notes: Optional[str] = None,
-    rejection_reason: Optional[str] = None,
-    rejection_notes: Optional[str] = None
 ) -> CertificateRequest:
     """
     Update request status with validation and audit logging
@@ -86,21 +84,15 @@ async def update_request_status(
     # Update status
     request.status = new_status
     
-    # Handle rejection
-    if new_status == RequestStatus.REJECTED:
-        if rejection_reason:
-            request.rejection_reason = rejection_reason
-        if rejection_notes:
-            request.rejection_notes = rejection_notes
-    
     # Generate verification token when moving to FOR_RELEASING
     if new_status == RequestStatus.APPROVED and not request.verification_token:
         request.verification_token = generate_verification_token()
     
     # Create audit log
     audit_log = AuditLog(
-        request_id=request_id,
         action="STATUS_CHANGED",
+        entity_type="certificate_request",
+        entity_id=request_id,
         field_name="status",
         old_value=old_status.value,
         new_value=new_status.value,
@@ -108,16 +100,6 @@ async def update_request_status(
         notes=notes
     )
     db.add(audit_log)
-    
-    # Add note if provided
-    if notes:
-        note = RequestNote(
-            request_id=request_id,
-            note=notes,
-            note_type="STATUS_CHANGE",
-            user_name=user_name
-        )
-        db.add(note)
     
     if new_status == RequestStatus.PROCESSING:
         if not request.or_number:
@@ -130,28 +112,24 @@ async def update_request_status(
             request.pdf_path = pdf_path
             
             # Add note about auto-generation
-            auto_note = RequestNote(
-                request_id=request_id,
-                note=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
-                note_type="INFO",
-                user_name="System"
+            db.add(
+                AuditLog(
+                    action="NOTE_ADDED",
+                    entity_type="certificate_request",
+                    entity_id=request_id,
+                    field_name="notes",
+                    new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
+                    user_name="System",
+                )
             )
-            db.add(auto_note)
         except Exception as e:
             print(f"Auto-generation failed: {e}")
+            try:
+                db.rollback()
+            except Exception:
+                pass
             # Don't fail the status update if PDF generation fails
     
-    # Add rejection note if rejecting
-    if new_status == RequestStatus.REJECTED and (rejection_reason or rejection_notes):
-        rejection_text = f"Rejection Reason: {rejection_reason}\n{rejection_notes or ''}"
-        note = RequestNote(
-            request_id=request_id,
-            note=rejection_text,
-            note_type="REJECTION_REASON",
-            user_name=user_name
-        )
-        db.add(note)
-
     db.commit()
     db.refresh(request)
     
@@ -197,8 +175,9 @@ def update_student_data(
                 
                 # Create audit log
                 audit_log = AuditLog(
-                    request_id=request_id,
                     action="DATA_UPDATED",
+                    entity_type="certificate_request",
+                    entity_id=request_id,
                     field_name=field,
                     old_value=str(old_value) if old_value else None,
                     new_value=str(new_value),
@@ -206,16 +185,6 @@ def update_student_data(
                     notes=notes
                 )
                 db.add(audit_log)
-    
-    # Add note if provided
-    if notes:
-        note = RequestNote(
-            request_id=request_id,
-            note=notes,
-            note_type="DATA_UPDATE",
-            user_name=user_name
-        )
-        db.add(note)
     
     db.commit()
     db.refresh(request)
@@ -228,7 +197,7 @@ def add_note_to_request(
     note_text: str,
     note_type: str = "INFO",
     user_name: str = "System"
-) -> RequestNote:
+) -> AuditLog:
     """
     Add a note to a request
     """
@@ -239,18 +208,10 @@ def add_note_to_request(
             detail="Request not found"
         )
     
-    note = RequestNote(
-        request_id=request_id,
-        note=note_text,
-        note_type=note_type,
-        user_name=user_name
-    )
-    db.add(note)
-    
-    # Also create audit log
     audit_log = AuditLog(
-        request_id=request_id,
         action="NOTE_ADDED",
+        entity_type="certificate_request",
+        entity_id=request_id,
         field_name="notes",
         new_value=note_text,
         user_name=user_name
@@ -258,6 +219,6 @@ def add_note_to_request(
     db.add(audit_log)
     
     db.commit()
-    db.refresh(note)
+    db.refresh(audit_log)
     
-    return note
+    return audit_log

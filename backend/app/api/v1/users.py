@@ -24,6 +24,7 @@ def create_user(new_user: UserCreate, db: Session = Depends(get_db), _: User = D
         hashed_password=get_password_hash(new_user.password),
         role=new_user.role or "user",
         campus_id=new_user.campus_id,
+        permissions=new_user.permissions,
     )
     db.add(user)
     db.commit()

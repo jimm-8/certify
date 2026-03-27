@@ -102,8 +102,8 @@ class CertificateEngine:
             head_match = re.search(r"<\s*head\b[^>]*>", html, flags=re.IGNORECASE)
             if head_match:
                 insert_at = head_match.end()
-                return f"{html[:insert_at]}\n    <base href=\"{base_href}\">\n{html[insert_at:]}"
-            return f"<head><base href=\"{base_href}\"></head>\n{html}"
+                return f'{html[:insert_at]}\n    <base href="{base_href}">\n{html[insert_at:]}'
+            return f'<head><base href="{base_href}"></head>\n{html}'
 
         def _inline_known_local_images(html: str, base_dir: Path) -> str:
             known = {"batangas_state_logo.png", "bsu.png"}
@@ -115,11 +115,18 @@ class CertificateEngine:
                     return match.group(0)
 
                 try:
-                    candidate = (base_dir / uri).resolve()
+                    raw_path = Path(uri)
+                    if raw_path.is_absolute():
+                        candidate = raw_path.resolve()
+                    else:
+                        candidate = (base_dir / uri).resolve()
                 except Exception:
                     return match.group(0)
 
-                if candidate.name.lower() not in known or not candidate.exists():
+                if not candidate.exists():
+                    return match.group(0)
+                # allow known logos or any local file path (e.g., signatures)
+                if candidate.name.lower() not in known and not candidate.is_file():
                     return match.group(0)
 
                 mime = mimetypes.guess_type(str(candidate))[0] or "image/png"
@@ -130,7 +137,12 @@ class CertificateEngine:
 
                 return f"src={quote}data:{mime};base64,{data}{quote}"
 
-            return re.sub(r"""src=(?P<q>["'])(?P<uri>[^"']+)(?P=q)""", repl, html, flags=re.IGNORECASE)
+            return re.sub(
+                r"""src=(?P<q>["'])(?P<uri>[^"']+)(?P=q)""",
+                repl,
+                html,
+                flags=re.IGNORECASE,
+            )
 
         tpl_dir = Path(CertificateEngine.TEMPLATE_DIR).resolve()
         base_href = tpl_dir.as_uri()
@@ -144,38 +156,63 @@ class CertificateEngine:
             try:
                 policy = asyncio.get_event_loop_policy()
                 if not isinstance(policy, asyncio.WindowsProactorEventLoopPolicy):
-                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                    asyncio.set_event_loop_policy(
+                        asyncio.WindowsProactorEventLoopPolicy()
+                    )
             except Exception:
                 pass
 
-        from playwright.sync_api import sync_playwright
+        async def _render_pdf_async(html: str) -> bytes:
+            from playwright.async_api import async_playwright
 
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch()
-            context = browser.new_context(viewport={"width": 816, "height": 1056})
-            page = context.new_page()
-            page.set_content(html_content, wait_until="load")
+            async with async_playwright() as pw:
+                browser = await pw.chromium.launch()
+                context = await browser.new_context(viewport={"width": 816, "height": 1056})
+                page = await context.new_page()
+                await page.set_content(html, wait_until="load")
+                try:
+                    await page.wait_for_load_state("networkidle", timeout=5000)
+                except Exception:
+                    pass
+                try:
+                    await page.emulate_media(media="print")
+                except Exception:
+                    pass
+                try:
+                    pdf_bytes = await page.pdf(
+                        print_background=True,
+                        prefer_css_page_size=True,
+                        margin={
+                            "top": "0in",
+                            "bottom": "0in",
+                            "left": "0in",
+                            "right": "0in",
+                        },
+                    )
+                except TypeError:
+                    pdf_bytes = await page.pdf(
+                        print_background=True,
+                        margin={
+                            "top": "0in",
+                            "bottom": "0in",
+                            "left": "0in",
+                            "right": "0in",
+                        },
+                    )
+                await browser.close()
+                return pdf_bytes
+
+        def _run_async(coro: asyncio.Future) -> bytes:
             try:
-                page.wait_for_load_state("networkidle", timeout=5000)
-            except Exception:
-                pass
-            try:
-                page.emulate_media(media="print")
-            except Exception:
-                pass
-            try:
-                pdf_bytes = page.pdf(
-                    print_background=True,
-                    prefer_css_page_size=True,
-                    margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
-                )
-            except TypeError:
-                pdf_bytes = page.pdf(
-                    print_background=True,
-                    margin={"top": "0in", "bottom": "0in", "left": "0in", "right": "0in"},
-                )
-            browser.close()
-        return pdf_bytes
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(coro)
+            from concurrent.futures import ThreadPoolExecutor
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                return executor.submit(lambda: asyncio.run(coro)).result()
+
+        return _run_async(_render_pdf_async(html_content))
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -183,8 +220,10 @@ class CertificateEngine:
 
     @staticmethod
     def _resolve_certificate_key(certificate_type: str, data: dict) -> str:
+        # Check exact match first (handles already-resolved keys from DependencyEngine)
         if certificate_type in CertificateEngine.TEMPLATE_MAP:
             return certificate_type
+
         normalized = (certificate_type or "").strip().lower()
         resolved = CertificateEngine.TYPE_NAME_ALIASES.get(normalized, certificate_type)
         return CertificateEngine._resolve_versioned_key(resolved, data)
@@ -192,7 +231,7 @@ class CertificateEngine:
     @staticmethod
     def _resolve_versioned_key(base_key: str, data: dict) -> str:
         if base_key in CertificateEngine.TEMPLATE_MAP:
-            return base_key
+            return base_key  # Already fully resolved — DO NOT re-version
 
         key = base_key or ""
         has_v1 = f"{key}_V1" in CertificateEngine.TEMPLATE_MAP
@@ -200,8 +239,23 @@ class CertificateEngine:
         if not (has_v1 or has_v2):
             return base_key
 
-        is_graduated = bool(data.get("year_graduated") or data.get("is_graduated"))
-        preferred = f"{key}_V2" if is_graduated else f"{key}_V1"
+        def _is_candidate_from_data(payload: dict) -> bool:
+            status = str(payload.get("graduation_status", "") or "").strip().lower()
+            if status == "candidate":
+                return not bool(payload.get("is_graduated"))
+            return False
+
+        if key in {
+            "CERTIFICATE_OF_GRADUATION",
+            "CERTIFICATE_OF_ENROLLMENT",
+            "CERTIFICATE_OF_ENGLISH_MEDIUM",
+            "CERTIFICATE_OF_ID_ISSUANCE",
+        }:
+            is_candidate = _is_candidate_from_data(data)
+            preferred = f"{key}_V1" if is_candidate else f"{key}_V2"
+        else:
+            is_graduated = bool(data.get("year_graduated") or data.get("is_graduated"))
+            preferred = f"{key}_V2" if is_graduated else f"{key}_V1"
 
         if preferred in CertificateEngine.TEMPLATE_MAP:
             return preferred

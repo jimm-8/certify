@@ -19,12 +19,13 @@ except Exception:  # pragma: no cover
 
 class CertificateTemplateEngine:
     """Resolves and renders certificate templates from app/templates."""
-    DEFAULT_TEMPLATE = "Cert-of-Enrollment-Current.html"
+    DEFAULT_TEMPLATE = "certificate_of_enrollment_v2.html"
     COMMON_FALLBACKS = (
-        "Cert-of-Enrollment-Current.html",
-        "Cert-of-Enrollment-Previous.html",
-        "Cert-of-ID-Issuance-Current.html",
-        "Cert-of-NSTP-Serial-Num.html",
+        "certificate_of_enrollment_v2.html",
+        "certificate_of_enrollment_v1.html",
+        "certificate_of_id_issuance_v2.html",
+        "certificate_of_id_issuance_v1.html",
+        "certificate_of_nstp_serial_number.html",
     )
     LEGACY_FILL_PATTERN = r"<span\s+class=\"([^\"]*fill[^\"]*)\"([^>]*)></span>"
 
@@ -203,33 +204,32 @@ class CertificateTemplateEngine:
     def _resolve_primary_template(self, normalized_type_key: str, context: dict[str, Any]) -> str:
         key = normalized_type_key
         if "coursedescription" in key:
-            return "Cert-of-Course-Desc.html"
+            return "certificate_of_course_description.html"
         if "enrolment" in key or "enrollment" in key:
-            return "Cert-of-Enrollment-Current.html"
+            return "certificate_of_enrollment_v2.html"
         if "gradingsystem" in key or "grades" in key:
-            return "Cert-of-Grades.html"
+            return "certificate_of_grades.html"
         if "graduation" in key:
-            has_year = bool(context.get("year_graduated"))
-            return "Cert-of-Grad-Has-Graduated.html" if has_year else "Cert-of-Grad-CandidateforGrad.html"
+            return "certificate_of_graduation_v2.html"
         if "idissuance" in key:
-            return "Cert-of-ID-Issuance-Current.html"
+            return "certificate_of_id_issuance_v2.html"
         if "nstpserialnumber" in key:
-            return "Cert-of-NSTP-Serial-Num.html"
+            return "certificate_of_nstp_serial_number.html"
         if "completedacademicrequirements" in key:
-            return "Cert-of-Completed-Acad-Req.html"
+            return "certificate_of_completed_acad_requirement.html"
         if "earnedunits" in key:
-            return "Cert-of-Earned-Units.html"
+            return "certificate_of_earned_units.html"
         if "englishmedium" in key:
             has_year = bool(context.get("year_graduated"))
-            return "Cert-of-English-Medium-Graduated.html" if has_year else "Cert-of-English-Medium-Earned.html"
+            return "certificate_of_english_medium_v2.html" if has_year else "certificate_of_english_medium_v1.html"
         if "gwa" in key:
-            return "Cert-of-GWA.html"
+            return "certificate_of_gwa.html"
         if "honorgraduate" in key:
-            return "Cert-of-Honor-Grad.html"
+            return "certificate_of_honor_graduate.html"
         if "transfercredentials" in key:
-            return "Cert-of-Trans-Credentials.html"
+            return "certificate_of_transfer_credentials.html"
         if "cav" in key or "authenticationandverification" in key:
-            return "Cert-of-Trans-Credentials.html"
+            return "certification_authentication_and_verification.html"
         return self.DEFAULT_TEMPLATE
 
     def _build_fallback_candidates(self, normalized_type_key: str, primary_template: str) -> list[str]:
@@ -237,13 +237,13 @@ class CertificateTemplateEngine:
         candidates = [primary_template]
 
         if "graduation" in key or "honorgraduate" in key or "completedacademicrequirements" in key:
-            candidates.extend(["Cert-of-Grad-Has-Graduated.html", "Cert-of-Grad-CandidateforGrad.html"])
+            candidates.extend(["certificate_of_graduation_v2.html", "certificate_of_graduation_v1.html"])
         elif "englishmedium" in key:
-            candidates.extend(["Cert-of-English-Medium-Graduated.html", "Cert-of-English-Medium-Earned.html"])
+            candidates.extend(["certificate_of_english_medium_v2.html", "certificate_of_english_medium_v1.html"])
         elif "grades" in key or "gwa" in key or "earnedunits" in key or "cav" in key or "authenticationandverification" in key:
-            candidates.extend(["Cert-of-Grades.html", "Cert-of-Course-Desc.html"])
+            candidates.extend(["certificate_of_grades.html", "certificate_of_course_description.html"])
         elif "enrolment" in key or "enrollment" in key:
-            candidates.extend(["Cert-of-Enrollment-Current.html", "Cert-of-Enrollment-Previous.html"])
+            candidates.extend(["certificate_of_enrollment_v2.html", "certificate_of_enrollment_v1.html"])
 
         candidates.extend(self.COMMON_FALLBACKS)
         return list(dict.fromkeys(candidates))

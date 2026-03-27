@@ -23,9 +23,8 @@ from app.services.request_service import (
     add_note_to_request
 )
 from app.models.audit_log import AuditLog
-from app.models.certificate_request import RequestNote
 from app.schemas.certificate_request import StatusUpdateRequest, StudentDataUpdate
-from app.schemas.audit import AuditLogResponse, RequestNoteCreate, RequestNoteResponse
+from app.schemas.audit import AuditLogResponse, RequestNoteCreate
 
 from app.schemas.certificate_request import CertificateVerificationResponse
 
@@ -259,9 +258,7 @@ async def update_status(
         request_id=request_id,
         new_status=new_status,
         user_name=status_update.user_name,
-        notes=status_update.notes,
-        rejection_reason=status_update.rejection_reason,
-        rejection_notes=status_update.rejection_notes
+        notes=status_update.notes
     )
     return updated_request
 
@@ -303,7 +300,7 @@ def update_request_student_data(
     return updated_request
 
 # Endpoint 7: Add note to request
-@router.post("/{request_id}/notes", response_model=RequestNoteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{request_id}/notes", response_model=AuditLogResponse, status_code=status.HTTP_201_CREATED)
 def create_note(
     request_id: int,
     note_data: RequestNoteCreate,
@@ -326,7 +323,7 @@ def create_note(
     return note
 
 # Endpoint 8: Get all notes for a request
-@router.get("/{request_id}/notes", response_model=list[RequestNoteResponse])
+@router.get("/{request_id}/notes", response_model=list[AuditLogResponse])
 def get_request_notes(
     request_id: int,
     db: Session = Depends(get_db)
@@ -335,9 +332,11 @@ def get_request_notes(
     Get all notes/comments for a request
     """
     
-    notes = db.query(RequestNote).filter(
-        RequestNote.request_id == request_id
-    ).order_by(RequestNote.created_at.desc()).all()
+    notes = db.query(AuditLog).filter(
+        AuditLog.entity_type == "certificate_request",
+        AuditLog.entity_id == request_id,
+        AuditLog.action == "NOTE_ADDED",
+    ).order_by(AuditLog.created_at.desc()).all()
     
     return notes
 
@@ -354,7 +353,8 @@ def get_request_audit_logs(
     """
     
     logs = db.query(AuditLog).filter(
-        AuditLog.request_id == request_id
+        AuditLog.entity_type == "certificate_request",
+        AuditLog.entity_id == request_id
     ).order_by(AuditLog.created_at.desc()).all()
     
     return logs

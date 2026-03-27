@@ -130,6 +130,7 @@ class CertificateRequestDetail(BaseModel):
     program: str
     major: Optional[str]
     year_graduated: Optional[str]
+    request_cost: Optional[float] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -147,10 +148,6 @@ class StatusUpdateRequest(BaseModel):
     new_status: RequestStatusEnum
     notes: Optional[str] = None
     user_name: Optional[str] = "Registrar"
-    
-    # For rejections
-    rejection_reason: Optional[str] = None
-    rejection_notes: Optional[str] = None
     
     class Config:
         json_schema_extra = {
