@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
-import BulkRejectModal from "../../components/common/bulkRejectModal";
 import { BsSearch, BsCalendar3, BsChevronDown } from "react-icons/bs";
 
 const filterOptions = [
@@ -34,21 +33,15 @@ const Checking = () => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
-  const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
-  const [bulkRejectLoading, setBulkRejectLoading] = useState(false);
-  const [bulkRejectNotes, setBulkRejectNotes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [actionLoading, setActionLoading] = useState({});
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await requestService.getAllRequests({
-        page: 1,
-        limit: 100,
-        status: "pending",
-      });
-      setRequests(Array.isArray(data) ? data : data.items || []);
+      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      const all = Array.isArray(data) ? data : data.items || [];
+      setRequests(all.filter((r) => r.status === "APPROVED"));
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     } finally {
@@ -93,27 +86,20 @@ const Checking = () => {
     currentPage * ROWS_PER_PAGE
   );
 
-  const handleApprove = async (req) => {
-    setActionLoading((prev) => ({ ...prev, [`approve_${req.id}`]: true }));
+  const handleAdvance = async (req) => {
+    const nextStatus = "PROCESSING";
+    setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: true }));
     try {
-      await requestService.updateStatus(req.id, "APPROVED", "All documents verified");
+      await requestService.updateStatus(
+        req.id,
+        nextStatus,
+        "Request moved to processing"
+      );
       fetchRequests();
     } catch (error) {
-      console.error("Failed to approve:", error);
+      console.error("Failed to advance request:", error);
     } finally {
-      setActionLoading((prev) => ({ ...prev, [`approve_${req.id}`]: false }));
-    }
-  };
-
-  const handleReject = async (req) => {
-    setActionLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
-    try {
-      await requestService.updateStatus(req.id, "REJECTED", "Rejected by checker");
-      fetchRequests();
-    } catch (error) {
-      console.error("Failed to reject:", error);
-    } finally {
-      setActionLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
+      setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: false }));
     }
   };
 
@@ -122,26 +108,18 @@ const Checking = () => {
   };
 
   const handleModalApprove = async (req) => {
+    const nextStatus = "PROCESSING";
     setModalLoading(true);
     try {
-      await requestService.updateStatus(req.id, "APPROVED", "All documents verified");
+      await requestService.updateStatus(
+        req.id,
+        nextStatus,
+        "Request moved to processing"
+      );
       setSelectedRequest(null);
       fetchRequests();
     } catch (error) {
-      console.error("Failed to approve request:", error);
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleModalDecline = async (req, notes) => {
-    setModalLoading(true);
-    try {
-      await requestService.updateStatus(req.id, "REJECTED", notes);
-      setSelectedRequest(null);
-      fetchRequests();
-    } catch (error) {
-      console.error("Failed to decline request:", error);
+      console.error("Failed to advance request:", error);
     } finally {
       setModalLoading(false);
     }
@@ -152,32 +130,18 @@ const Checking = () => {
     try {
       await Promise.all(
         filteredRequests.map((r) =>
-          requestService.updateStatus(r.id, "APPROVED", "All documents verified")
+          requestService.updateStatus(
+            r.id,
+            "PROCESSING",
+            "Request moved to processing"
+          )
         )
       );
       fetchRequests();
     } catch (error) {
-      console.error("Bulk approve failed:", error);
+      console.error("Bulk advance failed:", error);
     } finally {
       setBulkApproveLoading(false);
-    }
-  };
-
-  const handleBulkReject = async () => {
-    setBulkRejectLoading(true);
-    try {
-      await Promise.all(
-        filteredRequests.map((r) =>
-          requestService.updateStatus(r.id, "REJECTED", bulkRejectNotes)
-        )
-      );
-      setBulkRejectOpen(false);
-      setBulkRejectNotes("");
-      fetchRequests();
-    } catch (error) {
-      console.error("Bulk reject failed:", error);
-    } finally {
-      setBulkRejectLoading(false);
     }
   };
 
@@ -196,14 +160,7 @@ const Checking = () => {
             {bulkApproveLoading && (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )}
-            Approve All
-          </button>
-          <button
-            onClick={() => setBulkRejectOpen(true)}
-            disabled={filteredRequests.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
-          >
-            Reject All
+            Process All
           </button>
         </div>
 
@@ -330,19 +287,13 @@ const Checking = () => {
                     <div className="flex items-center gap-1.5">
                       {/* Accept */}
                       <button
-                        onClick={() => handleApprove(row)}
-                        disabled={actionLoading[`approve_${row.id}`]}
+                        onClick={() => handleAdvance(row)}
+                        disabled={actionLoading[`advance_${row.id}`]}
                         className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors disabled:opacity-50"
                       >
-                        {actionLoading[`approve_${row.id}`] ? "..." : "Accept"}
-                      </button>
-                      {/* Reject */}
-                      <button
-                        onClick={() => handleReject(row)}
-                        disabled={actionLoading[`reject_${row.id}`]}
-                        className="px-3 py-1 text-xs font-semibold text-white bg-[#ee1133] rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-                      >
-                        {actionLoading[`reject_${row.id}`] ? "..." : "Reject"}
+                        {actionLoading[`advance_${row.id}`]
+                          ? "..."
+                          : "Process"}
                       </button>
                       {/* Email */}
                       <button
@@ -413,18 +364,7 @@ const Checking = () => {
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
         onApprove={handleModalApprove}
-        onDecline={handleModalDecline}
         loading={modalLoading}
-      />
-
-      <BulkRejectModal
-        open={bulkRejectOpen}
-        onClose={() => { setBulkRejectOpen(false); setBulkRejectNotes(""); }}
-        onConfirm={handleBulkReject}
-        loading={bulkRejectLoading}
-        notes={bulkRejectNotes}
-        setNotes={setBulkRejectNotes}
-        affectedCount={filteredRequests.length}
       />
     </div>
   );

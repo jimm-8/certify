@@ -109,6 +109,11 @@ const Tracker = () => {
   }, []);
 
   useEffect(() => {
+    const id = setInterval(fetchRequests, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     requestService
       .getCertificateTypes()
       .then(setCertificateTypes)
@@ -147,6 +152,7 @@ const Tracker = () => {
       matchesType &&
       matchesProgram &&
       r.status !== "PENDING" &&
+      r.status !== "FOR_RELEASING" &&
       r.status !== "RELEASED"
     );
   });

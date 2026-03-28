@@ -7,6 +7,7 @@ from datetime import datetime
 from app.services.email_service import EmailService
 
 from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
 from app.models.payment import Payment
 from app.models.student import Student
@@ -168,6 +169,27 @@ async def update_request_status(
         except Exception as e:
             print(f"Auto-generation failed: {e}")
             # Don't fail the status update if PDF generation fails
+
+    if new_status == RequestStatus.RELEASED:
+        # Persist released requests into certificates table (idempotent)
+        existing_cert = (
+            db.query(Certificate)
+            .filter(Certificate.certificate_request_id == request.id)
+            .first()
+        )
+        if not existing_cert:
+            db.add(
+                Certificate(
+                    certificate_request_id=request.id,
+                    certificate_type_id=request.certificate_type_id,
+                    issued_to=request.student_name,
+                    sr_code=request.sr_code,
+                    issued_by=user_name,
+                    issued_at=datetime.now(),
+                    or_number=request.or_number,
+                    file_path=request.pdf_path,
+                )
+            )
     
     db.commit()
     db.refresh(request)

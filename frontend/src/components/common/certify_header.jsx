@@ -6,7 +6,6 @@ import {
   Radio,
   CheckCircle,
   History,
-  CreditCard,
 } from "lucide-react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 
@@ -15,7 +14,6 @@ const tabs = [
   { label: "Checking of Request", icon: <SearchCheck size={15} /> },
   { label: "Request Tracker", icon: <Radio size={15} /> },
   { label: "Ready", icon: <CheckCircle size={15} /> },
-  { label: "Payments", icon: <CreditCard size={15} /> },
   { label: "History", icon: <History size={15} /> },
 ];
 

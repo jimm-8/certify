@@ -73,9 +73,9 @@ const History = () => {
       setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
       const all = Array.isArray(data) ? data : data.items || [];
-      setRequests(all.filter((r) => r.status === "COMPLETED"));
+      setRequests(all.filter((r) => r.status === "RELEASED"));
     } catch (error) {
-      console.error("Failed to fetch completed requests:", error);
+      console.error("Failed to fetch released requests:", error);
     } finally {
       setLoading(false);
     }
@@ -188,7 +188,7 @@ const History = () => {
       sortable: true,
     },
     {
-      name: "Date Completed",
+      name: "Date Released",
       selector: (row) =>
         row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "—",
       sortable: true,
@@ -316,7 +316,7 @@ const History = () => {
           responsive
           noDataComponent={
             <div className="py-10 text-xs text-gray-400">
-              No completed requests found.
+              No released requests found.
             </div>
           }
         />

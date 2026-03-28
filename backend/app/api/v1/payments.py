@@ -5,14 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.payment import Payment
-from app.models.certificate_request import CertificateRequest
+from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.schemas.payment import (
     PaymentCreate,
     PaymentResponse,
     PaymentLookupResponse,
     PaymentByReferenceCreate,
 )
-from app.services.request_service import generate_or_number
+from app.services.request_service import generate_or_number, update_request_status
+import anyio
 
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
@@ -57,6 +58,17 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
     db.add(payment)
     db.commit()
     db.refresh(payment)
+
+    # Auto-advance to FOR_RELEASING once payment is detected
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+        anyio.from_thread.run(
+            update_request_status,
+            db,
+            request.id,
+            RequestStatus.FOR_RELEASING,
+            "System",
+            "Auto-marked for releasing after payment",
+        )
     return payment
 
 
@@ -133,4 +145,15 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
     db.add(payment)
     db.commit()
     db.refresh(payment)
+
+    # Auto-advance to FOR_RELEASING once payment is detected
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+        anyio.from_thread.run(
+            update_request_status,
+            db,
+            request.id,
+            RequestStatus.FOR_RELEASING,
+            "System",
+            "Auto-marked for releasing after payment",
+        )
     return payment
