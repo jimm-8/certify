@@ -10,8 +10,7 @@ class RequestStatusEnum(str, Enum):
     APPROVED = "APPROVED"
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
-    COMPLETED = "COMPLETED"
-    REJECTED = "REJECTED"
+    RELEASED = "RELEASED"
 
 # Schema for certificate type (what we send back)
 class CertificateDependencyField(BaseModel):

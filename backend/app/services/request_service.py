@@ -9,16 +9,17 @@ from app.services.email_service import EmailService
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.audit_log import AuditLog
 from app.models.payment import Payment
+from app.models.student import Student
+from app.models.program import Program
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
-    RequestStatus.SUBMITTED: [RequestStatus.PENDING],
-    RequestStatus.PENDING: [RequestStatus.APPROVED, RequestStatus.REJECTED],
+    RequestStatus.SUBMITTED: [RequestStatus.APPROVED, RequestStatus.PENDING],
+    RequestStatus.PENDING: [RequestStatus.APPROVED],
     RequestStatus.APPROVED: [RequestStatus.PROCESSING],
-    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],  # Can go back to approved if issues
-    RequestStatus.FOR_RELEASING: [RequestStatus.COMPLETED],
-    RequestStatus.COMPLETED: [],  # Final state
-    RequestStatus.REJECTED: []  # Final state
+    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],
+    RequestStatus.FOR_RELEASING: [RequestStatus.RELEASED],
+    RequestStatus.RELEASED: [],  # Final state
 }
 
 def can_transition_to(current_status: RequestStatus, new_status: RequestStatus) -> bool:
@@ -62,7 +63,7 @@ async def update_request_status(
         )
     
     # Check if already in final state
-    if request.status in [RequestStatus.COMPLETED, RequestStatus.REJECTED]:
+    if request.status in [RequestStatus.RELEASED]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot change status of {request.status.value} request"
@@ -82,6 +83,39 @@ async def update_request_status(
             Payment.purpose.ilike(f"%{ref}%")
         ).first()
         if not payment:
+            try:
+                campus_telNo = None
+                campus_email = None
+                student = None
+                if request.sr_code:
+                    student = (
+                        db.query(Student)
+                        .filter(Student.sr_code == request.sr_code)
+                        .first()
+                    )
+                campus = None
+                if student is not None:
+                    campus = student.campus or (student.program.campus if student.program else None)
+                if campus is None and request.program:
+                    program = db.query(Program).filter(Program.name == request.program).first()
+                    campus = program.campus if program else None
+                if campus is not None:
+                    campus_telNo = campus.campus_telNo
+                    campus_email = campus.campus_email
+
+                email_service = EmailService()
+                await email_service.send_payment_missing_notice(
+                    to_email=request.requestor_email,
+                    reference_number=request.reference_number,
+                    requestor_name=request.requestor_name,
+                    student_name=request.student_name,
+                    certificate_type=request.certificate_type_name,
+                    request_cost=request.request_cost,
+                    campus_email=campus_email,
+                    campus_telNo=campus_telNo,
+                )
+            except Exception as e:
+                print(f"⚠️ Payment-missing email failed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot mark as FOR_RELEASING. No payment found for this reference number."
@@ -89,15 +123,11 @@ async def update_request_status(
     
     # Store old status for audit
     old_status = request.status
-    
-    if new_status == RequestStatus.APPROVED and not request.verification_token:
-        request.verification_token = generate_verification_token()
-        print(f"✅ Generated verification token for request {request_id}")
-    
+
     # Update status
     request.status = new_status
-    
-    # Generate verification token when moving to FOR_RELEASING
+
+    # Generate verification token when moving to APPROVED
     if new_status == RequestStatus.APPROVED and not request.verification_token:
         request.verification_token = generate_verification_token()
     
@@ -120,10 +150,10 @@ async def update_request_status(
         try:
             from app.services.certificate_service import generate_certificate_pdf
             pdf_path = generate_certificate_pdf(db, request_id, user_name)
-            
+
             # Save PDF path to request
             request.pdf_path = pdf_path
-            
+
             # Add note about auto-generation
             db.add(
                 AuditLog(
@@ -137,10 +167,6 @@ async def update_request_status(
             )
         except Exception as e:
             print(f"Auto-generation failed: {e}")
-            try:
-                db.rollback()
-            except Exception:
-                pass
             # Don't fail the status update if PDF generation fails
     
     db.commit()
@@ -148,6 +174,23 @@ async def update_request_status(
     
     if new_status == RequestStatus.FOR_RELEASING:
         try:
+            campus_telNo = None
+            student = None
+            if request.sr_code:
+                student = (
+                    db.query(Student)
+                    .filter(Student.sr_code == request.sr_code)
+                    .first()
+                )
+            campus = None
+            if student is not None:
+                campus = student.campus or (student.program.campus if student.program else None)
+            if campus is None and request.program:
+                program = db.query(Program).filter(Program.name == request.program).first()
+                campus = program.campus if program else None
+            if campus is not None:
+                campus_telNo = campus.campus_telNo
+
             email_service = EmailService()
             await email_service.send_ready_for_release(
                 to_email=request.requestor_email,
@@ -155,6 +198,7 @@ async def update_request_status(
                 requestor_name=request.requestor_name,
                 student_name=request.student_name,
                 certificate_type=request.certificate_type_name,
+                campus_telNo=campus_telNo,
             )
             print(f"✅ Release email sent to {request.requestor_email}")
         except Exception as e:
@@ -235,3 +279,6 @@ def add_note_to_request(
     db.refresh(audit_log)
     
     return audit_log
+
+
+

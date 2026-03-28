@@ -2,7 +2,7 @@ import React from "react";
 
 const bulkStatusTarget = {
   PROCESSING: { value: "FOR_RELEASING", label: "For Releasing" },
-  FOR_RELEASING: { value: "COMPLETED", label: "Completed" },
+  FOR_RELEASING: { value: "RELEASED", label: "Released" },
 };
 
 const BulkStatusModal = ({

@@ -270,8 +270,7 @@ class EmailService:
             "PROCESSING": "⚙️ Your certificate is now being generated.",
             "FOR_REVIEW": "👀 Your certificate is ready for final review.",
             "FOR_RELEASING": "🎉 Your certificate is ready for pickup!",
-            "COMPLETED": "✨ Your certificate has been released.",
-            "REJECTED": "❌ Unfortunately, your request was not approved.",
+            "RELEASED": "? Your certificate has been released.",
         }
 
         status_message = status_messages.get(
@@ -341,8 +340,11 @@ class EmailService:
         requestor_name: str,
         student_name: str,
         certificate_type: str,
+        campus_telNo: str | None = None,
     ):
         subject = f"Your Certificate is Ready for Pickup – {reference_number}"
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
 
         html_body = f"""
         <!DOCTYPE html>
@@ -448,7 +450,7 @@ class EmailService:
             </div>
 
             <div class="content">
-            <p>Dear {{requestor_name}},</p>
+            <p>Dear {safe_requestor_name},</p>
             <p>Great news! Your certificate request is now <strong style="color: #DE1B1B;">READY FOR PICKUP</strong> at the
                 Registrar's Office.</p>
 
@@ -480,7 +482,7 @@ class EmailService:
                 <div class="card-header">Office Hours</div>
                 <div class="card-content">
                 <p>Monday to Friday: 8:00 AM to 5:00 PM</p>
-                <p><strong>Tel Nos.:</strong> {{campus_telNo}}</p>
+                <p><strong>Tel Nos.:</strong> {contact_phone}</p>
                 </div>
             </div>
             </div>
@@ -499,7 +501,7 @@ class EmailService:
         text_body = f"""
         Your Certificate is Ready for Pickup!
 
-        Dear {requestor_name},
+        Dear {safe_requestor_name},
 
         Your certificate request is now ready for pickup at the Registrar's Office.
 
@@ -531,4 +533,218 @@ class EmailService:
             return True
         except Exception as e:
             print(f"❌ Failed to send ready-for-release email: {e}")
+            return False
+
+    async def send_payment_missing_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        request_cost: str | float | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+    ):
+        subject = f"Payment Required Before Release - {reference_number}"
+        payment_amount = (
+            request_cost
+            if request_cost not in {None, ""}
+            else os.getenv("DEFAULT_REQUEST_COST", "0")
+        )
+        contact_email = (
+            campus_email.strip()
+            if campus_email and campus_email.strip()
+            else os.getenv("HELP_EMAIL", "registrar@school.edu")
+        )
+        contact_phone = (campus_telNo or "").strip() or os.getenv(
+            "HELP_PHONE", "(043) 425-0139"
+        )
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+        <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
+        </head>
+
+        <body>
+
+        <div class="container">
+            <div class="header">
+            <strong>Payment Required</strong>
+            </div>
+
+            <div class="content">
+            <p>Dear {safe_requestor_name},</p>
+            <p>We attempted to move your request to <strong>For Releasing</strong>, but the system did not detect a payment
+                for this request. Please settle the payment at the cashier and make sure the <strong>reference number</strong>
+                is used as the <strong>purpose</strong> of payment.</p>
+
+
+
+            <div class="request-card">
+                <div class="card-header">Request Summary</div>
+                <div class="card-content">
+                <p><strong>Reference Number:</strong> <span class="variable"> {reference_number}</span></p>
+                <p><strong>Certificate for:</strong> {student_name}</p>
+                <p><strong>Submitted Type:</strong> {certificate_type}</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Payment Instructions</div>
+                <div class="card-content">
+                <p style="text-align: center;">You will pay a total of <strong>Php {payment_amount}</strong>.</p>
+                <p>Step 1: Proceed to the Cashier's Office and state your purpose.</p>
+                <p>Step 2: Provide your <strong>Reference Number</strong> to the cashier so it can be recorded as the purpose
+                    of payment.</p>
+                <p>Step 3: Wait for an email confirmation notifying you that your certificate is ready for pickup.</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Need Help?</div>
+                <div class="card-content">
+                <p><strong>Email:</strong> <span class="variable">{contact_email}</span></p>
+                <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                </div>
+            </div>
+            </div>
+
+            <div class="footer">
+            <p>This is an automated email. Please do not reply.<br>
+                © 2024 Certify System. All rights reserved.</p>
+            </div>
+        </div>
+
+        </body>
+
+        </html>
+        """
+
+        text_body = f"""
+        Payment Required Before Release
+
+        Dear {safe_requestor_name},
+        We cannot move your request to For Releasing because no payment was detected.
+
+        Reference No.: {reference_number}
+        Student Name: {student_name}
+        Certificate Type: {certificate_type}
+        Amount Due: Php {payment_amount}
+
+        Please proceed to the cashier and use your Reference Number as the purpose of payment.
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"✅ Payment-missing email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to send payment-missing email: {e}")
             return False

@@ -145,6 +145,13 @@ const OdrNewRequest = () => {
 
     try {
       setLoading(true);
+      const parsedCost = parseUnitCost(selectedUnitCost);
+
+      if (parsedCost === null) {
+        setError("Please select a document type so the unit cost can be computed.");
+        setLoading(false);
+        return;
+      }
 
       const requestData = {
         certificate_type_id: selectedCertType.id,
@@ -160,7 +167,7 @@ const OdrNewRequest = () => {
         major: savedFormData.major || null,
         year_graduated: savedFormData.yearGraduated || null,
         signature_data: signatureData.split(",")[1],
-        request_cost: parseUnitCost(selectedUnitCost),
+        request_cost: parsedCost,
       };
 
       const response = await requestService.createRequest(requestData);

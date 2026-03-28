@@ -22,7 +22,8 @@ from app.schemas.certificate_request import (
 from app.services.request_service import (
     update_request_status,
     update_student_data,
-    add_note_to_request
+    add_note_to_request,
+    generate_verification_token,
 )
 from app.models.audit_log import AuditLog
 from app.schemas.certificate_request import StatusUpdateRequest, StudentDataUpdate
@@ -137,8 +138,8 @@ async def create_certificate_request(
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
         request_cost=request_data.request_cost,
-        verification_token=None,
-        status=RequestStatus.PENDING
+        verification_token=generate_verification_token(),
+        status=RequestStatus.APPROVED
     )
     
     # Save to database
@@ -434,7 +435,7 @@ def verify_certificate(
         )
     
     # Check if certificate is in valid state
-    if request.status not in [RequestStatus.FOR_RELEASING, RequestStatus.COMPLETED]:
+    if request.status not in [RequestStatus.FOR_RELEASING, RequestStatus.RELEASED]:
         return CertificateVerificationResponse(
             is_valid=False,
             message="This certificate is not yet released or has been revoked."
@@ -449,9 +450,9 @@ def verify_certificate(
         status=request.status.value
     )
 
-# Endpoint 12: Mark as completed (when QR is scanned at release)
-@router.post("/{request_id}/complete", response_model=CertificateRequestDetail)
-async def mark_as_completed(         
+# Endpoint 12: Mark as released (when QR is scanned at release)
+@router.post("/{request_id}/release", response_model=CertificateRequestDetail)
+async def mark_as_released(
     request_id: int,
     user_name: str = "Registrar",
     db: Session = Depends(get_db)
@@ -459,7 +460,7 @@ async def mark_as_completed(
     updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
-        new_status=RequestStatus.COMPLETED,
+        new_status=RequestStatus.RELEASED,
         user_name=user_name,
         notes="Certificate released to student"
     )

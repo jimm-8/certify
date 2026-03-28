@@ -29,12 +29,14 @@ class CertificateDependencyEngine:
         "certificationofearnedunits": "CERTIFICATE_OF_EARNED_UNITS",
         "certificateofearnedunits": "CERTIFICATE_OF_EARNED_UNITS",
         "certificationofenglishmedium": "CERTIFICATE_OF_ENGLISH_MEDIUM",
+        "certificateofenglishmedium": "CERTIFICATE_OF_ENGLISH_MEDIUM",
         "certificationofcompletedacademicrequirements": "CERTIFICATE_OF_COMPLETED_ACAD_REQUIREMENTS",
         "certificationofhonorgraduate": "CERTIFICATE_OF_HONOR_GRADUATE",
         "certificateofcoursedescription": "CERTIFICATE_OF_COURSE_DESCRIPTION",
         "certificateofidissuance": "CERTIFICATE_OF_ID_ISSUANCE",
         "certificateofnstpserialnumber": "CERTIFICATE_OF_NSTP_SERIAL_NUMBER",
         "certificationofgwa": "CERTIFICATE_OF_GWA",
+        "certificateofgwa": "CERTIFICATE_OF_GWA",
         "certificateoftransfercredentials": "CERTIFICATE_OF_TRANSFER_CREDENTIALS",
         "certificationofgrades": "CERTIFICATION_OF_GRADES",
         "certificateofgradingsystem": "CERTIFICATION_OF_GRADES",
@@ -306,7 +308,13 @@ class CertificateDependencyEngine:
         if certificate_type in CertificateDependencyEngine.CERTIFICATE_DEPENDENCIES:
             return certificate_type
         normalized = normalize_certificate_name(certificate_type)
-        return CertificateDependencyEngine.TYPE_ALIASES.get(normalized, certificate_type)
+        if normalized in CertificateDependencyEngine.TYPE_ALIASES:
+            return CertificateDependencyEngine.TYPE_ALIASES[normalized]
+        if "gwa" in normalized:
+            return "CERTIFICATE_OF_GWA"
+        if "englishmedium" in normalized:
+            return "CERTIFICATE_OF_ENGLISH_MEDIUM"
+        return certificate_type
 
     @staticmethod
     def _resolve_versioned_key(

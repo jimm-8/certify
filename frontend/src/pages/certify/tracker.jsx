@@ -59,19 +59,19 @@ const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
   FOR_RELEASING: "bg-purple-100 text-purple-700",
-  REJECTED: "bg-red-100 text-red-600",
+  RELEASED: "bg-gray-100 text-gray-600",
 };
 
 const statusLabels = {
   APPROVED: "Approved",
   PROCESSING: "Processing",
   FOR_RELEASING: "For Releasing",
-  REJECTED: "Rejected",
+  RELEASED: "Released",
 };
 
 const bulkStatusTarget = {
   PROCESSING: "FOR_RELEASING",
-  FOR_RELEASING: "COMPLETED",
+  FOR_RELEASING: "RELEASED",
 };
 
 const Tracker = () => {
@@ -147,7 +147,7 @@ const Tracker = () => {
       matchesType &&
       matchesProgram &&
       r.status !== "PENDING" &&
-      r.status !== "COMPLETED"
+      r.status !== "RELEASED"
     );
   });
 
@@ -164,7 +164,13 @@ const Tracker = () => {
       setStatusToast({ type: "loading", message: "Updating status..." });
       const newStatus =
         row.status === "APPROVED" ? "PROCESSING" : "FOR_RELEASING";
-      await requestService.updateStatus(row.id, newStatus);
+      const updated = await requestService.updateStatus(row.id, newStatus);
+      setRequests((prev) =>
+        prev.map((item) => (item.id === row.id ? updated : item)),
+      );
+      if (selectedRequest?.id === row.id) {
+        setSelectedRequest(updated);
+      }
       fetchRequests();
       setStatusToast({ type: "success", message: "Status updated." });
     } catch (error) {
@@ -191,9 +197,7 @@ const Tracker = () => {
       await Promise.all(
         filteredRequests
           .filter((r) => r.status === bulkStatus)
-          .map((r) =>
-            requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus]),
-          ),
+          .map((r) => requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus])),
       );
       setBulkModalOpen(false);
       setBulkStatus("");

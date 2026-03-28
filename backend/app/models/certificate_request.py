@@ -10,8 +10,7 @@ class RequestStatus(str, enum.Enum):
     APPROVED = "APPROVED"
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
-    COMPLETED = "COMPLETED"
-    REJECTED = "REJECTED"
+    RELEASED = "RELEASED"
 
 # Certificate types table
 class CertificateType(Base):
