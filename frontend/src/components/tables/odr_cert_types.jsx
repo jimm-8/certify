@@ -14,6 +14,15 @@ const OdrCertTypes = ({
   const [selectedCerts, setSelectedCerts] = useState({});
   const [certificationChecked, setCertificationChecked] = useState(false);
 
+  const transferCredentialsName = "Certificate of Transfer Credentials";
+
+  const getTransferCredentialsType = () =>
+    certificateTypes.find(
+      (c) =>
+        String(c.name || "").trim().toLowerCase() ===
+        transferCredentialsName.toLowerCase()
+    );
+
   useEffect(() => {
     const fetchCertificateTypes = async () => {
       setLoading(true);
@@ -47,6 +56,19 @@ const OdrCertTypes = ({
     if (row.requested_documents === "Certification") {
       setCertificationChecked((prev) => !prev);
       if (!newChecked) {
+        onCertTypeSelect(null);
+      }
+    }
+
+    if (row.requested_documents === transferCredentialsName) {
+      if (newChecked) {
+        const transferType = getTransferCredentialsType();
+        if (transferType) onCertTypeSelect(transferType);
+      } else if (
+        selectedCertType?.name &&
+        String(selectedCertType.name).toLowerCase() ===
+          transferCredentialsName.toLowerCase()
+      ) {
         onCertTypeSelect(null);
       }
     }
@@ -210,11 +232,17 @@ const OdrCertTypes = ({
               required // ✅ Add required attribute
             >
               <option value="">Select a certificate type</option>
-              {certificateTypes.map((cert) => (
-                <option key={cert.id} value={cert.id}>
-                  {cert.name}
-                </option>
-              ))}
+              {certificateTypes
+                .filter(
+                  (cert) =>
+                    String(cert.name || "").trim().toLowerCase() !==
+                    transferCredentialsName.toLowerCase()
+                )
+                .map((cert) => (
+                  <option key={cert.id} value={cert.id}>
+                    {cert.name}
+                  </option>
+                ))}
             </select>
           )}
         </div>
