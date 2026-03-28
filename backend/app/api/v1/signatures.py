@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.authorized_official import AuthorizedOfficial
 from app.repositories import AuthorizedOfficialRepository
 from app.schemas.signature import SignatureCreate, SignatureResponse, SignatureUpdate
+from app.api.v1.auth import require_permissions
 
 router = APIRouter(prefix="/signatures", tags=["Signatures"])
 
@@ -22,7 +23,8 @@ async def upload_signature(
     title: str = Form(...),
     campus_id: Optional[int] = Form(None),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Upload a signature image
@@ -110,7 +112,8 @@ async def upload_signature(
 @router.get("/", response_model=List[SignatureResponse])
 def get_all_signatures(
     active_only: bool = True,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get all signatures
@@ -131,7 +134,8 @@ def get_all_signatures(
 @router.get("/{signature_id}", response_model=SignatureResponse)
 def get_signature(
     signature_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get a specific signature by ID
@@ -152,7 +156,8 @@ def get_signature(
 def update_signature(
     signature_id: int,
     update_data: SignatureUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Update signature details
@@ -190,7 +195,8 @@ def update_signature(
 def delete_signature(
     signature_id: int,
     hard_delete: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Delete a signature

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Chart, registerables } from "chart.js";
 import dashboardService from "../../services/dashboardService";
 import "./dashboard.css";
@@ -62,13 +63,13 @@ const PrintIcon = ({ color = "#2DC78D" }) => (
     <rect x="6" y="14" width="12" height="8" />
   </svg>
 );
-const CheckIcon = () => (
+const CheckIcon = ({ color = "#2DC78D" }) => (
   <svg
     width="18"
     height="18"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#2DC78D"
+    stroke={color}
     strokeWidth="2"
   >
     <circle cx="12" cy="12" r="10" />
@@ -139,34 +140,45 @@ const WarnIcon = ({ size = 14 }) => (
 // ─── DONUT CHART ─────────────────────────────────────────────────────────────
 function DonutChart({ data = [0, 0, 0, 0, 0] }) {
   const ref = useRef(null);
+  const chartRef = useRef(null);
   useEffect(() => {
-    const chart = new Chart(ref.current, {
-      type: "doughnut",
-      data: {
-        datasets: [
-          {
-            data,
-            backgroundColor: [
-              "#7C6FF7",
-              "#F4A837",
-              "#4899F7",
-              "#2DC78D",
-              "#F74242",
-            ],
-            borderWidth: 3,
-            borderColor: "#fff",
-            hoverOffset: 4,
-          },
-        ],
-      },
-      options: {
-        cutout: "68%",
-        plugins: { legend: { display: false } },
-        responsive: true,
-        maintainAspectRatio: true,
-      },
-    });
-    return () => chart.destroy();
+    if (!ref.current) return;
+    if (!chartRef.current) {
+      chartRef.current = new Chart(ref.current, {
+        type: "doughnut",
+        data: {
+          datasets: [
+            {
+              data,
+              backgroundColor: [
+                "#7C6FF7",
+                "#F4A837",
+                "#4899F7",
+                "#2DC78D",
+                "#F74242",
+              ],
+              borderWidth: 3,
+              borderColor: "#fff",
+              hoverOffset: 4,
+            },
+          ],
+        },
+        options: {
+          cutout: "68%",
+          plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: true,
+          animation: { duration: 0 },
+        },
+      });
+    } else {
+      chartRef.current.data.datasets[0].data = data;
+      chartRef.current.update();
+    }
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
   }, [data]);
   return <canvas ref={ref} width={160} height={160} />;
 }
@@ -223,9 +235,9 @@ function LineChart({ trend = [] }) {
             borderWidth: 2,
           },
           {
-            label: "Completed",
+            label: "Released",
             data: trend.length
-              ? trend.map((d) => d.completed)
+              ? trend.map((d) => d.released)
               : [0, 0, 0, 0, 0, 0, 0, 0, 0],
             borderColor: "#F4A837",
             backgroundColor: "rgba(244,168,55,0.06)",
@@ -233,19 +245,6 @@ function LineChart({ trend = [] }) {
             fill: false,
             pointRadius: 4,
             pointBackgroundColor: "#F4A837",
-            borderWidth: 2,
-          },
-          {
-            label: "Rejected",
-            data: trend.length
-              ? trend.map((d) => d.rejected)
-              : [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            borderColor: "#F74242",
-            backgroundColor: "rgba(247,66,66,0.06)",
-            tension: 0.4,
-            fill: false,
-            pointRadius: 4,
-            pointBackgroundColor: "#F74242",
             borderWidth: 2,
           },
         ],
@@ -275,10 +274,29 @@ function LineChart({ trend = [] }) {
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 export default function CertifyDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [dashboardData, setDashboardData] = useState(null);
+  const [statusSummary, setStatusSummary] = useState(null);
+  const [trendSummary, setTrendSummary] = useState(null);
+  const [historySummary, setHistorySummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [trendMenuOpen, setTrendMenuOpen] = useState(false);
+  const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
+  const [statusPeriod, setStatusPeriod] = useState("all");
+  const [trendPeriod, setTrendPeriod] = useState("last_7_days");
+  const [historyPeriod, setHistoryPeriod] = useState("all");
+
+  const periodOptions = [
+    { value: "today", label: "Today" },
+    { value: "last_7_days", label: "Last 7 days" },
+    { value: "last_30_days", label: "Last 30 days" },
+    { value: "this_month", label: "This month" },
+    { value: "this_year", label: "This year" },
+    { value: "all", label: "All time" },
+  ];
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -295,6 +313,18 @@ export default function CertifyDashboard() {
 
     fetchDashboard();
   }, []);
+
+  useEffect(() => {
+    dashboardService.getSummary(statusPeriod).then(setStatusSummary).catch(() => {});
+  }, [statusPeriod]);
+
+  useEffect(() => {
+    dashboardService.getSummary(trendPeriod).then(setTrendSummary).catch(() => {});
+  }, [trendPeriod]);
+
+  useEffect(() => {
+    dashboardService.getSummary(historyPeriod).then(setHistorySummary).catch(() => {});
+  }, [historyPeriod]);
   const tabs = [
     { name: "Dashboard", icon: <CalIcon /> },
     { name: "Checking of Request", icon: <LockIcon /> },
@@ -319,8 +349,9 @@ export default function CertifyDashboard() {
 
   const totals = dashboardData?.totals || {};
   const changes = dashboardData?.changes || {};
-  const breakdown = dashboardData?.status_breakdown || {};
-  const trend = dashboardData?.requests_over_time || [];
+  const breakdown =
+    statusSummary?.status_breakdown || dashboardData?.status_breakdown || {};
+  const trend = trendSummary?.requests_over_time || dashboardData?.requests_over_time || [];
 
   const formatChangeBadge = (change) => {
     if (!change || change.direction === "flat") return "";
@@ -339,13 +370,6 @@ export default function CertifyDashboard() {
       icon: <CalIcon />,
     },
     {
-      num: String(totals.pending_for_checking || 0),
-      label: "Pending for Checking",
-      badge: "",
-      iconBg: "#FFF3E8",
-      icon: <SearchIcon />,
-    },
-    {
       num: String(totals.for_approval_review || 0),
       label: "For Approval / Review",
       badge: "",
@@ -361,19 +385,19 @@ export default function CertifyDashboard() {
       icon: <PrintIcon />,
     },
     {
-      num: String(totals.completed_this_month || 0),
-      label: "Completed This Month",
-      badge: formatChangeBadge(changes.completed_this_month),
-      badgeCls: changeClass(changes.completed_this_month),
-      iconBg: "#E5FAF2",
-      icon: <CheckIcon />,
+      num: String(totals.released_this_month || 0),
+      label: "Released This Month",
+      badge: formatChangeBadge(changes.released_this_month),
+      badgeCls: changeClass(changes.released_this_month),
+      iconBg: "#FFF3E8",
+      icon: <CheckIcon color="#F4A837" />,
     },
     {
-      num: String(totals.rejected || 0),
-      label: "Rejected",
+      num: totals.avg_processing_time_label || "—",
+      label: "Avg Processing Time",
       badge: "",
-      iconBg: "#FFEBEB",
-      icon: <XIcon />,
+      iconBg: "#EEF2FF",
+      icon: <ClockIcon />,
     },
   ];
 
@@ -385,16 +409,14 @@ export default function CertifyDashboard() {
       label: "For Releasing",
       val: breakdown.for_releasing || 0,
     },
-    { color: "#2DC78D", label: "Completed", val: breakdown.completed || 0 },
-    { color: "#F74242", label: "Rejected", val: breakdown.rejected || 0 },
+    { color: "#2DC78D", label: "Released", val: breakdown.released || 0 },
   ];
 
   const chartLegend = [
     { color: "#7C6FF7", label: "Processing" },
     { color: "#F4A837", label: "For Review" },
     { color: "#4899F7", label: "For Releasing" },
-    { color: "#2DC78D", label: "Completed" },
-    { color: "#F74242", label: "Rejected" },
+    { color: "#2DC78D", label: "Released" },
   ];
 
   const tableRows = (dashboardData?.monthly_overview || []).map((r) => ({
@@ -408,8 +430,8 @@ export default function CertifyDashboard() {
           ? "review"
           : r.status === "FOR_RELEASING"
             ? "releasing"
-            : r.status === "COMPLETED"
-              ? "completed"
+            : r.status === "RELEASED"
+              ? "released"
               : "",
   }));
 
@@ -417,7 +439,7 @@ export default function CertifyDashboard() {
     processing: "Processing",
     review: "For Review",
     releasing: "For Releasing",
-    completed: "Completed",
+    released: "Released",
   };
 
   const lbRows = (dashboardData?.performance_leaderboard || []).map((r, i) => ({
@@ -432,7 +454,8 @@ export default function CertifyDashboard() {
     val: (r.status || "").replace(/_/g, " "),
   }));
 
-  const certHistory = dashboardData?.certificate_history || [];
+  const certHistory =
+    historySummary?.certificate_history || dashboardData?.certificate_history || [];
   const maxHistory = Math.max(...certHistory.map((x) => x.count), 1);
   const totalProcessed = certHistory.reduce((sum, x) => sum + x.count, 0);
 
@@ -483,7 +506,30 @@ export default function CertifyDashboard() {
           <div className="c-card">
             <div className="c-card-header">
               <span className="c-card-title">Request Status</span>
-              <span className="c-dots">···</span>
+              <div className="relative">
+                <button
+                  className="c-dots"
+                  onClick={() => setStatusMenuOpen((v) => !v)}
+                >
+                  ···
+                </button>
+                {statusMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    {periodOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setStatusPeriod(opt.value);
+                          setStatusMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="c-donut-wrap">
               <div className="c-donut-canvas">
@@ -506,9 +552,6 @@ export default function CertifyDashboard() {
                   <span>
                     ● Processing <b>{breakdown.processing || 0}</b>
                   </span>
-                  <span>
-                    ● Rejected <b>{breakdown.rejected || 0}</b>
-                  </span>
                 </div>
               </div>
             </div>
@@ -518,7 +561,30 @@ export default function CertifyDashboard() {
           <div className="c-card">
             <div className="c-card-header">
               <span className="c-card-title">Requests Over Time</span>
-              <span className="c-dots">···</span>
+              <div className="relative">
+                <button
+                  className="c-dots"
+                  onClick={() => setTrendMenuOpen((v) => !v)}
+                >
+                  ···
+                </button>
+                {trendMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    {periodOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setTrendPeriod(opt.value);
+                          setTrendMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="c-line-wrap">
               <LineChart trend={trend} />
@@ -531,17 +597,6 @@ export default function CertifyDashboard() {
                     style={{ background: c.color }}
                   />
                   {c.label}
-                  {c.label === "Rejected" && (
-                    <span
-                      style={{
-                        color: "#F74242",
-                        fontWeight: 600,
-                        marginLeft: 2,
-                      }}
-                    >
-                      ◉ 4.6%
-                    </span>
-                  )}
                 </div>
               ))}
             </div>
@@ -569,7 +624,7 @@ export default function CertifyDashboard() {
                   <span
                     style={{ fontSize: 11, color: "#8892A4", marginLeft: 6 }}
                   >
-                    | Last poit year · past Month ›
+                    | Last year · past month ›
                   </span>
                 </div>
               </div>
@@ -607,7 +662,7 @@ export default function CertifyDashboard() {
                 pending for over 5 days
               </div>
               <span style={{ fontWeight: 400, fontSize: 12, color: "#8892A4" }}>
-                Settings ⚙
+                &nbsp;
               </span>
             </div>
           </div>
@@ -616,30 +671,13 @@ export default function CertifyDashboard() {
           <div className="c-lb-card">
             <div className="c-lb-section">
               <div className="c-card-header" style={{ marginBottom: 10 }}>
-                <span className="c-card-title">Performance Leaderboard</span>
-                <span className="c-dots">···</span>
-              </div>
-              <div className="c-lb-row c-lb-head">
-                <span>SR Code</span>
-                <span>Name</span>
-                <span>Status ›</span>
-              </div>
-              {lbRows.map((r, i) => (
-                <div className="c-lb-row" key={i}>
-                  <span className="c-lb-code">{r.code}</span>
-                  <span>{r.name}</span>
-                  <span
-                    style={{ fontSize: 12, fontWeight: 600, color: "#1A1D2E" }}
-                  >
-                    {r.val}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="c-lb-section">
-              <div className="c-card-header" style={{ marginBottom: 10 }}>
                 <span className="c-card-title">Recent Requests</span>
-                <span className="c-view-all">View All ›</span>
+                <button
+                  className="c-view-all"
+                  onClick={() => navigate("/dashboard/requests")}
+                >
+                  View All ›
+                </button>
               </div>
               <div className="c-lb-row c-lb-head">
                 <span>SR Code</span>
@@ -664,7 +702,30 @@ export default function CertifyDashboard() {
           <div className="c-card">
             <div className="c-card-header">
               <span className="c-card-title">Overall History</span>
-              <span className="c-dots">···</span>
+              <div className="relative">
+                <button
+                  className="c-dots"
+                  onClick={() => setHistoryMenuOpen((v) => !v)}
+                >
+                  ···
+                </button>
+                {historyMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    {periodOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setHistoryPeriod(opt.value);
+                          setHistoryMenuOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {certHistory.map((item, i) => {

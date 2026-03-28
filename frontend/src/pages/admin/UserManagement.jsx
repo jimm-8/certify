@@ -3,7 +3,14 @@ import userService from "../../services/userService";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ username: "", email: "", password: "", role: "user", campus_id: null });
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "registrar_staff",
+    campus_id: null,
+    permissions: "",
+  });
   const [error, setError] = useState("");
 
   const fetch = async () => {
@@ -25,7 +32,14 @@ export default function UserManagement() {
     e.preventDefault();
     try {
       await userService.createUser(form);
-      setForm({ username: "", email: "", password: "", role: "user", campus_id: null });
+      setForm({
+        username: "",
+        email: "",
+        password: "",
+        role: "registrar_staff",
+        campus_id: null,
+        permissions: "",
+      });
       fetch();
     } catch (err) {
       setError(err.response?.data || "Failed to create user");
@@ -51,15 +65,24 @@ export default function UserManagement() {
             </div>
             <div className="col-md-2">
               <select name="role" value={form.role} onChange={handleChange} className="form-select">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
                 <option value="superadmin">Superadmin</option>
+                <option value="registrar_head">Registrar Head</option>
+                <option value="registrar_staff">Registrar Staff</option>
               </select>
             </div>
-            <div className="col-md-1">
+            <div className="col-md-2">
               <input name="campus_id" value={form.campus_id || ""} onChange={handleChange} className="form-control" placeholder="Campus ID" />
             </div>
-            <div className="col-md-1">
+            <div className="col-md-3">
+              <input
+                name="permissions"
+                value={form.permissions}
+                onChange={handleChange}
+                className="form-control"
+                placeholder='Permissions JSON (optional)'
+              />
+            </div>
+            <div className="col-md-2">
               <button className="btn btn-primary">Create</button>
             </div>
           </div>

@@ -7,7 +7,6 @@
 }
 .certify {
   font-family: "DM Sans", sans-serif;
-  border: #e5e7eb 1px solid;
   border-radius: 4px;
   color: #1a1d2e;
   min-height: 100vh;
@@ -103,17 +102,18 @@
 
 /* MAIN */
 .c-main {
-  padding: 10px 10px;
+  /* padding: 10px 10px; */
   display: flex;
   flex-direction: column;
   border-radius: 10px;
-  gap: 18px;
+  gap: 12px;
+  padding-bottom: 12px;
 }
 
 /* STATS */
 .c-stats {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
 .c-stat {
@@ -126,6 +126,7 @@
   gap: 12px;
   border: #e5e7eb 1px solid;
   border-radius: 4px;
+  margin-bottom: 0;
 }
 .c-stat-icon {
   width: 36px;
@@ -159,7 +160,7 @@
 .c-mid {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
-  gap: 18px;
+  gap: 12px;
 }
 
 /* CARD */
@@ -167,7 +168,7 @@
   background: white;
   border: #e5e7eb 1px solid;
   border-radius: 4px;
-  padding: 18px;
+  padding: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
 }
 .c-card-header {
@@ -265,7 +266,7 @@
 .c-bottom {
   display: grid;
   grid-template-columns: 1.5fr 1fr 0.7fr;
-  gap: 18px;
+  gap: 12px;
 }
 
 /* TABLE */

@@ -2,10 +2,12 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.api.v1.auth import require_permissions
 from app.repositories import CertificateRequestRepository
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -29,12 +31,52 @@ def _pct_change(current: int, previous: int):
     return {"percent": round(abs(change)), "direction": direction}
 
 
+def _format_duration(seconds: float | None) -> str:
+    if seconds is None:
+        return "—"
+    total_minutes = int(round(seconds / 60))
+    if total_minutes <= 0:
+        return "0m"
+    days, rem = divmod(total_minutes, 60 * 24)
+    hours, minutes = divmod(rem, 60)
+    if days > 0:
+        return f"{days}d {hours}h"
+    if hours > 0:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
+
+
+def _apply_period(requests, period: Optional[str], today):
+    if not period or period == "all":
+        return requests
+    if period == "today":
+        return [r for r in requests if _safe_date(r.created_at) == today]
+    if period == "last_7_days":
+        start = today - timedelta(days=6)
+        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+    if period == "last_30_days":
+        start = today - timedelta(days=29)
+        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+    if period == "this_month":
+        start = today.replace(day=1)
+        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+    if period == "this_year":
+        start = today.replace(month=1, day=1)
+        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+    return requests
+
+
 @router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db)):
+def get_dashboard_summary(
+    period: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("dashboard.read")),
+):
     request_repo = CertificateRequestRepository(db)
     requests = request_repo.query().all()
     now = datetime.now()
     today = now.date()
+    requests = _apply_period(requests, period, today)
     month_start = today.replace(day=1)
     yesterday = today - timedelta(days=1)
     last_month_end = month_start - timedelta(days=1)
@@ -76,6 +118,25 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         and _safe_date(r.created_at)
         and last_month_start <= _safe_date(r.created_at) <= last_month_end
     )
+
+    released_durations = []
+    for r in requests:
+        if r.status != RequestStatus.RELEASED:
+            continue
+        if not r.created_at:
+            continue
+        end_time = r.updated_at or r.created_at
+        try:
+            released_durations.append((end_time - r.created_at).total_seconds())
+        except Exception:
+            pass
+
+    avg_processing_seconds = (
+        sum(released_durations) / len(released_durations)
+        if released_durations
+        else None
+    )
+    avg_processing_time_label = _format_duration(avg_processing_seconds)
 
     status_breakdown = {
         "processing": sum(1 for r in requests if r.status == RequestStatus.PROCESSING),
@@ -176,6 +237,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             "for_approval_review": for_approval_review,
             "ready_for_printing": ready_for_printing,
             "released_this_month": released_this_month,
+            "avg_processing_time_label": avg_processing_time_label,
         },
         "changes": {
             "requests_today": _pct_change(requests_today, requests_yesterday),

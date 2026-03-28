@@ -39,6 +39,7 @@ from app.schemas.audit import AuditLogResponse, RequestNoteCreate
 from app.schemas.certificate_request import CertificateVerificationResponse
 
 from app.services.certificate_service import generate_certificate_pdf
+from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
 
 # Create router
@@ -240,7 +241,8 @@ def get_all_requests(
     skip: int = 0,
     limit: int = 10,
     status_filter: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     request_repo = CertificateRequestRepository(db)
     query = request_repo.query()
@@ -262,7 +264,8 @@ def get_all_requests(
 @router.get("/{request_id}", response_model=CertificateRequestDetail)
 def get_request_detail(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get detailed information about a specific request
@@ -284,7 +287,8 @@ def get_request_detail(
 async def update_status(                         
     request_id: int,
     status_update: StatusUpdateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
 ):
     # Convert schema enum to model enum to satisfy transition checks
     new_status = RequestStatus(status_update.new_status.value)
@@ -302,7 +306,8 @@ async def update_status(
 def update_request_student_data(
     request_id: int,
     data_update: StudentDataUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_data")),
 ):
     """
     Update student information on a request
@@ -339,7 +344,8 @@ def update_request_student_data(
 def create_note(
     request_id: int,
     note_data: RequestNoteCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.notes")),
 ):
     """
     Add a note/comment to a request
@@ -361,7 +367,8 @@ def create_note(
 @router.get("/{request_id}/notes", response_model=list[AuditLogResponse])
 def get_request_notes(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get all notes/comments for a request
@@ -376,7 +383,8 @@ def get_request_notes(
 @router.get("/{request_id}/audit-logs", response_model=list[AuditLogResponse])
 def get_request_audit_logs(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get complete audit trail for a request
@@ -394,7 +402,8 @@ def get_request_audit_logs(
 def get_all_audit_logs(
     skip: int = 0,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get all audit logs across all requests
@@ -461,7 +470,8 @@ def verify_certificate(
 async def mark_as_released(
     request_id: int,
     user_name: str = "Registrar",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.release")),
 ):
     updated_request = await update_request_status(  
         db=db,
@@ -477,7 +487,8 @@ async def mark_as_released(
 def generate_certificate(
     request_id: int,
     user_name: str = "System",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Generate PDF certificate for a request
@@ -504,7 +515,8 @@ def generate_certificate(
 @router.get("/{request_id}/download-certificate")
 def download_certificate(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Download the generated certificate PDF

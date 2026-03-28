@@ -249,6 +249,8 @@ class PermissionRepository(BaseRepository[Permission]):
     def __init__(self, db: Session):
         super().__init__(db, Permission)
 
+    def get_by_name(self, name: str):
+        return self.query().filter(Permission.name == name).first()
 
 class ProgramRepository(BaseRepository[Program]):
     def __init__(self, db: Session):
@@ -264,11 +266,15 @@ class RoleRepository(BaseRepository[Role]):
     def __init__(self, db: Session):
         super().__init__(db, Role)
 
+    def get_by_name(self, name: str):
+        return self.query().filter(Role.name == name).first()
 
 class RolePermissionRepository(BaseRepository[RolePermission]):
     def __init__(self, db: Session):
         super().__init__(db, RolePermission)
 
+    def for_role(self, role_id: int):
+        return self.query().filter(RolePermission.role_id == role_id)
 
 class StudentRepository(BaseRepository[Student]):
     def __init__(self, db: Session):
@@ -317,3 +323,7 @@ class UserRepository(BaseRepository[User]):
 class UserRoleRepository(BaseRepository[UserRole]):
     def __init__(self, db: Session):
         super().__init__(db, UserRole)
+
+    def get_role_id_for_user(self, user_id: int):
+        row = self.query().filter(UserRole.user_id == user_id).first()
+        return row.role_id if row else None

@@ -15,13 +15,14 @@ from app.schemas.payment import (
 from app.services.request_service import generate_or_number, update_request_status
 from app.repositories import CertificateRequestRepository, PaymentRepository
 import anyio
+from app.api.v1.auth import require_permissions
 
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
 @router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
-def create_payment(payload: PaymentCreate, db: Session = Depends(get_db)):
+def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dict = Depends(require_permissions("payments.create"))):
     request_repo = CertificateRequestRepository(db)
     payment_repo = PaymentRepository(db)
     request = request_repo.get_by_id(payload.request_id)
