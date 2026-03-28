@@ -1,0 +1,20 @@
+[
+  {
+    "program_code": "BSEE",
+    "name": "BSEE Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  },
+  {
+    "program_code": "BSCpE",
+    "name": "BSCpE Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSME",
+    "name": "BSME Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  }
+]

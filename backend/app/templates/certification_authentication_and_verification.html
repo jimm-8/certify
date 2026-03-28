@@ -389,7 +389,14 @@
         </div>
       </div>
       <div class="signature">
-        <div class="signature-line"></div>
+        {% if signature_path %}
+          <img
+            src="{{ signature_path }}"
+            alt="Signature"
+            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
+          />
+          {% endif %}
+<div class="signature-line"></div>
         <strong>{{ name_official }}</strong><br />
         {{ official_title }}
       </div>

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Engineering",
+    "code": "COE"
+  },
+  {
+    "name": "Architecture, Fine Arts and Design",
+    "code": "CAFAD"
+  },
+  {
+    "name": "Informatics and Computing Sciences",
+    "code": "CICS"
+  },
+  {
+    "name": "Engineering Technology",
+    "code": "CET"
+  }
+]

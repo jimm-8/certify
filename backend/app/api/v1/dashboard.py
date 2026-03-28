@@ -51,13 +51,10 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     ready_for_printing = sum(
         1 for r in requests if r.status == RequestStatus.FOR_RELEASING
     )
-    completed_this_month = sum(
+    released_this_month = sum(
         1
         for r in requests
-        if r.status == RequestStatus.COMPLETED and _safe_date(r.created_at) and _safe_date(r.created_at) >= month_start
-    )
-    rejected_total = sum(
-        1 for r in requests if r.status == RequestStatus.REJECTED
+        if r.status == RequestStatus.RELEASED and _safe_date(r.created_at) and _safe_date(r.created_at) >= month_start
     )
 
     requests_yesterday = sum(
@@ -70,10 +67,10 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         if r.status == RequestStatus.FOR_RELEASING and _safe_date(r.created_at) == yesterday
     )
 
-    completed_last_month = sum(
+    released_last_month = sum(
         1
         for r in requests
-        if r.status == RequestStatus.COMPLETED
+        if r.status == RequestStatus.RELEASED
         and _safe_date(r.created_at)
         and last_month_start <= _safe_date(r.created_at) <= last_month_end
     )
@@ -82,8 +79,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         "processing": sum(1 for r in requests if r.status == RequestStatus.PROCESSING),
         "for_review": for_approval_review,
         "for_releasing": ready_for_printing,
-        "completed": sum(1 for r in requests if r.status == RequestStatus.COMPLETED),
-        "rejected": rejected_total,
+        "released": sum(1 for r in requests if r.status == RequestStatus.RELEASED),
     }
 
     recent = sorted(
@@ -142,8 +138,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             "processing": 0,
             "for_review": 0,
             "for_releasing": 0,
-            "completed": 0,
-            "rejected": 0,
+            "released": 0,
         }
     )
     last_days = [today - timedelta(days=i) for i in range(8, -1, -1)]
@@ -159,10 +154,8 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             day_buckets[created]["for_review"] += 1
         elif status_val == RequestStatus.FOR_RELEASING:
             day_buckets[created]["for_releasing"] += 1
-        elif status_val == RequestStatus.COMPLETED:
-            day_buckets[created]["completed"] += 1
-        elif status_val == RequestStatus.REJECTED:
-            day_buckets[created]["rejected"] += 1
+        elif status_val == RequestStatus.RELEASED:
+            day_buckets[created]["released"] += 1
 
     requests_over_time = [
         {
@@ -180,13 +173,12 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             "pending_for_checking": pending_for_checking,
             "for_approval_review": for_approval_review,
             "ready_for_printing": ready_for_printing,
-            "completed_this_month": completed_this_month,
-            "rejected": rejected_total,
+            "released_this_month": released_this_month,
         },
         "changes": {
             "requests_today": _pct_change(requests_today, requests_yesterday),
             "ready_for_printing": _pct_change(ready_for_printing, ready_yesterday),
-            "completed_this_month": _pct_change(completed_this_month, completed_last_month),
+            "released_this_month": _pct_change(released_this_month, released_last_month),
         },
         "status_breakdown": status_breakdown,
         "requests_over_time": requests_over_time,

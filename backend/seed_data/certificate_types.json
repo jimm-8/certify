@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Certification, Authentication and Verification",
+    "description": "Official verification and authentication of academic documents for local or international use, commonly required for employment, further studies, or legal purposes.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of Graduation",
+    "description": "Certifies that a student has successfully completed all academic requirements and has officially graduated from the institution.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of Enrolment",
+    "description": "Confirms that a student is currently enrolled in a specific academic term, including program and year level details.",
+    "is_active": 1
+  },
+  {
+    "name": "Certification of Earned Units",
+    "description": "Indicates the total number of academic units a student has successfully completed in their program.",
+    "is_active": 1
+  },
+  {
+    "name": "Certification of Completed Academic Requirements",
+    "description": "Certifies that a student has fulfilled all academic requirements but may not yet have formally graduated.",
+    "is_active": 1
+  },
+  {
+    "name": "Certification of Honor Graduate",
+    "description": "Confirms that a graduate has received academic honors such as cum laude, magna cum laude, or summa cum laude.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of Course Description",
+    "description": "Provides detailed descriptions of courses taken, including topics covered, often required for credit transfer or evaluation abroad.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of ID Issuance",
+    "description": "Certifies that a student or alumnus has been issued an official school identification card.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of NSTP Serial Number",
+    "description": "Confirms the assigned NSTP serial number of a student, typically required for compliance with national service records.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of GWA",
+    "description": "Certifies the General Weighted Average (GWA) of a student for a specific period or entire academic program.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of Transfer Credentials",
+    "description": "Indicates that a student is eligible to transfer to another institution and has no outstanding obligations.",
+    "is_active": 1
+  },
+  {
+    "name": "Certification of Grades",
+    "description": "Provides an official record of a student’s grades for a specific term or entire academic history.",
+    "is_active": 1
+  },
+  {
+    "name": "Certificate of English Medium",
+    "description": "Certifies that the medium of instruction used in the student’s academic program is English, often required for international studies or employment.",
+    "is_active": 1
+  }
+]

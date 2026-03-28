@@ -19,12 +19,21 @@ const statusConfig = {
     text: "text-yellow-700",
     ring: "ring-yellow-200",
   },
+  APPROVED: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    ring: "ring-blue-200",
+  },
   PROCESSING: {
     bg: "bg-blue-50",
     text: "text-blue-700",
     ring: "ring-blue-200",
   },
-  READY: { bg: "bg-green-50", text: "text-green-700", ring: "ring-green-200" },
+  FOR_RELEASING: {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    ring: "ring-purple-200",
+  },
   RELEASED: { bg: "bg-gray-100", text: "text-gray-600", ring: "ring-gray-200" },
 };
 

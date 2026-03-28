@@ -1,0 +1,48 @@
+import json
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DB_NAME = os.getenv("DB_NAME", "certify-system")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
+DATA_PATH = os.path.join(os.path.dirname(__file__), "certificate_types.json")
+
+with open(DATA_PATH, "r", encoding="utf-8") as f:
+    items = json.load(f)
+
+conn = psycopg2.connect(
+    dbname=DB_NAME,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=DB_PORT,
+)
+
+try:
+    with conn:
+        with conn.cursor() as cur:
+            inserted = 0
+            for item in items:
+                cur.execute(
+                    """
+                    INSERT INTO certificate_types (name, description, is_active)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (name) DO NOTHING
+                    """,
+                    (
+                        item.get("name"),
+                        item.get("description"),
+                        item.get("is_active", 1),
+                    ),
+                )
+                inserted += 1
+finally:
+    conn.close()
+
+print("Seeded certificate_types:", inserted)

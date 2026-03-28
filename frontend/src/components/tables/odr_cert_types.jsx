@@ -6,6 +6,7 @@ const OdrCertTypes = ({
   selectedOffice,
   onCertTypeSelect,
   selectedCertType,
+  onUnitCostSelect,
 }) => {
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,20 +35,24 @@ const OdrCertTypes = ({
     fetchCertificateTypes();
   }, []);
 
-  const handleCheckboxChange = (certId, documentName) => {
-    const newChecked = !selectedCerts[certId];
+  const handleCheckboxChange = (row) => {
+    const newChecked = !selectedCerts[row.id];
 
     setSelectedCerts((prev) => ({
       ...prev,
-      [certId]: !prev[certId],
+      [row.id]: !prev[row.id],
     }));
 
     // Check if "Certification" was clicked
-    if (documentName === "Certification") {
+    if (row.requested_documents === "Certification") {
       setCertificationChecked((prev) => !prev);
       if (!newChecked) {
         onCertTypeSelect(null);
       }
+    }
+
+    if (onUnitCostSelect) {
+      onUnitCostSelect(newChecked ? row.unit_cost : null);
     }
   };
 
@@ -109,7 +114,7 @@ const OdrCertTypes = ({
         <input
           type="checkbox"
           checked={selectedCerts[row.id] || false}
-          onChange={() => handleCheckboxChange(row.id, row.requested_documents)}
+          onChange={() => handleCheckboxChange(row)}
         />
       ),
       width: "80px",

@@ -10,8 +10,7 @@ class RequestStatusEnum(str, Enum):
     APPROVED = "APPROVED"
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
-    COMPLETED = "COMPLETED"
-    REJECTED = "REJECTED"
+    RELEASED = "RELEASED"
 
 # Schema for certificate type (what we send back)
 class CertificateDependencyField(BaseModel):
@@ -56,6 +55,9 @@ class CertificateRequestCreate(BaseModel):
     program: str = Field(..., min_length=2, max_length=255, description="Program/Course")
     major: Optional[str] = Field(None, max_length=255, description="Major (optional)")
     year_graduated: Optional[str] = Field(None, max_length=10, description="Year graduated")
+
+    # Request cost (unit cost from selected document)
+    request_cost: Optional[float] = Field(None, description="Requested document cost")
     
     # Signature (base64 encoded image data)
     signature_data: Optional[str] = Field(None, description="Base64 encoded signature image")
@@ -75,6 +77,7 @@ class CertificateRequestCreate(BaseModel):
                 "program": "BS Computer Engineering",
                 "major": "Software Engineering",
                 "year_graduated": "2024",
+                "request_cost": 30.00,
                 "signature_data": "base64_image_data_here"
             }
         }
@@ -130,6 +133,7 @@ class CertificateRequestDetail(BaseModel):
     program: str
     major: Optional[str]
     year_graduated: Optional[str]
+    request_cost: Optional[float] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -147,10 +151,6 @@ class StatusUpdateRequest(BaseModel):
     new_status: RequestStatusEnum
     notes: Optional[str] = None
     user_name: Optional[str] = "Registrar"
-    
-    # For rejections
-    rejection_reason: Optional[str] = None
-    rejection_notes: Optional[str] = None
     
     class Config:
         json_schema_extra = {

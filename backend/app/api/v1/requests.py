@@ -10,6 +10,8 @@ import glob
 
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
+from app.models.student import Student
+from app.models.program import Program
 from app.schemas.certificate_request import (
     CertificateRequestCreate,
     CertificateRequestResponse,
@@ -20,12 +22,12 @@ from app.schemas.certificate_request import (
 from app.services.request_service import (
     update_request_status,
     update_student_data,
-    add_note_to_request
+    add_note_to_request,
+    generate_verification_token,
 )
 from app.models.audit_log import AuditLog
-from app.models.certificate_request import RequestNote
 from app.schemas.certificate_request import StatusUpdateRequest, StudentDataUpdate
-from app.schemas.audit import AuditLogResponse, RequestNoteCreate, RequestNoteResponse
+from app.schemas.audit import AuditLogResponse, RequestNoteCreate
 
 from app.schemas.certificate_request import CertificateVerificationResponse
 
@@ -135,8 +137,9 @@ async def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
-        verification_token=None,
-        status=RequestStatus.PENDING
+        request_cost=request_data.request_cost,
+        verification_token=generate_verification_token(),
+        status=RequestStatus.APPROVED
     )
     
     # Save to database
@@ -146,6 +149,25 @@ async def create_certificate_request(
     
     # Send confirmation email
     try:
+        campus_email = None
+        campus_telNo = None
+
+        if request_data.sr_code:
+            student = db.query(Student).filter(Student.sr_code == request_data.sr_code).first()
+        else:
+            student = None
+
+        campus = None
+        if student is not None:
+            campus = student.campus or (student.program.campus if student.program else None)
+        if campus is None and request_data.program:
+            program = db.query(Program).filter(Program.name == request_data.program).first()
+            campus = program.campus if program else None
+
+        if campus is not None:
+            campus_email = campus.campus_email
+            campus_telNo = campus.campus_telNo
+
         email_service = EmailService()
         await email_service.send_request_confirmation(
             to_email=request_data.requestor_email,
@@ -154,7 +176,10 @@ async def create_certificate_request(
             requestor_name=request_data.requestor_name, 
             student_name=request_data.student_name, 
             certificate_type=cert_type.name,
-            submitted_date=new_request.created_at
+            submitted_date=new_request.created_at,
+            request_cost=request_data.request_cost,
+            campus_email=campus_email,
+            campus_telNo=campus_telNo
         )
         print(f"✅ Email sent to {request_data.requestor_email}")
     except Exception as e:
@@ -259,9 +284,7 @@ async def update_status(
         request_id=request_id,
         new_status=new_status,
         user_name=status_update.user_name,
-        notes=status_update.notes,
-        rejection_reason=status_update.rejection_reason,
-        rejection_notes=status_update.rejection_notes
+        notes=status_update.notes
     )
     return updated_request
 
@@ -303,7 +326,7 @@ def update_request_student_data(
     return updated_request
 
 # Endpoint 7: Add note to request
-@router.post("/{request_id}/notes", response_model=RequestNoteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{request_id}/notes", response_model=AuditLogResponse, status_code=status.HTTP_201_CREATED)
 def create_note(
     request_id: int,
     note_data: RequestNoteCreate,
@@ -326,7 +349,7 @@ def create_note(
     return note
 
 # Endpoint 8: Get all notes for a request
-@router.get("/{request_id}/notes", response_model=list[RequestNoteResponse])
+@router.get("/{request_id}/notes", response_model=list[AuditLogResponse])
 def get_request_notes(
     request_id: int,
     db: Session = Depends(get_db)
@@ -335,9 +358,11 @@ def get_request_notes(
     Get all notes/comments for a request
     """
     
-    notes = db.query(RequestNote).filter(
-        RequestNote.request_id == request_id
-    ).order_by(RequestNote.created_at.desc()).all()
+    notes = db.query(AuditLog).filter(
+        AuditLog.entity_type == "certificate_request",
+        AuditLog.entity_id == request_id,
+        AuditLog.action == "NOTE_ADDED",
+    ).order_by(AuditLog.created_at.desc()).all()
     
     return notes
 
@@ -354,7 +379,8 @@ def get_request_audit_logs(
     """
     
     logs = db.query(AuditLog).filter(
-        AuditLog.request_id == request_id
+        AuditLog.entity_type == "certificate_request",
+        AuditLog.entity_id == request_id
     ).order_by(AuditLog.created_at.desc()).all()
     
     return logs
@@ -409,7 +435,7 @@ def verify_certificate(
         )
     
     # Check if certificate is in valid state
-    if request.status not in [RequestStatus.FOR_RELEASING, RequestStatus.COMPLETED]:
+    if request.status not in [RequestStatus.FOR_RELEASING, RequestStatus.RELEASED]:
         return CertificateVerificationResponse(
             is_valid=False,
             message="This certificate is not yet released or has been revoked."
@@ -424,9 +450,9 @@ def verify_certificate(
         status=request.status.value
     )
 
-# Endpoint 12: Mark as completed (when QR is scanned at release)
-@router.post("/{request_id}/complete", response_model=CertificateRequestDetail)
-async def mark_as_completed(         
+# Endpoint 12: Mark as released (when QR is scanned at release)
+@router.post("/{request_id}/release", response_model=CertificateRequestDetail)
+async def mark_as_released(
     request_id: int,
     user_name: str = "Registrar",
     db: Session = Depends(get_db)
@@ -434,7 +460,7 @@ async def mark_as_completed(
     updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
-        new_status=RequestStatus.COMPLETED,
+        new_status=RequestStatus.RELEASED,
         user_name=user_name,
         notes="Certificate released to student"
     )

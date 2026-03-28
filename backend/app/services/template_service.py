@@ -5,8 +5,13 @@ from typing import Any
 
 from app.certificate_dependencies import DEFAULT_FILL_DEPENDENCIES, TEMPLATE_FILL_DEPENDENCIES
 from app.database import SessionLocal
-from app.models.certificate_dependency_data import CourseDescriptionRecord, EarnedUnitsRecord, GWARecord, HonorGraduateRecord
-from app.models.registrar_simulation import CourseCatalog, Enrollment, Grade, Graduate, SemesterGWA, StudentRecord
+from app.models.enrollment import Enrollment
+from app.models.grade import Grade
+from app.models.course import Course
+from app.models.student import Student
+from app.models.student_address import StudentAddress
+from app.models.academic_summary import AcademicSummary
+from app.models.graduation_record import GraduationRecordNew
 from sqlalchemy import case
 from sqlalchemy import func
 from app.utils.pdf_generator import CertificateGenerator
@@ -252,18 +257,18 @@ class CertificateTemplateService:
             # Primary source: registrar simulation academic records.
             rows = (
                 db.query(
-                    CourseCatalog.course_code,
-                    CourseCatalog.units,
-                    CourseCatalog.course_description,
+                    Course.course_code,
+                    Course.units,
+                    Course.course_description,
                 )
-                .join(Grade, Grade.course_id == CourseCatalog.id)
+                .join(Grade, Grade.course_id == Course.id)
                 .join(Enrollment, Enrollment.id == Grade.enrollment_id)
                 .filter(Grade.student_id == sr_code)
                 .order_by(
                     Enrollment.academic_year.asc(),
                     case((Enrollment.semester == "1st", 1), (Enrollment.semester == "2nd", 2), else_=9),
                     Enrollment.year_level.asc(),
-                    CourseCatalog.course_code.asc(),
+                    Course.course_code.asc(),
                 )
                 .limit(limit)
                 .all()
@@ -278,28 +283,7 @@ class CertificateTemplateService:
                     )
                     for code, units, description in rows
                 ]
-
-            # Fallback source: legacy course description records.
-            fallback = (
-                db.query(
-                    CourseDescriptionRecord.course_code,
-                    CourseDescriptionRecord.credits,
-                    CourseDescriptionRecord.course_description,
-                )
-                .filter(CourseDescriptionRecord.sr_code == sr_code)
-                .order_by(CourseDescriptionRecord.id.desc())
-                .limit(limit)
-                .all()
-            )
-
-            return [
-                (
-                    str(code or ""),
-                    str(credits or ""),
-                    str(description or ""),
-                )
-                for code, credits, description in fallback
-            ]
+            return []
         finally:
             db.close()
 
@@ -339,61 +323,49 @@ class CertificateTemplateService:
                 snapshot["attendance_period"] = f"{first_enrollment.academic_year} to {last_enrollment.academic_year}"
 
             earned_units = (
-                db.query(func.sum(CourseCatalog.units))
-                .join(Grade, Grade.course_id == CourseCatalog.id)
+                db.query(func.sum(Course.units))
+                .join(Grade, Grade.course_id == Course.id)
                 .filter(Grade.student_id == sr_code, Grade.grade <= 3.00)
                 .scalar()
             )
-            if earned_units is None:
-                fallback_earned = (
-                    db.query(EarnedUnitsRecord.credits)
-                    .filter(EarnedUnitsRecord.sr_code == sr_code)
-                    .order_by(EarnedUnitsRecord.id.desc())
-                    .first()
-                )
-                if fallback_earned and fallback_earned.credits is not None:
-                    earned_units = fallback_earned.credits
             if earned_units is not None:
                 snapshot["earned_credits"] = str(round(float(earned_units), 2)).rstrip("0").rstrip(".")
 
-            graduate = db.query(Graduate).filter(Graduate.student_id == sr_code).first()
-            if graduate:
-                snapshot["date_of_graduation"] = graduate.date_of_graduation.strftime("%B %d, %Y")
-                snapshot["board_resolution_number"] = graduate.board_resolution_number or ""
-                snapshot["latin_honor"] = graduate.latin_honor or ""
-                if graduate.board_resolution_number:
-                    snapshot["regulation"] = f"Board Resolution No. {graduate.board_resolution_number}"
+            grad_new = db.query(GraduationRecordNew).filter(GraduationRecordNew.sr_code == sr_code).first()
+            if grad_new:
+                snapshot["date_of_graduation"] = str(grad_new.date_of_graduation or "")
+                snapshot["board_resolution_number"] = str(grad_new.board_resolution_number or "")
             else:
-                fallback_honor = (
-                    db.query(HonorGraduateRecord)
-                    .filter(HonorGraduateRecord.sr_code == sr_code)
-                    .order_by(HonorGraduateRecord.id.desc())
-                    .first()
-                )
-                if fallback_honor:
-                    snapshot["date_of_graduation"] = str(fallback_honor.date_of_graduation or "")
-                    snapshot["board_resolution_number"] = str(fallback_honor.board_resolution_number or "")
-                    snapshot["latin_honor"] = str(fallback_honor.latin_honor or "")
+                pass
 
-            avg_gwa = db.query(func.avg(SemesterGWA.gwa)).filter(SemesterGWA.student_id == sr_code).scalar()
-            if avg_gwa is None:
-                fallback_gwa = (
-                    db.query(GWARecord.gwa)
-                    .filter(GWARecord.sr_code == sr_code)
-                    .order_by(GWARecord.id.desc())
-                    .first()
-                )
-                if fallback_gwa and fallback_gwa.gwa is not None:
-                    avg_gwa = fallback_gwa.gwa
+            summary = (
+                db.query(AcademicSummary)
+                .filter(AcademicSummary.sr_code == sr_code)
+                .order_by(AcademicSummary.academic_year.desc(), AcademicSummary.semester.desc())
+                .first()
+            )
+            avg_gwa = summary.gwa if summary and summary.gwa is not None else None
             if avg_gwa is not None:
                 snapshot["gwa"] = f"{float(avg_gwa):.2f}"
 
-            student_record = db.query(StudentRecord).filter(StudentRecord.sr_code == sr_code).first()
-            if student_record:
-                if student_record.address:
-                    snapshot["address"] = student_record.address
-                snapshot["sex"] = str(student_record.sex or "")
-                snapshot["last_name"] = str(student_record.last_name or "")
+            student = db.query(Student).filter(Student.sr_code == sr_code).first()
+            if student:
+                snapshot["sex"] = str(student.gender or "")
+                snapshot["last_name"] = str(student.last_name or "")
+                address = (
+                    db.query(StudentAddress)
+                    .filter(StudentAddress.student_id == student.id)
+                    .order_by(StudentAddress.id.desc())
+                    .first()
+                )
+                if address:
+                    snapshot["address"] = ", ".join([p for p in [
+                        address.address_line,
+                        address.city,
+                        address.province,
+                        address.zip_code,
+                        address.country,
+                    ] if p])
 
             return snapshot
         finally:

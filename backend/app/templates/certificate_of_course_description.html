@@ -298,41 +298,45 @@
           </div>
 
           <!-- This is one block per course -->
-          <table class="course-block">
-            <tr>
-              <td class="course-label">Course Code</td>
-              <td class="course-colon">:</td>
-              <td>{{ course_code }}</td>
-            </tr>
-            <tr>
-              <td class="course-label">Credits</td>
-              <td class="course-colon">:</td>
-              <td>{{ course_credits }}</td>
-            </tr>
-            <tr>
-              <td colspan="3" class="course-description">
-                {{ course_description }}
-              </td>
-            </tr>
-          </table>
-
-          <table class="course-block">
-            <tr>
-              <td class="course-label">Course Code</td>
-              <td class="course-colon">:</td>
-              <td>{{ course_code }}</td>
-            </tr>
-            <tr>
-              <td class="course-label">Credits</td>
-              <td class="course-colon">:</td>
-              <td>{{ course_credits }}</td>
-            </tr>
-            <tr>
-              <td colspan="3" class="course-description">
-                {{ course_description }}
-              </td>
-            </tr>
-          </table>
+          {% if course_descriptions %}
+            {% for course in course_descriptions %}
+            <table class="course-block">
+              <tr>
+                <td class="course-label">Course Code</td>
+                <td class="course-colon">:</td>
+                <td>{{ course.course_code }}</td>
+              </tr>
+              <tr>
+                <td class="course-label">Credits</td>
+                <td class="course-colon">:</td>
+                <td>{{ course.course_credits }}</td>
+              </tr>
+              <tr>
+                <td colspan="3" class="course-description">
+                  {{ course.course_description }}
+                </td>
+              </tr>
+            </table>
+            {% endfor %}
+          {% else %}
+            <table class="course-block">
+              <tr>
+                <td class="course-label">Course Code</td>
+                <td class="course-colon">:</td>
+                <td>{{ course_code }}</td>
+              </tr>
+              <tr>
+                <td class="course-label">Credits</td>
+                <td class="course-colon">:</td>
+                <td>{{ course_credits }}</td>
+              </tr>
+              <tr>
+                <td colspan="3" class="course-description">
+                  {{ course_description }}
+                </td>
+              </tr>
+            </table>
+          {% endif %}
           <!-- End of block -->
 
           <!-- 
@@ -366,7 +370,14 @@
         </div>
       </div>
       <div class="signature">
-          <div class="signature-line"></div>
+          {% if signature_path %}
+          <img
+            src="{{ signature_path }}"
+            alt="Signature"
+            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
+          />
+          {% endif %}
+<div class="signature-line"></div>
           <strong>{{ name_official }}</strong><br />
           {{ official_title }}
         </div>

@@ -6,18 +6,20 @@ import os
 from datetime import datetime
 from app.services.email_service import EmailService
 
-from app.models.certificate_request import CertificateRequest, RequestStatus, RequestNote
+from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.audit_log import AuditLog
+from app.models.payment import Payment
+from app.models.student import Student
+from app.models.program import Program
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
-    RequestStatus.SUBMITTED: [RequestStatus.PENDING],
-    RequestStatus.PENDING: [RequestStatus.APPROVED, RequestStatus.REJECTED],
+    RequestStatus.SUBMITTED: [RequestStatus.APPROVED, RequestStatus.PENDING],
+    RequestStatus.PENDING: [RequestStatus.APPROVED],
     RequestStatus.APPROVED: [RequestStatus.PROCESSING],
-    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],  # Can go back to approved if issues
-    RequestStatus.FOR_RELEASING: [RequestStatus.COMPLETED],
-    RequestStatus.COMPLETED: [],  # Final state
-    RequestStatus.REJECTED: []  # Final state
+    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],
+    RequestStatus.FOR_RELEASING: [RequestStatus.RELEASED],
+    RequestStatus.RELEASED: [],  # Final state
 }
 
 def can_transition_to(current_status: RequestStatus, new_status: RequestStatus) -> bool:
@@ -48,8 +50,6 @@ async def update_request_status(
     new_status: RequestStatus,
     user_name: str = "System",
     notes: Optional[str] = None,
-    rejection_reason: Optional[str] = None,
-    rejection_notes: Optional[str] = None
 ) -> CertificateRequest:
     """
     Update request status with validation and audit logging
@@ -63,7 +63,7 @@ async def update_request_status(
         )
     
     # Check if already in final state
-    if request.status in [RequestStatus.COMPLETED, RequestStatus.REJECTED]:
+    if request.status in [RequestStatus.RELEASED]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot change status of {request.status.value} request"
@@ -75,32 +75,67 @@ async def update_request_status(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot transition from {request.status.value} to {new_status.value}"
         )
+
+    # Require payment before releasing
+    if new_status == RequestStatus.FOR_RELEASING:
+        ref = request.reference_number or ""
+        payment = db.query(Payment).filter(
+            Payment.purpose.ilike(f"%{ref}%")
+        ).first()
+        if not payment:
+            try:
+                campus_telNo = None
+                campus_email = None
+                student = None
+                if request.sr_code:
+                    student = (
+                        db.query(Student)
+                        .filter(Student.sr_code == request.sr_code)
+                        .first()
+                    )
+                campus = None
+                if student is not None:
+                    campus = student.campus or (student.program.campus if student.program else None)
+                if campus is None and request.program:
+                    program = db.query(Program).filter(Program.name == request.program).first()
+                    campus = program.campus if program else None
+                if campus is not None:
+                    campus_telNo = campus.campus_telNo
+                    campus_email = campus.campus_email
+
+                email_service = EmailService()
+                await email_service.send_payment_missing_notice(
+                    to_email=request.requestor_email,
+                    reference_number=request.reference_number,
+                    requestor_name=request.requestor_name,
+                    student_name=request.student_name,
+                    certificate_type=request.certificate_type_name,
+                    request_cost=request.request_cost,
+                    campus_email=campus_email,
+                    campus_telNo=campus_telNo,
+                )
+            except Exception as e:
+                print(f"⚠️ Payment-missing email failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot mark as FOR_RELEASING. No payment found for this reference number."
+            )
     
     # Store old status for audit
     old_status = request.status
-    
-    if new_status == RequestStatus.APPROVED and not request.verification_token:
-        request.verification_token = generate_verification_token()
-        print(f"✅ Generated verification token for request {request_id}")
-    
+
     # Update status
     request.status = new_status
-    
-    # Handle rejection
-    if new_status == RequestStatus.REJECTED:
-        if rejection_reason:
-            request.rejection_reason = rejection_reason
-        if rejection_notes:
-            request.rejection_notes = rejection_notes
-    
-    # Generate verification token when moving to FOR_RELEASING
+
+    # Generate verification token when moving to APPROVED
     if new_status == RequestStatus.APPROVED and not request.verification_token:
         request.verification_token = generate_verification_token()
     
     # Create audit log
     audit_log = AuditLog(
-        request_id=request_id,
         action="STATUS_CHANGED",
+        entity_type="certificate_request",
+        entity_id=request_id,
         field_name="status",
         old_value=old_status.value,
         new_value=new_status.value,
@@ -109,54 +144,53 @@ async def update_request_status(
     )
     db.add(audit_log)
     
-    # Add note if provided
-    if notes:
-        note = RequestNote(
-            request_id=request_id,
-            note=notes,
-            note_type="STATUS_CHANGE",
-            user_name=user_name
-        )
-        db.add(note)
-    
     if new_status == RequestStatus.PROCESSING:
         if not request.or_number:
             request.or_number = generate_or_number(db)
         try:
             from app.services.certificate_service import generate_certificate_pdf
             pdf_path = generate_certificate_pdf(db, request_id, user_name)
-            
+
             # Save PDF path to request
             request.pdf_path = pdf_path
-            
+
             # Add note about auto-generation
-            auto_note = RequestNote(
-                request_id=request_id,
-                note=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
-                note_type="INFO",
-                user_name="System"
+            db.add(
+                AuditLog(
+                    action="NOTE_ADDED",
+                    entity_type="certificate_request",
+                    entity_id=request_id,
+                    field_name="notes",
+                    new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
+                    user_name="System",
+                )
             )
-            db.add(auto_note)
         except Exception as e:
             print(f"Auto-generation failed: {e}")
             # Don't fail the status update if PDF generation fails
     
-    # Add rejection note if rejecting
-    if new_status == RequestStatus.REJECTED and (rejection_reason or rejection_notes):
-        rejection_text = f"Rejection Reason: {rejection_reason}\n{rejection_notes or ''}"
-        note = RequestNote(
-            request_id=request_id,
-            note=rejection_text,
-            note_type="REJECTION_REASON",
-            user_name=user_name
-        )
-        db.add(note)
-
     db.commit()
     db.refresh(request)
     
     if new_status == RequestStatus.FOR_RELEASING:
         try:
+            campus_telNo = None
+            student = None
+            if request.sr_code:
+                student = (
+                    db.query(Student)
+                    .filter(Student.sr_code == request.sr_code)
+                    .first()
+                )
+            campus = None
+            if student is not None:
+                campus = student.campus or (student.program.campus if student.program else None)
+            if campus is None and request.program:
+                program = db.query(Program).filter(Program.name == request.program).first()
+                campus = program.campus if program else None
+            if campus is not None:
+                campus_telNo = campus.campus_telNo
+
             email_service = EmailService()
             await email_service.send_ready_for_release(
                 to_email=request.requestor_email,
@@ -164,6 +198,7 @@ async def update_request_status(
                 requestor_name=request.requestor_name,
                 student_name=request.student_name,
                 certificate_type=request.certificate_type_name,
+                campus_telNo=campus_telNo,
             )
             print(f"✅ Release email sent to {request.requestor_email}")
         except Exception as e:
@@ -197,8 +232,9 @@ def update_student_data(
                 
                 # Create audit log
                 audit_log = AuditLog(
-                    request_id=request_id,
                     action="DATA_UPDATED",
+                    entity_type="certificate_request",
+                    entity_id=request_id,
                     field_name=field,
                     old_value=str(old_value) if old_value else None,
                     new_value=str(new_value),
@@ -206,16 +242,6 @@ def update_student_data(
                     notes=notes
                 )
                 db.add(audit_log)
-    
-    # Add note if provided
-    if notes:
-        note = RequestNote(
-            request_id=request_id,
-            note=notes,
-            note_type="DATA_UPDATE",
-            user_name=user_name
-        )
-        db.add(note)
     
     db.commit()
     db.refresh(request)
@@ -228,7 +254,7 @@ def add_note_to_request(
     note_text: str,
     note_type: str = "INFO",
     user_name: str = "System"
-) -> RequestNote:
+) -> AuditLog:
     """
     Add a note to a request
     """
@@ -239,18 +265,10 @@ def add_note_to_request(
             detail="Request not found"
         )
     
-    note = RequestNote(
-        request_id=request_id,
-        note=note_text,
-        note_type=note_type,
-        user_name=user_name
-    )
-    db.add(note)
-    
-    # Also create audit log
     audit_log = AuditLog(
-        request_id=request_id,
         action="NOTE_ADDED",
+        entity_type="certificate_request",
+        entity_id=request_id,
         field_name="notes",
         new_value=note_text,
         user_name=user_name
@@ -258,6 +276,9 @@ def add_note_to_request(
     db.add(audit_log)
     
     db.commit()
-    db.refresh(note)
+    db.refresh(audit_log)
     
-    return note
+    return audit_log
+
+
+

@@ -7,6 +7,7 @@ import {
 import { useEffect } from "react";
 import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
+import OdrPayment from "./pages/odr/odr_payment";
 import CertifyIndex from "./pages/certify/index";
 import CertifyDashboard from './pages/certify/dashboard';
 import TemplatePreview from "./pages/templates/TemplatePreview";
@@ -44,6 +45,8 @@ function AppContent() {
 
       {/* Without Navbar */}
       <Route path="/odr" element={<OdrRequests />} />
+      <Route path="/odr-payment" element={<OdrPayment />} />
+      <Route path="/odr-payments" element={<OdrPayment />} />
 
       {/* Dashboard */}
       <Route path="/dashboard" element={<CertifyDashboard />} />

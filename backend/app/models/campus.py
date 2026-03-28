@@ -9,9 +9,9 @@ class Campus(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     campus_address = Column(Text, nullable=True)
-    campus_telNo = Column(String(50), nullable=True)
+    campus_telNo = Column("campus_telno", String(50), nullable=True)
     campus_email = Column(String(255), nullable=True)
-    campus_certCode = Column(String(50), nullable=True)
+    campus_certCode = Column("campus_certcode", String(50), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

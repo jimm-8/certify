@@ -59,19 +59,19 @@ const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
   FOR_RELEASING: "bg-purple-100 text-purple-700",
-  REJECTED: "bg-red-100 text-red-600",
+  RELEASED: "bg-gray-100 text-gray-600",
 };
 
 const statusLabels = {
   APPROVED: "Approved",
   PROCESSING: "Processing",
   FOR_RELEASING: "For Releasing",
-  REJECTED: "Rejected",
+  RELEASED: "Released",
 };
 
 const bulkStatusTarget = {
   PROCESSING: "FOR_RELEASING",
-  FOR_RELEASING: "COMPLETED",
+  FOR_RELEASING: "RELEASED",
 };
 
 const Tracker = () => {
@@ -88,6 +88,9 @@ const Tracker = () => {
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [statusLoadingId, setStatusLoadingId] = useState(null);
+  const [statusError, setStatusError] = useState("");
+  const [statusToast, setStatusToast] = useState(null);
 
   const fetchRequests = async () => {
     try {
@@ -144,7 +147,7 @@ const Tracker = () => {
       matchesType &&
       matchesProgram &&
       r.status !== "PENDING" &&
-      r.status !== "COMPLETED"
+      r.status !== "RELEASED"
     );
   });
 
@@ -155,34 +158,63 @@ const Tracker = () => {
   const handleView = (row) => setSelectedRequest(row);
 
   const handleMarkProcessing = async (row) => {
+    setStatusError("");
     try {
+      setStatusLoadingId(row.id);
+      setStatusToast({ type: "loading", message: "Updating status..." });
       const newStatus =
         row.status === "APPROVED" ? "PROCESSING" : "FOR_RELEASING";
-      await requestService.updateStatus(row.id, newStatus);
+      const updated = await requestService.updateStatus(row.id, newStatus);
+      setRequests((prev) =>
+        prev.map((item) => (item.id === row.id ? updated : item)),
+      );
+      if (selectedRequest?.id === row.id) {
+        setSelectedRequest(updated);
+      }
       fetchRequests();
+      setStatusToast({ type: "success", message: "Status updated." });
     } catch (error) {
       console.error("Failed to update status:", error);
+      const detail =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update status.";
+      setStatusError(detail);
+      setStatusToast({ type: "error", message: detail });
+    } finally {
+      setStatusLoadingId(null);
+      setTimeout(() => setStatusToast(null), 2500);
     }
   };
 
   const handleBulkStatusChange = async () => {
     if (!bulkStatus) return;
     setBulkLoading(true);
+    setStatusError("");
     try {
+      setStatusToast({ type: "loading", message: "Updating requests..." });
       await Promise.all(
         filteredRequests
           .filter((r) => r.status === bulkStatus)
-          .map((r) =>
-            requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus]),
-          ),
+          .map((r) => requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus])),
       );
       setBulkModalOpen(false);
       setBulkStatus("");
       fetchRequests();
+      setStatusToast({ type: "success", message: "Bulk update completed." });
     } catch (error) {
       console.error("Bulk status change failed:", error);
+      const detail =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Bulk status change failed.";
+      setStatusError(detail);
+      setStatusToast({ type: "error", message: detail });
     } finally {
       setBulkLoading(false);
+      setTimeout(() => setStatusToast(null), 2500);
     }
   };
 
@@ -241,9 +273,14 @@ const Tracker = () => {
                   ? "Mark as Processing"
                   : "Mark as For Releasing"
               }
-              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
+              disabled={statusLoadingId === row.id}
+              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <BsArrowRepeat size={13} />
+              {statusLoadingId === row.id ? (
+                <span className="w-3 h-3 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <BsArrowRepeat size={13} />
+              )}
             </button>
           )}
         </div>
@@ -382,6 +419,31 @@ const Tracker = () => {
         loading={bulkLoading}
         affectedCount={affectedCount}
       />
+
+      {(statusLoadingId || bulkLoading) && (
+        <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
+          <div className="bg-white rounded-md px-6 py-4 shadow-lg flex items-center gap-3">
+            <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-gray-700">Updating status...</span>
+          </div>
+        </div>
+      )}
+
+      {statusToast && (
+        <div className="fixed top-5 right-5 z-50">
+          <div
+            className={`px-4 py-3 rounded-md shadow-lg text-sm ${
+              statusToast.type === "success"
+                ? "bg-green-600 text-white"
+                : statusToast.type === "error"
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-900 text-white"
+            }`}
+          >
+            {statusToast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,372 @@
+[
+  {
+    "name": "Bachelor of Science in Chemical Engineering",
+    "code": "BSChE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "12, s.1995",
+    "course_academic_year": "1995-1996",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Food Engineering",
+    "code": "BSFE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "03, s.1996",
+    "course_academic_year": "1996-1997",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Ceramics Engineering",
+    "code": "BSCerE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "136, s.2021",
+    "course_academic_year": "2021-2022",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Metallurgical Engineering",
+    "code": "BSMetE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "137, s.2021",
+    "course_academic_year": "2021-2022",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Civil Engineering",
+    "code": "BSCE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "10, s.1974",
+    "course_academic_year": "1974-1975",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Sanitary Engineering",
+    "code": "BSSE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "15, s.2000",
+    "course_academic_year": "2000-2001",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Geodetic Engineering",
+    "code": "BSGE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "20, s.2004",
+    "course_academic_year": "2004-2005",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Geological Engineering",
+    "code": "BSGeoE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "04, s.2022",
+    "course_academic_year": "2022-2023",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Transportation Systems Engineering",
+    "code": "BSTE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "11, s.2021",
+    "course_academic_year": "2021-2022",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Electrical Engineering",
+    "code": "BSEE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "09, s.1971",
+    "course_academic_year": "1971-1972",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Computer Engineering",
+    "code": "BSCpE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "10 s.1990",
+    "course_academic_year": "1990-1991",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Electronics Engineering",
+    "code": "BSECE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "10, 1963",
+    "course_academic_year": "1963-1964",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Instrumentation and Control Engineering",
+    "code": "BSICE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "06, s.2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Mechatronics Engineering",
+    "code": "BSMexE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "02, s.2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Aerospace Engineering",
+    "code": "BSAeE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "01, s.2021",
+    "course_academic_year": "2021-2022",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Biomedical Engineering",
+    "code": "BSBioE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "03, s.2022",
+    "course_academic_year": "2022-2023",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Industrial Engineering",
+    "code": "BSIE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "11, s.2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Mechanical Engineering",
+    "code": "BSME",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "07, s.1971",
+    "course_academic_year": "1971-1972",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Petroleum Engineering",
+    "code": "BSPetE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "04, s.2011",
+    "course_academic_year": "2011-2012",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Automotive Engineering",
+    "code": "BSAE",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "09, s.2021",
+    "course_academic_year": "2021-2022",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Naval Architecture and Marine Engineering",
+    "code": "BSNAME",
+    "major": "",
+    "college_name": "Engineering",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "05, s.2020",
+    "course_academic_year": "2020-2021",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Automotive Engineering Technology",
+    "code": "BAET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Civil Engineering Technology",
+    "code": "BCET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Computer Engineering Technology",
+    "code": "BCpET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Drafting Engineering Technology",
+    "code": "BDET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Electrical Engineering Technology",
+    "code": "BEET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Electronics Engineering Technology",
+    "code": "BECT",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Food Engineering Technology",
+    "code": "BFET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Instrumentation and Control Engineering Technology",
+    "code": "BICET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Mechanical Engineering Technology",
+    "code": "BMET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Mechatronics Engineering Technology",
+    "code": "BMxET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Welding and Fabrication Engineering Technology",
+    "code": "BWFET",
+    "major": "",
+    "college_name": "Engineering Technology",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "61, s. 2018",
+    "course_academic_year": "2018-2019",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Fine Arts and Design",
+    "code": "BFA",
+    "major": "Major in Visual Communication",
+    "college_name": "Architecture, Fine Arts and Design",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "12, s.2000",
+    "course_academic_year": "2000",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Interior Design",
+    "code": "BSID",
+    "major": "",
+    "college_name": "Architecture, Fine Arts and Design",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "03, s.1999",
+    "course_academic_year": "2012-2013",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Architecture",
+    "code": "BSArchi",
+    "major": "",
+    "college_name": "Architecture, Fine Arts and Design",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "12, s.1995",
+    "course_academic_year": "1995-2000",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Computer Science",
+    "code": "BSCS",
+    "major": "",
+    "college_name": "Informatics and Computing Sciences",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "12, s.1990",
+    "course_academic_year": "1990-1991",
+    "is_active": 1
+  },
+  {
+    "name": "Bachelor of Science in Information Technology",
+    "code": "BSIT",
+    "major": "",
+    "college_name": "Informatics and Computing Sciences",
+    "campus_name": "Alangilan",
+    "course_board_resolution_num": "12, s.2001",
+    "course_academic_year": "2001-2002",
+    "is_active": 1
+  }
+]
