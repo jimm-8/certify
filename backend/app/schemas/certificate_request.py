@@ -56,6 +56,9 @@ class CertificateRequestCreate(BaseModel):
     program: str = Field(..., min_length=2, max_length=255, description="Program/Course")
     major: Optional[str] = Field(None, max_length=255, description="Major (optional)")
     year_graduated: Optional[str] = Field(None, max_length=10, description="Year graduated")
+
+    # Request cost (unit cost from selected document)
+    request_cost: Optional[float] = Field(None, description="Requested document cost")
     
     # Signature (base64 encoded image data)
     signature_data: Optional[str] = Field(None, description="Base64 encoded signature image")
@@ -75,6 +78,7 @@ class CertificateRequestCreate(BaseModel):
                 "program": "BS Computer Engineering",
                 "major": "Software Engineering",
                 "year_graduated": "2024",
+                "request_cost": 30.00,
                 "signature_data": "base64_image_data_here"
             }
         }

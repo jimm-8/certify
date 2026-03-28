@@ -41,6 +41,7 @@ const OdrNewRequest = () => {
   const [signatureData, setSignatureData] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [selectedCertType, setSelectedCertType] = useState(null);
+  const [selectedUnitCost, setSelectedUnitCost] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -63,6 +64,15 @@ const OdrNewRequest = () => {
     { number: 1, label: "Request Details" },
     { number: 2, label: "Submit" },
   ];
+
+  const parseUnitCost = (value) => {
+    if (!value) return null;
+    const cleaned = value.replace(/,/g, "");
+    const match = cleaned.match(/[0-9]+(\.[0-9]+)?/);
+    if (!match) return null;
+    const numberValue = Number.parseFloat(match[0]);
+    return Number.isNaN(numberValue) ? null : numberValue;
+  };
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -150,6 +160,7 @@ const OdrNewRequest = () => {
         major: savedFormData.major || null,
         year_graduated: savedFormData.yearGraduated || null,
         signature_data: signatureData.split(",")[1],
+        request_cost: parseUnitCost(selectedUnitCost),
       };
 
       const response = await requestService.createRequest(requestData);
@@ -158,6 +169,7 @@ const OdrNewRequest = () => {
       setCurrentStep(0);
       setSelectedOffice("");
       setSelectedCertType(null);
+      setSelectedUnitCost(null);
       setSavedFormData(null);
       setSignatureData(null);
       setIsConfirmed(false);
@@ -495,6 +507,7 @@ const OdrNewRequest = () => {
                       setStep1Errors((p) => ({ ...p, certType: "" }));
                   }}
                   selectedCertType={selectedCertType}
+                  onUnitCostSelect={setSelectedUnitCost}
                 />
               </div>
               <FieldError message={step1Errors.certType} />

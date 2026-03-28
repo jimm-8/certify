@@ -8,6 +8,7 @@ from app.services.email_service import EmailService
 
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.audit_log import AuditLog
+from app.models.payment import Payment
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
@@ -73,6 +74,18 @@ async def update_request_status(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot transition from {request.status.value} to {new_status.value}"
         )
+
+    # Require payment before releasing
+    if new_status == RequestStatus.FOR_RELEASING:
+        ref = request.reference_number or ""
+        payment = db.query(Payment).filter(
+            Payment.purpose.ilike(f"%{ref}%")
+        ).first()
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot mark as FOR_RELEASING. No payment found for this reference number."
+            )
     
     # Store old status for audit
     old_status = request.status

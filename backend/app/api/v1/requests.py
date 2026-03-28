@@ -10,6 +10,8 @@ import glob
 
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
+from app.models.student import Student
+from app.models.program import Program
 from app.schemas.certificate_request import (
     CertificateRequestCreate,
     CertificateRequestResponse,
@@ -134,6 +136,7 @@ async def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
+        request_cost=request_data.request_cost,
         verification_token=None,
         status=RequestStatus.PENDING
     )
@@ -145,6 +148,25 @@ async def create_certificate_request(
     
     # Send confirmation email
     try:
+        campus_email = None
+        campus_telNo = None
+
+        if request_data.sr_code:
+            student = db.query(Student).filter(Student.sr_code == request_data.sr_code).first()
+        else:
+            student = None
+
+        campus = None
+        if student is not None:
+            campus = student.campus or (student.program.campus if student.program else None)
+        if campus is None and request_data.program:
+            program = db.query(Program).filter(Program.name == request_data.program).first()
+            campus = program.campus if program else None
+
+        if campus is not None:
+            campus_email = campus.campus_email
+            campus_telNo = campus.campus_telNo
+
         email_service = EmailService()
         await email_service.send_request_confirmation(
             to_email=request_data.requestor_email,
@@ -153,7 +175,10 @@ async def create_certificate_request(
             requestor_name=request_data.requestor_name, 
             student_name=request_data.student_name, 
             certificate_type=cert_type.name,
-            submitted_date=new_request.created_at
+            submitted_date=new_request.created_at,
+            request_cost=request_data.request_cost,
+            campus_email=campus_email,
+            campus_telNo=campus_telNo
         )
         print(f"✅ Email sent to {request_data.requestor_email}")
     except Exception as e:
