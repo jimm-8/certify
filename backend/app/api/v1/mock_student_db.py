@@ -4,6 +4,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models.student import Student
+from app.repositories import StudentRepository
 from app.models.program import Program
 from app.schemas.student import StudentResponse
 
@@ -22,7 +23,8 @@ def get_student_by_sr_code(
     In production, this would call the real student database API.
     """
     
-    student = db.query(Student).filter(Student.sr_code == sr_code).first()
+    student_repo = StudentRepository(db)
+    student = student_repo.get_by_sr_code(sr_code)
     
     if not student:
         raise HTTPException(
@@ -44,7 +46,8 @@ def search_students(
     Search students by name or program
     """
     
-    query = db.query(Student)
+    student_repo = StudentRepository(db)
+    query = student_repo.query()
     
     if name:
         search_term = f"%{name}%"

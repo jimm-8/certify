@@ -12,6 +12,14 @@ from app.models.audit_log import AuditLog
 from app.models.payment import Payment
 from app.models.student import Student
 from app.models.program import Program
+from app.repositories import (
+    AuditLogRepository,
+    CertificateRepository,
+    CertificateRequestRepository,
+    PaymentRepository,
+    ProgramRepository,
+    StudentRepository,
+)
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
@@ -38,7 +46,8 @@ def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
     month = now.strftime("%m")
     prefix = f"{year}-{month}-"
 
-    count = db.query(CertificateRequest).filter(
+    request_repo = CertificateRequestRepository(db)
+    count = request_repo.query().filter(
         CertificateRequest.or_number.like(f"{prefix}%")
     ).count()
 
@@ -56,7 +65,13 @@ async def update_request_status(
     Update request status with validation and audit logging
     """
     # Get request
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    payment_repo = PaymentRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+    certificate_repo = CertificateRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -80,9 +95,7 @@ async def update_request_status(
     # Require payment before releasing
     if new_status == RequestStatus.FOR_RELEASING:
         ref = request.reference_number or ""
-        payment = db.query(Payment).filter(
-            Payment.purpose.ilike(f"%{ref}%")
-        ).first()
+        payment = payment_repo.get_by_reference(ref)
         if not payment:
             try:
                 campus_telNo = None
@@ -90,15 +103,13 @@ async def update_request_status(
                 student = None
                 if request.sr_code:
                     student = (
-                        db.query(Student)
-                        .filter(Student.sr_code == request.sr_code)
-                        .first()
+                        student_repo.get_by_sr_code(request.sr_code)
                     )
                 campus = None
                 if student is not None:
                     campus = student.campus or (student.program.campus if student.program else None)
                 if campus is None and request.program:
-                    program = db.query(Program).filter(Program.name == request.program).first()
+                    program = program_repo.get_by_name(request.program)
                     campus = program.campus if program else None
                 if campus is not None:
                     campus_telNo = campus.campus_telNo
@@ -143,7 +154,7 @@ async def update_request_status(
         user_name=user_name,
         notes=notes
     )
-    db.add(audit_log)
+    audit_repo.add(audit_log)
     
     if new_status == RequestStatus.PROCESSING:
         if not request.or_number:
@@ -156,7 +167,7 @@ async def update_request_status(
             request.pdf_path = pdf_path
 
             # Add note about auto-generation
-            db.add(
+            audit_repo.add(
                 AuditLog(
                     action="NOTE_ADDED",
                     entity_type="certificate_request",
@@ -172,13 +183,9 @@ async def update_request_status(
 
     if new_status == RequestStatus.RELEASED:
         # Persist released requests into certificates table (idempotent)
-        existing_cert = (
-            db.query(Certificate)
-            .filter(Certificate.certificate_request_id == request.id)
-            .first()
-        )
+        existing_cert = certificate_repo.get_by_request_id(request.id)
         if not existing_cert:
-            db.add(
+            certificate_repo.add(
                 Certificate(
                     certificate_request_id=request.id,
                     certificate_type_id=request.certificate_type_id,
@@ -200,15 +207,13 @@ async def update_request_status(
             student = None
             if request.sr_code:
                 student = (
-                    db.query(Student)
-                    .filter(Student.sr_code == request.sr_code)
-                    .first()
+                    student_repo.get_by_sr_code(request.sr_code)
                 )
             campus = None
             if student is not None:
                 campus = student.campus or (student.program.campus if student.program else None)
             if campus is None and request.program:
-                program = db.query(Program).filter(Program.name == request.program).first()
+                program = program_repo.get_by_name(request.program)
                 campus = program.campus if program else None
             if campus is not None:
                 campus_telNo = campus.campus_telNo
@@ -238,7 +243,9 @@ def update_student_data(
     """
     Update student information on a request
     """
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -263,7 +270,7 @@ def update_student_data(
                     user_name=user_name,
                     notes=notes
                 )
-                db.add(audit_log)
+                audit_repo.add(audit_log)
     
     db.commit()
     db.refresh(request)
@@ -280,7 +287,9 @@ def add_note_to_request(
     """
     Add a note to a request
     """
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -295,7 +304,7 @@ def add_note_to_request(
         new_value=note_text,
         user_name=user_name
     )
-    db.add(audit_log)
+    audit_repo.add(audit_log)
     
     db.commit()
     db.refresh(audit_log)

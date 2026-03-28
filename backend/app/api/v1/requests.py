@@ -12,6 +12,13 @@ from app.database import get_db
 from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
 from app.models.student import Student
 from app.models.program import Program
+from app.repositories import (
+    AuditLogRepository,
+    CertificateRequestRepository,
+    CertificateTypeRepository,
+    ProgramRepository,
+    StudentRepository,
+)
 from app.schemas.certificate_request import (
     CertificateRequestCreate,
     CertificateRequestResponse,
@@ -44,10 +51,11 @@ def generate_reference_number(db: Session) -> str:
     year = now.strftime("%y")
     month_day = now.strftime("%m%d")
 
+    request_repo = CertificateRequestRepository(db)
     while True:
         random_suffix = f"{random.randint(0, 99999):05d}"
         ref = f"{year}-{month_day}-{random_suffix}"
-        exists = db.query(CertificateRequest).filter(
+        exists = request_repo.query().filter(
             CertificateRequest.reference_number == ref
         ).first()
         if not exists:
@@ -99,10 +107,8 @@ async def create_certificate_request(
     """
     
     # Verify certificate type exists
-    cert_type = db.query(CertificateType).filter(
-        CertificateType.id == request_data.certificate_type_id,
-        CertificateType.is_active == 1
-    ).first()
+    cert_type_repo = CertificateTypeRepository(db)
+    cert_type = cert_type_repo.get_active_by_id(request_data.certificate_type_id)
     
     if not cert_type:
         raise HTTPException(
@@ -143,7 +149,8 @@ async def create_certificate_request(
     )
     
     # Save to database
-    db.add(new_request)
+    request_repo = CertificateRequestRepository(db)
+    request_repo.add(new_request)
     db.commit()
     db.refresh(new_request)
     
@@ -152,8 +159,10 @@ async def create_certificate_request(
         campus_email = None
         campus_telNo = None
 
+        student_repo = StudentRepository(db)
+        program_repo = ProgramRepository(db)
         if request_data.sr_code:
-            student = db.query(Student).filter(Student.sr_code == request_data.sr_code).first()
+            student = student_repo.get_by_sr_code(request_data.sr_code)
         else:
             student = None
 
@@ -161,7 +170,7 @@ async def create_certificate_request(
         if student is not None:
             campus = student.campus or (student.program.campus if student.program else None)
         if campus is None and request_data.program:
-            program = db.query(Program).filter(Program.name == request_data.program).first()
+            program = program_repo.get_by_name(request_data.program)
             campus = program.campus if program else None
 
         if campus is not None:
@@ -207,10 +216,8 @@ def track_certificate_request(
     """
     
     # Find request
-    request = db.query(CertificateRequest).filter(
-        CertificateRequest.reference_number == reference_number,
-        CertificateRequest.pin == pin
-    ).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_reference_and_pin(reference_number, pin)
     
     if not request:
         raise HTTPException(
@@ -235,7 +242,8 @@ def get_all_requests(
     status_filter: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(CertificateRequest)
+    request_repo = CertificateRequestRepository(db)
+    query = request_repo.query()
 
     if status_filter:
         try:
@@ -260,7 +268,8 @@ def get_request_detail(
     Get detailed information about a specific request
     """
     
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
     
     if not request:
         raise HTTPException(
@@ -358,11 +367,8 @@ def get_request_notes(
     Get all notes/comments for a request
     """
     
-    notes = db.query(AuditLog).filter(
-        AuditLog.entity_type == "certificate_request",
-        AuditLog.entity_id == request_id,
-        AuditLog.action == "NOTE_ADDED",
-    ).order_by(AuditLog.created_at.desc()).all()
+    audit_repo = AuditLogRepository(db)
+    notes = audit_repo.request_notes(request_id).all()
     
     return notes
 
@@ -378,10 +384,8 @@ def get_request_audit_logs(
     Shows all changes made to the request (status changes, data updates, etc.)
     """
     
-    logs = db.query(AuditLog).filter(
-        AuditLog.entity_type == "certificate_request",
-        AuditLog.entity_id == request_id
-    ).order_by(AuditLog.created_at.desc()).all()
+    audit_repo = AuditLogRepository(db)
+    logs = audit_repo.for_request(request_id).all()
     
     return logs
 
@@ -398,7 +402,8 @@ def get_all_audit_logs(
     For transparency and oversight.
     """
     
-    logs = db.query(AuditLog).order_by(
+    audit_repo = AuditLogRepository(db)
+    logs = audit_repo.query().order_by(
         AuditLog.created_at.desc()
     ).offset(skip).limit(limit).all()
     
@@ -424,7 +429,8 @@ def verify_certificate(
         )
     
     
-    request = db.query(CertificateRequest).filter(
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.query().filter(
         CertificateRequest.verification_token == verification_token
     ).first()
     
@@ -506,9 +512,8 @@ def download_certificate(
     Returns the PDF file for download
     """
     
-    request = db.query(CertificateRequest).filter(
-        CertificateRequest.id == request_id
-    ).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
     
     if not request:
         raise HTTPException(

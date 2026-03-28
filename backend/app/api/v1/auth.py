@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from app.database import get_db
 from app.models.user import User
+from app.repositories import UserRepository
 from app.services.auth_service import (
     verify_password,
     create_access_token,
@@ -19,7 +20,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_username(form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
 
@@ -32,7 +34,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     data = decode_access_token(token)
     if data is None or data.username is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
-    user = db.query(User).filter(User.username == data.username).first()
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_username(data.username)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user

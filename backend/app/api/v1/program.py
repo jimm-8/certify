@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.program import Program
 from app.models.campus import Campus
+from app.repositories import CampusRepository, ProgramRepository
 
 router = APIRouter(prefix="/programs", tags=["Programs"])
 
@@ -27,7 +28,9 @@ def get_programs_by_campus(campus_name: str, db: Session = Depends(get_db)):
 
     # 1) Exact-ish match against known variants
     exact_filters = [Campus.name.ilike(name) for name in names_to_try if name]
-    campus = db.query(Campus).filter(or_(*exact_filters)).first() if exact_filters else None
+    campus_repo = CampusRepository(db)
+    program_repo = ProgramRepository(db)
+    campus = campus_repo.query().filter(or_(*exact_filters)).first() if exact_filters else None
 
     # 2) Fallback to contains match to tolerate DB naming differences
     if not campus:
@@ -35,7 +38,7 @@ def get_programs_by_campus(campus_name: str, db: Session = Depends(get_db)):
             Campus.name.ilike(f"%{name}%") for name in names_to_try if name
         ]
         campus = (
-            db.query(Campus).filter(or_(*contains_filters)).first()
+            campus_repo.query().filter(or_(*contains_filters)).first()
             if contains_filters
             else None
         )
@@ -44,7 +47,7 @@ def get_programs_by_campus(campus_name: str, db: Session = Depends(get_db)):
         return []
 
     programs = (
-        db.query(Program)
+        program_repo.query()
         .filter(Program.campus_id == campus.id)
         .order_by(Program.name)
         .all()

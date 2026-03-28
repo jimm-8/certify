@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.repositories import CertificateRequestRepository
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -30,7 +31,8 @@ def _pct_change(current: int, previous: int):
 
 @router.get("/summary")
 def get_dashboard_summary(db: Session = Depends(get_db)):
-    requests = db.query(CertificateRequest).all()
+    request_repo = CertificateRequestRepository(db)
+    requests = request_repo.query().all()
     now = datetime.now()
     today = now.date()
     month_start = today.replace(day=1)
