@@ -12,6 +12,14 @@ from app.models.student import Student
 from app.models.student_address import StudentAddress
 from app.models.academic_summary import AcademicSummary
 from app.models.graduation_record import GraduationRecordNew
+from app.repositories import (
+    AcademicSummaryRepository,
+    CourseRepository,
+    EnrollmentRepository,
+    GraduationRecordRepository,
+    StudentAddressRepository,
+    StudentRepository,
+)
 from sqlalchemy import case
 from sqlalchemy import func
 from app.utils.pdf_generator import CertificateGenerator
@@ -256,7 +264,7 @@ class CertificateTemplateService:
         try:
             # Primary source: registrar simulation academic records.
             rows = (
-                db.query(
+                CourseRepository(db).query_with(
                     Course.course_code,
                     Course.units,
                     Course.course_description,
@@ -299,13 +307,13 @@ class CertificateTemplateService:
             semester_order = case((Enrollment.semester == "1st", 1), (Enrollment.semester == "2nd", 2), else_=9)
 
             first_enrollment = (
-                db.query(Enrollment)
+                EnrollmentRepository(db).query()
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(Enrollment.academic_year.asc(), semester_order.asc(), Enrollment.year_level.asc())
                 .first()
             )
             last_enrollment = (
-                db.query(Enrollment)
+                EnrollmentRepository(db).query()
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(Enrollment.academic_year.desc(), semester_order.desc(), Enrollment.year_level.desc())
                 .first()
@@ -323,7 +331,7 @@ class CertificateTemplateService:
                 snapshot["attendance_period"] = f"{first_enrollment.academic_year} to {last_enrollment.academic_year}"
 
             earned_units = (
-                db.query(func.sum(Course.units))
+                CourseRepository(db).query_with(func.sum(Course.units))
                 .join(Grade, Grade.course_id == Course.id)
                 .filter(Grade.student_id == sr_code, Grade.grade <= 3.00)
                 .scalar()
@@ -331,7 +339,7 @@ class CertificateTemplateService:
             if earned_units is not None:
                 snapshot["earned_credits"] = str(round(float(earned_units), 2)).rstrip("0").rstrip(".")
 
-            grad_new = db.query(GraduationRecordNew).filter(GraduationRecordNew.sr_code == sr_code).first()
+            grad_new = GraduationRecordRepository(db).get_by_sr_code(sr_code)
             if grad_new:
                 snapshot["date_of_graduation"] = str(grad_new.date_of_graduation or "")
                 snapshot["board_resolution_number"] = str(grad_new.board_resolution_number or "")
@@ -339,7 +347,7 @@ class CertificateTemplateService:
                 pass
 
             summary = (
-                db.query(AcademicSummary)
+                AcademicSummaryRepository(db).query()
                 .filter(AcademicSummary.sr_code == sr_code)
                 .order_by(AcademicSummary.academic_year.desc(), AcademicSummary.semester.desc())
                 .first()
@@ -348,16 +356,11 @@ class CertificateTemplateService:
             if avg_gwa is not None:
                 snapshot["gwa"] = f"{float(avg_gwa):.2f}"
 
-            student = db.query(Student).filter(Student.sr_code == sr_code).first()
+            student = StudentRepository(db).get_by_sr_code(sr_code)
             if student:
                 snapshot["sex"] = str(student.gender or "")
                 snapshot["last_name"] = str(student.last_name or "")
-                address = (
-                    db.query(StudentAddress)
-                    .filter(StudentAddress.student_id == student.id)
-                    .order_by(StudentAddress.id.desc())
-                    .first()
-                )
+                address = StudentAddressRepository(db).latest_for_student(student.id)
                 if address:
                     snapshot["address"] = ", ".join([p for p in [
                         address.address_line,
@@ -421,13 +424,13 @@ class CertificateTemplateService:
             semester_order = case((Enrollment.semester == "1st", 1), (Enrollment.semester == "2nd", 2), else_=9)
 
             first_row = (
-                db.query(Enrollment.semester, Enrollment.academic_year)
+                EnrollmentRepository(db).query_with(Enrollment.semester, Enrollment.academic_year)
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(Enrollment.academic_year.asc(), semester_order.asc(), Enrollment.year_level.asc())
                 .first()
             )
             last_row = (
-                db.query(Enrollment.semester, Enrollment.academic_year)
+                EnrollmentRepository(db).query_with(Enrollment.semester, Enrollment.academic_year)
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(Enrollment.academic_year.desc(), semester_order.desc(), Enrollment.year_level.desc())
                 .first()

@@ -1,21 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
-import {
-  LayoutGrid,
-  SearchCheck,
-  Radio,
-  CheckCircle,
-  History,
-  CreditCard,
-} from "lucide-react";
+import { LayoutGrid, Inbox, PackageCheck, History } from "lucide-react";
+import { LuRefreshCw } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
 
 const tabs = [
   { label: "Dashboard", icon: <LayoutGrid size={15} /> },
-  { label: "Checking of Request", icon: <SearchCheck size={15} /> },
-  { label: "Request Tracker", icon: <Radio size={15} /> },
-  { label: "Ready", icon: <CheckCircle size={15} /> },
-  { label: "Payments", icon: <CreditCard size={15} /> },
+  { label: "Received Request", icon: <Inbox size={15} /> },
+  { label: "Under Processing", icon: <LuRefreshCw size={15} /> },
+  { label: "For Release", icon: <PackageCheck size={15} /> },
   { label: "History", icon: <History size={15} /> },
 ];
 

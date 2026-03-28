@@ -12,6 +12,13 @@ from app.database import get_db
 from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
 from app.models.student import Student
 from app.models.program import Program
+from app.repositories import (
+    AuditLogRepository,
+    CertificateRequestRepository,
+    CertificateTypeRepository,
+    ProgramRepository,
+    StudentRepository,
+)
 from app.schemas.certificate_request import (
     CertificateRequestCreate,
     CertificateRequestResponse,
@@ -32,6 +39,7 @@ from app.schemas.audit import AuditLogResponse, RequestNoteCreate
 from app.schemas.certificate_request import CertificateVerificationResponse
 
 from app.services.certificate_service import generate_certificate_pdf
+from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
 
 # Create router
@@ -44,10 +52,11 @@ def generate_reference_number(db: Session) -> str:
     year = now.strftime("%y")
     month_day = now.strftime("%m%d")
 
+    request_repo = CertificateRequestRepository(db)
     while True:
         random_suffix = f"{random.randint(0, 99999):05d}"
         ref = f"{year}-{month_day}-{random_suffix}"
-        exists = db.query(CertificateRequest).filter(
+        exists = request_repo.query().filter(
             CertificateRequest.reference_number == ref
         ).first()
         if not exists:
@@ -99,10 +108,8 @@ async def create_certificate_request(
     """
     
     # Verify certificate type exists
-    cert_type = db.query(CertificateType).filter(
-        CertificateType.id == request_data.certificate_type_id,
-        CertificateType.is_active == 1
-    ).first()
+    cert_type_repo = CertificateTypeRepository(db)
+    cert_type = cert_type_repo.get_active_by_id(request_data.certificate_type_id)
     
     if not cert_type:
         raise HTTPException(
@@ -143,7 +150,8 @@ async def create_certificate_request(
     )
     
     # Save to database
-    db.add(new_request)
+    request_repo = CertificateRequestRepository(db)
+    request_repo.add(new_request)
     db.commit()
     db.refresh(new_request)
     
@@ -152,8 +160,10 @@ async def create_certificate_request(
         campus_email = None
         campus_telNo = None
 
+        student_repo = StudentRepository(db)
+        program_repo = ProgramRepository(db)
         if request_data.sr_code:
-            student = db.query(Student).filter(Student.sr_code == request_data.sr_code).first()
+            student = student_repo.get_by_sr_code(request_data.sr_code)
         else:
             student = None
 
@@ -161,7 +171,7 @@ async def create_certificate_request(
         if student is not None:
             campus = student.campus or (student.program.campus if student.program else None)
         if campus is None and request_data.program:
-            program = db.query(Program).filter(Program.name == request_data.program).first()
+            program = program_repo.get_by_name(request_data.program)
             campus = program.campus if program else None
 
         if campus is not None:
@@ -207,10 +217,8 @@ def track_certificate_request(
     """
     
     # Find request
-    request = db.query(CertificateRequest).filter(
-        CertificateRequest.reference_number == reference_number,
-        CertificateRequest.pin == pin
-    ).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_reference_and_pin(reference_number, pin)
     
     if not request:
         raise HTTPException(
@@ -233,9 +241,11 @@ def get_all_requests(
     skip: int = 0,
     limit: int = 10,
     status_filter: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
-    query = db.query(CertificateRequest)
+    request_repo = CertificateRequestRepository(db)
+    query = request_repo.query()
 
     if status_filter:
         try:
@@ -254,13 +264,15 @@ def get_all_requests(
 @router.get("/{request_id}", response_model=CertificateRequestDetail)
 def get_request_detail(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get detailed information about a specific request
     """
     
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
     
     if not request:
         raise HTTPException(
@@ -275,7 +287,8 @@ def get_request_detail(
 async def update_status(                         
     request_id: int,
     status_update: StatusUpdateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
 ):
     # Convert schema enum to model enum to satisfy transition checks
     new_status = RequestStatus(status_update.new_status.value)
@@ -293,7 +306,8 @@ async def update_status(
 def update_request_student_data(
     request_id: int,
     data_update: StudentDataUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_data")),
 ):
     """
     Update student information on a request
@@ -330,7 +344,8 @@ def update_request_student_data(
 def create_note(
     request_id: int,
     note_data: RequestNoteCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.notes")),
 ):
     """
     Add a note/comment to a request
@@ -352,17 +367,15 @@ def create_note(
 @router.get("/{request_id}/notes", response_model=list[AuditLogResponse])
 def get_request_notes(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get all notes/comments for a request
     """
     
-    notes = db.query(AuditLog).filter(
-        AuditLog.entity_type == "certificate_request",
-        AuditLog.entity_id == request_id,
-        AuditLog.action == "NOTE_ADDED",
-    ).order_by(AuditLog.created_at.desc()).all()
+    audit_repo = AuditLogRepository(db)
+    notes = audit_repo.request_notes(request_id).all()
     
     return notes
 
@@ -370,7 +383,8 @@ def get_request_notes(
 @router.get("/{request_id}/audit-logs", response_model=list[AuditLogResponse])
 def get_request_audit_logs(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get complete audit trail for a request
@@ -378,10 +392,8 @@ def get_request_audit_logs(
     Shows all changes made to the request (status changes, data updates, etc.)
     """
     
-    logs = db.query(AuditLog).filter(
-        AuditLog.entity_type == "certificate_request",
-        AuditLog.entity_id == request_id
-    ).order_by(AuditLog.created_at.desc()).all()
+    audit_repo = AuditLogRepository(db)
+    logs = audit_repo.for_request(request_id).all()
     
     return logs
 
@@ -390,7 +402,8 @@ def get_request_audit_logs(
 def get_all_audit_logs(
     skip: int = 0,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
 ):
     """
     Get all audit logs across all requests
@@ -398,7 +411,8 @@ def get_all_audit_logs(
     For transparency and oversight.
     """
     
-    logs = db.query(AuditLog).order_by(
+    audit_repo = AuditLogRepository(db)
+    logs = audit_repo.query().order_by(
         AuditLog.created_at.desc()
     ).offset(skip).limit(limit).all()
     
@@ -424,7 +438,8 @@ def verify_certificate(
         )
     
     
-    request = db.query(CertificateRequest).filter(
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.query().filter(
         CertificateRequest.verification_token == verification_token
     ).first()
     
@@ -455,7 +470,8 @@ def verify_certificate(
 async def mark_as_released(
     request_id: int,
     user_name: str = "Registrar",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.release")),
 ):
     updated_request = await update_request_status(  
         db=db,
@@ -471,7 +487,8 @@ async def mark_as_released(
 def generate_certificate(
     request_id: int,
     user_name: str = "System",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Generate PDF certificate for a request
@@ -498,7 +515,8 @@ def generate_certificate(
 @router.get("/{request_id}/download-certificate")
 def download_certificate(
     request_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Download the generated certificate PDF
@@ -506,9 +524,8 @@ def download_certificate(
     Returns the PDF file for download
     """
     
-    request = db.query(CertificateRequest).filter(
-        CertificateRequest.id == request_id
-    ).first()
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
     
     if not request:
         raise HTTPException(

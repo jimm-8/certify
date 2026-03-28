@@ -10,6 +10,13 @@ from datetime import datetime
 from app.engine.certificate_engine import CertificateEngine
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.models.student_address import StudentAddress
+from app.repositories import (
+    AuditLogRepository,
+    AuthorizedOfficialRepository,
+    CertificateRequestRepository,
+    StudentAddressRepository,
+    StudentRepository,
+)
 
 
 def generate_certificate_pdf(
@@ -27,7 +34,11 @@ def generate_certificate_pdf(
     4. Generate PDF and audit the operation
     """
 
-    request = db.query(CertificateRequest).filter(CertificateRequest.id == request_id).first()
+    request_repo = CertificateRequestRepository(db)
+    signature_repo = AuthorizedOfficialRepository(db)
+    student_address_repo = StudentAddressRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
 
     if not request:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
@@ -77,10 +88,7 @@ def generate_certificate_pdf(
 
     try:
         default_signature = (
-            db.query(AuthorizedOfficial)
-            .filter(AuthorizedOfficial.is_active == True)
-            .order_by(AuthorizedOfficial.created_at.desc())
-            .first()
+            signature_repo.latest_active()
         )
     except Exception:
         # Signature table may not be present yet in new schema.
@@ -106,10 +114,7 @@ def generate_certificate_pdf(
     student_address = ""
     if student:
         addr = (
-            db.query(StudentAddress)
-            .filter(StudentAddress.student_id == student.id)
-            .order_by(StudentAddress.id.desc())
-            .first()
+            student_address_repo.latest_for_student(student.id)
         )
         if addr:
             student_address = ", ".join([p for p in [
@@ -343,7 +348,7 @@ def generate_certificate_pdf(
         user_name=user_name,
         notes="Certificate PDF generated from mapped template successfully",
     )
-    db.add(audit_log)
+    audit_repo.add(audit_log)
     db.commit()
     db.refresh(request)
 
@@ -358,8 +363,8 @@ def get_certificate_data_from_student_db(
     Fetch student data from mock database and prepare for certificate.
     """
     from app.models.student import Student
-
-    student = db.query(Student).filter(Student.sr_code == sr_code).first()
+    student_repo = StudentRepository(db)
+    student = student_repo.get_by_sr_code(sr_code)
 
     if not student:
         return None

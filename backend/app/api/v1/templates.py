@@ -6,6 +6,7 @@ from typing import List
 from app.certificate_dependencies import dependency_variants_payload
 from app.database import get_db
 from app.models.certificate_request import CertificateType
+from app.repositories import CertificateTypeRepository
 from app.schemas.certificate_request import CertificateTypeResponse
 from app.utils.template_engine import CertificateTemplateEngine
 
@@ -23,9 +24,8 @@ def get_certificate_types(
     Returns a list of all certificate types that can be requested.
     """
     
-    cert_types = db.query(CertificateType).filter(
-        CertificateType.is_active == 1
-    ).order_by(CertificateType.name).all()
+    cert_type_repo = CertificateTypeRepository(db)
+    cert_types = cert_type_repo.active().order_by(CertificateType.name).all()
 
     return [
         CertificateTypeResponse(

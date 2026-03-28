@@ -5,14 +5,12 @@ import CheckingOfRequest from "./checking";
 import RequestTracker from "./tracker";
 import Ready from "./ready";
 import History from "./history";
-import Payments from "./payments";
 
 const tabComponents = [
   <Dashboard />,
   <CheckingOfRequest />,
   <RequestTracker />,
   <Ready />,
-  <Payments />,
   <History />,
 ];
 

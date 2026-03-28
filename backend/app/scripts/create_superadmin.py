@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import argparse
 from app.database import SessionLocal
 from app.models.user import User
+from app.repositories import UserRepository
 from app.services.auth_service import get_password_hash
 
 
@@ -17,7 +18,8 @@ load_dotenv()
 def create_superadmin(username: str, email: str, password: str):
     db = SessionLocal()
     try:
-        existing = db.query(User).filter(User.username == username).first()
+        user_repo = UserRepository(db)
+        existing = user_repo.query().filter(User.username == username).first()
         if existing:
             print(f"User '{username}' already exists. Skipping creation.")
             return
@@ -28,7 +30,7 @@ def create_superadmin(username: str, email: str, password: str):
             hashed_password=get_password_hash(password),
             role="superadmin",
         )
-        db.add(user)
+        user_repo.add(user)
         db.commit()
         print(f"Created superadmin user '{username}'")
     finally:

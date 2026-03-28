@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
-import RequestModal from "../../components/common/requestModal";
 import {
   BsSearch,
   BsCalendar3,
@@ -10,6 +9,7 @@ import {
   BsPrinter,
   BsCheckLg,
   BsDownload,
+  BsX,
 } from "react-icons/bs";
 
 const filterOptions = [
@@ -63,11 +63,12 @@ const Ready = () => {
   const [selectedFilter, setSelectedFilter] = useState(filterOptions[4]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const [selectedRequest, setSelectedRequest] = useState(null);
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const fetchRequests = async () => {
     try {
@@ -84,6 +85,11 @@ const Ready = () => {
 
   useEffect(() => {
     fetchRequests();
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(fetchRequests, 5000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -122,7 +128,26 @@ const Ready = () => {
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
 
-  const handleView = (row) => setSelectedRequest(row);
+  const handleView = async (row) => {
+    setPdfLoading(true);
+    try {
+      const blob = await requestService.downloadCertificate(row.id);
+      const url = window.URL.createObjectURL(
+        new Blob([blob], { type: "application/pdf" }),
+      );
+      setPdfUrl(url);
+    } catch (error) {
+      console.error("Failed to load certificate:", error);
+      alert("Failed to load certificate preview.");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleClosePdf = () => {
+    if (pdfUrl) window.URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
 
   const handlePrint = async (row) => {
     try {
@@ -145,10 +170,10 @@ const Ready = () => {
 
   const handleComplete = async (row) => {
     try {
-      await requestService.updateStatus(row.id, "COMPLETED");
+      await requestService.updateStatus(row.id, "RELEASED");
       fetchRequests();
     } catch (error) {
-      console.error("Failed to mark as completed:", error);
+      console.error("Failed to mark as released:", error);
       alert("Failed to update status. Please try again.");
     }
   };
@@ -294,8 +319,8 @@ const Ready = () => {
 
           <button
             onClick={() => handleComplete(row)}
-            title="Mark as Completed"
-            className="flex items-center px-3 py-1.5 text-xs font-medium text-purple-600 border border-purple-200 rounded-md hover:bg-purple-50 transition-colors duration-150"
+            title="Mark as Released"
+            className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
           >
             <BsCheckLg size={13} />
           </button>
@@ -431,11 +456,45 @@ const Ready = () => {
         />
       </div>
 
-      <RequestModal
-        request={selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-        readOnly={true}
-      />
+      {/* PDF Viewer Modal */}
+      {(pdfUrl || pdfLoading) && (
+        <div
+          onClick={handleClosePdf}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-4xl h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+              <p className="text-sm font-semibold text-gray-800">
+                Certificate Preview
+              </p>
+              <button
+                onClick={handleClosePdf}
+                className="flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              >
+                <BsX size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              {pdfLoading ? (
+                <div className="flex items-center justify-center h-full gap-2 text-sm text-gray-400">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                  Loading certificate...
+                </div>
+              ) : (
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-full border-0"
+                  title="Certificate Preview"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

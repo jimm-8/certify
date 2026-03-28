@@ -7,7 +7,9 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models.authorized_official import AuthorizedOfficial
+from app.repositories import AuthorizedOfficialRepository
 from app.schemas.signature import SignatureCreate, SignatureResponse, SignatureUpdate
+from app.api.v1.auth import require_permissions
 
 router = APIRouter(prefix="/signatures", tags=["Signatures"])
 
@@ -21,7 +23,8 @@ async def upload_signature(
     title: str = Form(...),
     campus_id: Optional[int] = Form(None),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Upload a signature image
@@ -97,7 +100,8 @@ async def upload_signature(
         is_active=True
     )
     
-    db.add(signature)
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature_repo.add(signature)
     db.commit()
     db.refresh(signature)
 
@@ -108,7 +112,8 @@ async def upload_signature(
 @router.get("/", response_model=List[SignatureResponse])
 def get_all_signatures(
     active_only: bool = True,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get all signatures
@@ -116,10 +121,11 @@ def get_all_signatures(
     By default returns only active signatures
     """
     
-    query = db.query(AuthorizedOfficial)
+    signature_repo = AuthorizedOfficialRepository(db)
+    query = signature_repo.query()
     
     if active_only:
-        query = query.filter(AuthorizedOfficial.is_active == True)
+        query = signature_repo.active()
     
     signatures = query.order_by(AuthorizedOfficial.created_at.desc()).all()
     
@@ -128,13 +134,15 @@ def get_all_signatures(
 @router.get("/{signature_id}", response_model=SignatureResponse)
 def get_signature(
     signature_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get a specific signature by ID
     """
     
-    signature = db.query(AuthorizedOfficial).filter(AuthorizedOfficial.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -148,7 +156,8 @@ def get_signature(
 def update_signature(
     signature_id: int,
     update_data: SignatureUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Update signature details
@@ -156,7 +165,8 @@ def update_signature(
     Can update name, title, position, status, etc.
     """
     
-    signature = db.query(AuthorizedOfficial).filter(AuthorizedOfficial.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -185,7 +195,8 @@ def update_signature(
 def delete_signature(
     signature_id: int,
     hard_delete: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Delete a signature
@@ -194,7 +205,8 @@ def delete_signature(
     Set hard_delete=true to permanently delete
     """
     
-    signature = db.query(AuthorizedOfficial).filter(AuthorizedOfficial.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -208,7 +220,7 @@ def delete_signature(
             os.remove(signature.signature_path)
         
         # Delete from database
-        db.delete(signature)
+        signature_repo.delete(signature)
         db.commit()
         
         return {"message": "Signature permanently deleted"}

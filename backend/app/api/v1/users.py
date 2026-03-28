@@ -3,36 +3,48 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.models.user_role import UserRole
+from app.repositories import RoleRepository, UserRepository, UserRoleRepository
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth_service import get_password_hash
-from app.api.v1.auth import require_superadmin, get_current_user
+from app.api.v1.auth import require_permissions
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.post("/", response_model=UserResponse)
-def create_user(new_user: UserCreate, db: Session = Depends(get_db), _: User = Depends(require_superadmin)):
+def create_user(new_user: UserCreate, db: Session = Depends(get_db), _: dict = Depends(require_permissions("users.manage"))):
     # ensure username/email uniqueness
-    if db.query(User).filter(User.username == new_user.username).first():
+    user_repo = UserRepository(db)
+    role_repo = RoleRepository(db)
+    user_role_repo = UserRoleRepository(db)
+    if user_repo.get_by_username(new_user.username):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
-    if db.query(User).filter(User.email == new_user.email).first():
+    if user_repo.get_by_email(new_user.email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
 
+    role_name = new_user.role or "registrar_staff"
     user = User(
         username=new_user.username,
         email=new_user.email,
         hashed_password=get_password_hash(new_user.password),
-        role=new_user.role or "user",
+        role=role_name,
         campus_id=new_user.campus_id,
         permissions=new_user.permissions,
     )
-    db.add(user)
+    user_repo.add(user)
     db.commit()
     db.refresh(user)
+
+    role = role_repo.get_by_name(role_name)
+    if role:
+        user_role_repo.add(UserRole(user_id=user.id, role_id=role.id))
+        db.commit()
     return user
 
 
 @router.get("/", response_model=list[UserResponse])
-def list_users(db: Session = Depends(get_db), _: User = Depends(require_superadmin)):
-    users = db.query(User).order_by(User.username).all()
+def list_users(db: Session = Depends(get_db), _: dict = Depends(require_permissions("users.manage"))):
+    user_repo = UserRepository(db)
+    users = user_repo.query().order_by(User.username).all()
     return users

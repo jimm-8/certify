@@ -13,6 +13,8 @@ import CertifyDashboard from './pages/certify/dashboard';
 import TemplatePreview from "./pages/templates/TemplatePreview";
 import Login from "./pages/auth/Login";
 import UserManagement from "./pages/admin/UserManagement";
+import RequireAuth from "./components/common/RequireAuth";
+import AllRequests from "./pages/certify/all_requests";
 
 function App() {
   return (
@@ -37,9 +39,11 @@ function AppContent() {
       <Route
         path="/"
         element={
-          <MainLayout>
-            <CertifyIndex />
-          </MainLayout>
+          <RequireAuth>
+            <MainLayout>
+              <CertifyIndex />
+            </MainLayout>
+          </RequireAuth>
         }
       />
 
@@ -49,14 +53,25 @@ function AppContent() {
       <Route path="/odr-payments" element={<OdrPayment />} />
 
       {/* Dashboard */}
-      <Route path="/dashboard" element={<CertifyDashboard />} />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <CertifyIndex />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
 
       <Route
         path="/templates/preview"
         element={
-          <MainLayout>
-            <TemplatePreview />
-          </MainLayout>
+          <RequireAuth>
+            <MainLayout>
+              <TemplatePreview />
+            </MainLayout>
+          </RequireAuth>
         }
       />
 
@@ -65,9 +80,22 @@ function AppContent() {
       <Route
         path="/admin/users"
         element={
-          <MainLayout>
-            <UserManagement />
-          </MainLayout>
+          <RequireAuth>
+            <MainLayout>
+              <UserManagement />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/dashboard/requests"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <AllRequests />
+            </MainLayout>
+          </RequireAuth>
         }
       />
     </Routes>
