@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuth, isTokenExpired } from "../utils/auth";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -13,9 +14,11 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Attach token if available
-    const token = localStorage.getItem("access_token");
-    if (token) {
+    const token = sessionStorage.getItem("access_token");
+    if (token && !isTokenExpired(token)) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (token && isTokenExpired(token)) {
+      clearAuth();
     }
     return config;
   },
@@ -34,6 +37,15 @@ api.interceptors.response.use(
     if (error.response) {
       // Server responded with error
       console.error("API Error:", error.response.data);
+      if (
+        error.response.status === 401 &&
+        !String(error.config?.url || "").includes("/auth/token")
+      ) {
+        clearAuth();
+        if (!window.location.pathname.startsWith("/odr")) {
+          window.location.assign("/login");
+        }
+      }
     } else if (error.request) {
       // Request made but no response
       console.error("Network Error:", error.message);

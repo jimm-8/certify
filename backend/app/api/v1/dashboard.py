@@ -53,16 +53,32 @@ def _apply_period(requests, period: Optional[str], today):
         return [r for r in requests if _safe_date(r.created_at) == today]
     if period == "last_7_days":
         start = today - timedelta(days=6)
-        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+        return [
+            r
+            for r in requests
+            if _safe_date(r.created_at) and _safe_date(r.created_at) >= start
+        ]
     if period == "last_30_days":
         start = today - timedelta(days=29)
-        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+        return [
+            r
+            for r in requests
+            if _safe_date(r.created_at) and _safe_date(r.created_at) >= start
+        ]
     if period == "this_month":
         start = today.replace(day=1)
-        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+        return [
+            r
+            for r in requests
+            if _safe_date(r.created_at) and _safe_date(r.created_at) >= start
+        ]
     if period == "this_year":
         start = today.replace(month=1, day=1)
-        return [r for r in requests if _safe_date(r.created_at) and _safe_date(r.created_at) >= start]
+        return [
+            r
+            for r in requests
+            if _safe_date(r.created_at) and _safe_date(r.created_at) >= start
+        ]
     return requests
 
 
@@ -82,23 +98,23 @@ def get_dashboard_summary(
     last_month_end = month_start - timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
 
-    requests_today = sum(
-        1 for r in requests if _safe_date(r.created_at) == today
-    )
+    requests_today = sum(1 for r in requests if _safe_date(r.created_at) == today)
 
     pending_for_checking = sum(
-        1 for r in requests if r.status in {RequestStatus.SUBMITTED, RequestStatus.PENDING}
+        1
+        for r in requests
+        if r.status in {RequestStatus.SUBMITTED, RequestStatus.PENDING}
     )
-    for_approval_review = sum(
-        1 for r in requests if r.status == RequestStatus.APPROVED
-    )
+    for_approval_review = sum(1 for r in requests if r.status == RequestStatus.APPROVED)
     ready_for_printing = sum(
         1 for r in requests if r.status == RequestStatus.FOR_RELEASING
     )
     released_this_month = sum(
         1
         for r in requests
-        if r.status == RequestStatus.RELEASED and _safe_date(r.created_at) and _safe_date(r.created_at) >= month_start
+        if r.status == RequestStatus.RELEASED
+        and _safe_date(r.created_at)
+        and _safe_date(r.created_at) >= month_start
     )
 
     requests_yesterday = sum(
@@ -108,7 +124,8 @@ def get_dashboard_summary(
     ready_yesterday = sum(
         1
         for r in requests
-        if r.status == RequestStatus.FOR_RELEASING and _safe_date(r.created_at) == yesterday
+        if r.status == RequestStatus.FOR_RELEASING
+        and _safe_date(r.created_at) == yesterday
     )
 
     released_last_month = sum(
@@ -161,7 +178,7 @@ def get_dashboard_summary(
             "reference_number": r.reference_number,
             "created_at": r.created_at,
         }
-        for r in recent[:6]
+        for r in recent[:7]
     ]
 
     recent_requests = [
@@ -172,7 +189,7 @@ def get_dashboard_summary(
             "student_name": r.student_name,
             "status": r.status.value if hasattr(r.status, "value") else str(r.status),
         }
-        for r in recent[:3]
+        for r in recent[:9]
     ]
 
     requestor_counter = Counter(r.requestor_name for r in requests if r.requestor_name)
@@ -181,7 +198,9 @@ def get_dashboard_summary(
         for name, count in requestor_counter.most_common(3)
     ]
 
-    cert_counter = Counter(r.certificate_type_name for r in requests if r.certificate_type_name)
+    cert_counter = Counter(
+        r.certificate_type_name for r in requests if r.certificate_type_name
+    )
     certificate_history = [
         {"certificate_type": cert_type, "count": count}
         for cert_type, count in cert_counter.most_common(5)
@@ -191,7 +210,13 @@ def get_dashboard_summary(
     pending_over_5_days = sum(
         1
         for r in requests
-        if r.status in {RequestStatus.SUBMITTED, RequestStatus.PENDING, RequestStatus.APPROVED, RequestStatus.PROCESSING}
+        if r.status
+        in {
+            RequestStatus.SUBMITTED,
+            RequestStatus.PENDING,
+            RequestStatus.APPROVED,
+            RequestStatus.PROCESSING,
+        }
         and _safe_date(r.created_at)
         and _safe_date(r.created_at) <= pending_cutoff
     )
@@ -242,7 +267,9 @@ def get_dashboard_summary(
         "changes": {
             "requests_today": _pct_change(requests_today, requests_yesterday),
             "ready_for_printing": _pct_change(ready_for_printing, ready_yesterday),
-            "released_this_month": _pct_change(released_this_month, released_last_month),
+            "released_this_month": _pct_change(
+                released_this_month, released_last_month
+            ),
         },
         "status_breakdown": status_breakdown,
         "requests_over_time": requests_over_time,

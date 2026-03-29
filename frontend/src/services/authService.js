@@ -12,13 +12,13 @@ const authService = {
     });
     const token = response.data.access_token;
     if (token) {
-      localStorage.setItem("access_token", token);
+      sessionStorage.setItem("access_token", token);
     }
     return response.data;
   },
 
   logout: () => {
-    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
   },
 };
 

@@ -20,7 +20,7 @@ const CertifyPage = () => {
   return (
     <div>
       <CertifyHeader onTabChange={(index) => setActiveTab(index)} />
-      <div className="mx-4 mt-4">{tabComponents[activeTab]}</div>
+      <div className="mt-4">{tabComponents[activeTab]}</div>
     </div>
   );
 };

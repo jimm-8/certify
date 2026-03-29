@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.user_role import UserRole
 from app.repositories import RoleRepository, UserRepository, UserRoleRepository
+import json
 from app.schemas.user import UserCreate, UserResponse
 from app.services.auth_service import get_password_hash
 from app.api.v1.auth import require_permissions
@@ -24,13 +25,20 @@ def create_user(new_user: UserCreate, db: Session = Depends(get_db), _: dict = D
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
 
     role_name = new_user.role or "registrar_staff"
+    permissions_payload = new_user.permissions
+    permissions_value = None
+    if permissions_payload:
+        if isinstance(permissions_payload, list):
+            permissions_value = json.dumps(permissions_payload)
+        else:
+            permissions_value = str(permissions_payload)
     user = User(
         username=new_user.username,
         email=new_user.email,
         hashed_password=get_password_hash(new_user.password),
         role=role_name,
         campus_id=new_user.campus_id,
-        permissions=new_user.permissions,
+        permissions=permissions_value,
     )
     user_repo.add(user)
     db.commit()

@@ -55,6 +55,13 @@ const customStyles = {
   },
 };
 
+const LoadingState = () => (
+  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+    Loading requests...
+  </div>
+);
+
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
@@ -91,16 +98,28 @@ const Tracker = () => {
   const [statusLoadingId, setStatusLoadingId] = useState(null);
   const [statusError, setStatusError] = useState("");
   const [statusToast, setStatusToast] = useState(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [nowTick, setNowTick] = useState(Date.now());
 
-  const fetchRequests = async () => {
+  const lastSnapshotRef = useRef("");
+
+  const fetchRequests = async (opts = { silent: false }) => {
     try {
-      setLoading(true);
+      if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      setRequests(Array.isArray(data) ? data : data.items || []);
+      const items = Array.isArray(data) ? data : data.items || [];
+      const snapshot = JSON.stringify(
+        items.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
+      );
+      if (snapshot !== lastSnapshotRef.current) {
+        lastSnapshotRef.current = snapshot;
+        setRequests(items);
+      }
+      setLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
   };
 
@@ -109,7 +128,12 @@ const Tracker = () => {
   }, []);
 
   useEffect(() => {
-    const id = setInterval(fetchRequests, 5000);
+    const id = setInterval(() => fetchRequests({ silent: true }), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -157,6 +181,10 @@ const Tracker = () => {
     );
   });
 
+  const lastUpdatedLabel = lastUpdatedAt
+    ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
+    : "—";
+
   const affectedCount = filteredRequests.filter(
     (r) => r.status === bulkStatus,
   ).length;
@@ -203,7 +231,9 @@ const Tracker = () => {
       await Promise.all(
         filteredRequests
           .filter((r) => r.status === bulkStatus)
-          .map((r) => requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus])),
+          .map((r) =>
+            requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus]),
+          ),
       );
       setBulkModalOpen(false);
       setBulkStatus("");
@@ -395,6 +425,7 @@ const Tracker = () => {
           columns={columns}
           data={filteredRequests}
           progressPending={loading}
+          progressComponent={<LoadingState />}
           pagination
           customStyles={customStyles}
           highlightOnHover
@@ -406,6 +437,9 @@ const Tracker = () => {
           }
         />
       </div>
+      <span className="text-[11px] text-gray-400">
+        Last updated: {lastUpdatedLabel}
+      </span>
 
       <RequestModal
         request={selectedRequest}

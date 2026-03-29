@@ -92,6 +92,22 @@ const requestService = {
       throw error;
     }
   },
+  // get all audit logs
+  getAllAuditLogs: async ({ page = 1, limit = 50 } = {}) => {
+    try {
+      const skip = (page - 1) * limit;
+      const response = await api.get("/requests/audit-logs/all", {
+        params: {
+          skip,
+          limit,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      throw error;
+    }
+  },
   // download certificate
   downloadCertificate: async (requestId) => {
     try {

@@ -1,12 +1,12 @@
 import CertifyNavbar from "../components/common/certify_navbar";
 
-const main = ({ children }) => {
+const Main = ({ children }) => {
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <CertifyNavbar />
-      {children}
+      <div className="px-3">{children}</div>
     </div>
   );
 };
 
-export default main;
+export default Main;

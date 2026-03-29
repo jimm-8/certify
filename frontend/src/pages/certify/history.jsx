@@ -54,6 +54,13 @@ const customStyles = {
   },
 };
 
+const LoadingState = () => (
+  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+    Loading requests...
+  </div>
+);
+
 const History = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -310,6 +317,7 @@ const History = () => {
           columns={columns}
           data={filteredRequests}
           progressPending={loading}
+          progressComponent={<LoadingState />}
           pagination
           customStyles={customStyles}
           highlightOnHover
