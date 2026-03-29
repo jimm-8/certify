@@ -139,7 +139,7 @@ const CertifyHeader = ({ onTabChange }) => {
   }, []);
 
   return (
-    <div className=" mt-3">
+    <div className="mt-3">
       <div className="bg-white rounded-md border h-10 border-gray-200 shadow-sm flex items-stretch overflow-x-auto">
         {/* Tabs */}
         <div className="flex items-stretch">
