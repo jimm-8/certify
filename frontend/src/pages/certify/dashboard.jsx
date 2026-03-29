@@ -205,7 +205,7 @@ export default function CertifyDashboard() {
   );
 
   return (
-    <div className="text-[#1A1D2E] text-[13px] -mt-3">
+    <div className="text-[#1A1D2E] text-sm -mt-3">
       {/* MAIN */}
       <div className="flex flex-col gap-3 pb-3">
         {/* SKELETON */}
@@ -242,26 +242,24 @@ export default function CertifyDashboard() {
         )}
 
         {/* STATS */}
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-3 mb-0">
           {stats.map((s, i) => (
             <div
               key={i}
               className="bg-white border border-gray-200 rounded p-3 shadow-sm flex items-start gap-3"
             >
               <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.iconBg}`}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${s.iconBg}`}
               >
                 {s.icon}
               </div>
               <div>
-                <div className="text-[22px] font-medium leading-none">
-                  {s.num}
-                </div>
-                <div className="text-[11px] text-[#8892A4] mt-1">
+                <div className="text-xl font-medium leading-none">{s.num}</div>
+                <div className="text-xs text-[#8892A4] mt-1">
                   {s.label}
                   {s.badge && (
                     <span
-                      className={`text-[10px] font-semibold ml-1 ${s.badgeDown ? "text-[#F74242]" : "text-[#2DC78D]"}`}
+                      className={`text-xs font-semibold ml-1 ${s.badgeDown ? "text-[#F74242]" : "text-[#2DC78D]"}`}
                     >
                       {s.badge}
                     </span>

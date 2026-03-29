@@ -205,10 +205,11 @@ const AuditLogs = () => {
         <div className="flex items-center justify-between gap-2 mb-2">
           <button
             onClick={() => navigate("/dashboard")}
-            className="text-sm font-bold  text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+            title="Back to Dashboard"
+            className="text-lg font-bold  text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
           >
             <BsChevronLeft style={{ strokeWidth: "0.5" }} />
-            <span>Dashboard</span>
+            <span>Audit Logs</span>
           </button>
           <div className="flex items-center gap-2">
             {/* Date Filter */}

@@ -1,5 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import templateService from "../../../services/templateService";
+import { useNavigate } from "react-router-dom";
+import { BsChevronLeft } from "react-icons/bs";
+import {
+  BiUndo,
+  BiRedo,
+  BiBold,
+  BiItalic,
+  BiUnderline,
+  BiAlignLeft,
+  BiAlignMiddle,
+  BiAlignRight,
+  BiListUl,
+  BiListOl,
+} from "react-icons/bi";
+import { FaXmark } from "react-icons/fa6";
 
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
@@ -13,6 +28,7 @@ const Templates = () => {
   const [success, setSuccess] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const iframeRef = useRef(null);
+  const navigate = useNavigate();
 
   const apiBase =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
@@ -23,7 +39,8 @@ const Templates = () => {
     return html.replace(
       /(src|href)=["'](?!https?:|data:|\/api\/v1\/templates\/assets\/)([^"']+)["']/gi,
       (_, attr, url) => {
-        if (url.startsWith("/")) return `${attr}="${assetsBase}${url.slice(1)}"`;
+        if (url.startsWith("/"))
+          return `${attr}="${assetsBase}${url.slice(1)}"`;
         return `${attr}="${assetsBase}${url}"`;
       },
     );
@@ -120,25 +137,30 @@ const Templates = () => {
     }
   };
 
+  const toolbarBtn =
+    "flex items-center gap-1 px-2 py-1 text-lg border border-gray-200 rounded bg-white hover:bg-gray-100";
+
+  const formatName = (name) =>
+    name
+      .replace(/\.html$/, "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
-    <div className="m-4">
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
+    <div className="py-3">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-2">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">
-              Template Editor
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Edit the actual HTML template and preview the result live.
-            </p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              title="Back to Dashboard"
+              className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+            >
+              <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+              <span>Template Editor</span>
+            </button>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.history.back()}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Back to Dashboard
-            </button>
             <div className="flex items-center border border-gray-200 rounded-md overflow-hidden text-xs">
               <button
                 onClick={() => setViewMode("visual")}
@@ -210,7 +232,7 @@ const Templates = () => {
               >
                 {templates.map((name) => (
                   <option key={name} value={name}>
-                    {name}
+                    {formatName(name)}
                   </option>
                 ))}
               </select>
@@ -219,68 +241,78 @@ const Templates = () => {
             {viewMode === "visual" ? (
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Template Editor (Word‑like)
+                  Template Editor
                 </label>
                 <div className="flex flex-wrap gap-1 border border-gray-200 rounded-md p-2 bg-gray-50">
                   <button
                     onClick={() => exec("bold")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Bold"
                   >
-                    B
+                    <BiBold />
                   </button>
                   <button
                     onClick={() => exec("italic")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Italic"
                   >
-                    I
+                    <BiItalic />
                   </button>
                   <button
                     onClick={() => exec("underline")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Underline"
                   >
-                    U
+                    <BiUnderline />
                   </button>
                   <button
                     onClick={() => exec("justifyLeft")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Align Left"
                   >
-                    Left
+                    <BiAlignLeft />
                   </button>
                   <button
                     onClick={() => exec("justifyCenter")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Align Center"
                   >
-                    Center
+                    <BiAlignMiddle />
                   </button>
                   <button
                     onClick={() => exec("justifyRight")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Align Right"
                   >
-                    Right
+                    <BiAlignRight />
                   </button>
                   <button
                     onClick={() => exec("insertUnorderedList")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Bullet List"
                   >
-                    Bullets
+                    <BiListUl />
                   </button>
                   <button
                     onClick={() => exec("insertOrderedList")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Numbered List"
                   >
-                    Numbered
+                    <BiListOl />
                   </button>
                   <button
                     onClick={() => exec("undo")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Undo"
                   >
-                    Undo
+                    <BiUndo />
                   </button>
                   <button
                     onClick={() => exec("redo")}
-                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white hover:bg-gray-100"
+                    className={toolbarBtn}
+                    title="Redo"
                   >
-                    Redo
+                    <BiRedo />
                   </button>
                   <select
                     onChange={(e) => exec("fontSize", e.target.value)}
@@ -321,7 +353,6 @@ const Templates = () => {
               </div>
             )}
           </div>
-
         </div>
       </div>
 
@@ -334,18 +365,18 @@ const Templates = () => {
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden"
           >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100">
               <div className="text-sm font-semibold text-gray-800">
                 Template Preview
               </div>
               <button
                 onClick={() => setPreviewOpen(false)}
-                className="text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
+                className="text-lg rounded-md  border-gray-200 hover:text-[#B22222]"
               >
-                Close
+                <FaXmark />
               </button>
             </div>
-            <div className="flex-1 bg-gray-50 p-3 overflow-auto">
+            <div className="flex-1 bg-gray-50 p-2 overflow-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-full text-xs text-gray-400">
                   Loading template...
