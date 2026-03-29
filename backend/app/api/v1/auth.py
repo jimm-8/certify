@@ -19,6 +19,7 @@ from app.services.auth_service import (
     create_access_token,
     decode_access_token,
 )
+from app.services.audit_service import log_action
 from app.schemas.user import Token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
@@ -38,6 +39,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = create_access_token(
         data={"sub": user.username, "role": role_name},
         expires_delta=access_token_expires,
+    )
+    log_action(
+        db,
+        action="AUTH_LOGIN",
+        entity_type="auth",
+        entity_id=user.id,
+        user_id=user.id,
+        user_name=user.username,
+        notes="Login success",
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
