@@ -55,6 +55,13 @@ const customStyles = {
   },
 };
 
+const LoadingState = () => (
+  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+    Loading requests...
+  </div>
+);
+
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
@@ -418,6 +425,7 @@ const Tracker = () => {
           columns={columns}
           data={filteredRequests}
           progressPending={loading}
+          progressComponent={<LoadingState />}
           pagination
           customStyles={customStyles}
           highlightOnHover

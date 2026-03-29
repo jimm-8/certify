@@ -299,11 +299,25 @@ export default function CertifyDashboard() {
   ];
 
   useEffect(() => {
+    const cached = sessionStorage.getItem("dashboard_summary_cache");
+    if (cached) {
+      try {
+        setDashboardData(JSON.parse(cached));
+        setLoading(false);
+      } catch {
+        sessionStorage.removeItem("dashboard_summary_cache");
+      }
+    }
+
     const fetchDashboard = async () => {
       try {
-        setLoading(true);
+        if (!cached) setLoading(true);
         const data = await dashboardService.getSummary();
         setDashboardData(data);
+        sessionStorage.setItem(
+          "dashboard_summary_cache",
+          JSON.stringify(data),
+        );
       } catch (err) {
         setError("Failed to load dashboard data.");
       } finally {
@@ -475,7 +489,24 @@ export default function CertifyDashboard() {
     <div className="certify">
       {/* MAIN */}
       <div className="c-main">
-        {loading && <div className="c-card">Loading dashboard...</div>}
+        {loading && !dashboardData && (
+          <div className="c-skeleton">
+            <div className="c-skel-row">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="c-skel-card" />
+              ))}
+            </div>
+            <div className="c-skel-row c-skel-mid">
+              <div className="c-skel-card c-skel-tall" />
+              <div className="c-skel-card c-skel-wide" />
+            </div>
+            <div className="c-skel-row c-skel-bottom">
+              <div className="c-skel-card c-skel-wide" />
+              <div className="c-skel-card" />
+              <div className="c-skel-card" />
+            </div>
+          </div>
+        )}
         {error && (
           <div className="c-card" style={{ color: "#F74242" }}>
             {error}

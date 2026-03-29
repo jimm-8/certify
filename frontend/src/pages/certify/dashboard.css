@@ -450,3 +450,48 @@
 .c-btn.green {
   background: #2dc78d;
 }
+
+/* SKELETON */
+.c-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.c-skel-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.c-skel-mid {
+  grid-template-columns: 1fr 1.5fr;
+}
+.c-skel-bottom {
+  grid-template-columns: 1.5fr 1fr 0.7fr;
+}
+.c-skel-card {
+  height: 86px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #f2f4f8 0%,
+    #e9edf3 45%,
+    #f2f4f8 90%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border: 1px solid #e5e7eb;
+}
+.c-skel-tall {
+  height: 240px;
+}
+.c-skel-wide {
+  height: 240px;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

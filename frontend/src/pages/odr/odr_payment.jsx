@@ -163,24 +163,25 @@ const OdrPayment = () => {
 
             <div className="mt-4">
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Purpose (Reference Number)
+                Purpose / Reference Number
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={referenceNumber}
-                  onChange={(e) => setReferenceNumber(e.target.value)}
-                  placeholder="Reference Number (e.g. 26-0328-00001)"
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-xs"
-                />
-                <button
-                  onClick={handleRequestLookup}
-                  disabled={loading}
-                  className="px-3 py-2 text-xs font-medium text-white bg-gray-700 rounded-md hover:bg-gray-900 disabled:opacity-50"
-                >
-                  Verify
-                </button>
-              </div>
+              <input
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                onBlur={handleRequestLookup}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleRequestLookup();
+                  }
+                }}
+                placeholder="Reference Number (e.g. 26-0328-00001)"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">
+                Lookup is automatic when you finish typing the purpose/reference.
+              </p>
             </div>
 
             {requestInfo && (
