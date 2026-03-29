@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { LayoutGrid, Inbox, PackageCheck, History } from "lucide-react";
 import { LuRefreshCw } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { getTokenPayload } from "../../utils/auth";
 
 const tabs = [
   { label: "Dashboard", icon: <LayoutGrid size={15} /> },
@@ -12,9 +14,19 @@ const tabs = [
   { label: "History", icon: <History size={15} /> },
 ];
 
-const menuItems = ["Settings", "Template", "FAQs", "Audit Logs"];
+const baseMenuItems = [
+  { label: "Settings" },
+  { label: "Template" },
+  { label: "FAQs" },
+];
 
-const DropdownPortal = ({ anchorRef, onClose }) => {
+const adminMenuItems = [
+  { label: "Audit Logs", roles: ["superadmin", "registrar_head"] },
+  { label: "User Management", roles: ["superadmin", "registrar_head"] },
+  { label: "Role Management", roles: ["superadmin"] },
+];
+
+const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
@@ -22,24 +34,40 @@ const DropdownPortal = ({ anchorRef, onClose }) => {
       const rect = anchorRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 192, // 192 = w-48
+        left: rect.right + window.scrollX - 224,
       });
     }
   }, [anchorRef]);
 
   return ReactDOM.createPortal(
     <div
+      ref={portalRef}
       style={{ top: position.top, left: position.left }}
-      className="absolute w-48 bg-white border border-gray-200 rounded-md shadow-xl z-[9999] overflow-hidden"
+      className="absolute w-56 bg-white border border-gray-100 rounded-xl shadow-xl z-[9999] overflow-hidden"
     >
-      {menuItems.map((item, index) => (
-        <button
-          key={index}
-          onClick={onClose}
-          className="w-full text-left px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100"
-        >
-          {item}
-        </button>
+      {sections.map((section, sIndex) => (
+        <div key={section.key || sIndex}>
+          {section.title && (
+            <div className="px-4 pt-3 pb-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+              {section.title}
+            </div>
+          )}
+          {section.items.map((item, index) => (
+            <button
+              key={`${section.key || sIndex}-${index}`}
+              onClick={() => {
+                onClose();
+                item.onClick?.();
+              }}
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100"
+            >
+              {item.label}
+            </button>
+          ))}
+          {sIndex < sections.length - 1 && (
+            <div className="h-px bg-gray-100 my-1" />
+          )}
+        </div>
       ))}
     </div>,
     document.body,
@@ -50,6 +78,44 @@ const CertifyHeader = ({ onTabChange }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const buttonRef = useRef(null);
+  const portalRef = useRef(null);
+  const role = getTokenPayload()?.role;
+  const navigate = useNavigate();
+
+  const baseItems = baseMenuItems.map((item) => {
+    if (item.label === "Settings") {
+      return { ...item, onClick: () => navigate("/settings") };
+    }
+    if (item.label === "Template") {
+      return { ...item, onClick: () => navigate("/templates") };
+    }
+    if (item.label === "FAQs") {
+      return { ...item, onClick: () => navigate("/faqs") };
+    }
+    return item;
+  });
+
+  const adminItems = adminMenuItems
+    .filter((item) => !item.roles || item.roles.includes(role))
+    .map((item) => {
+      if (item.label === "User Management") {
+        return { ...item, onClick: () => navigate("/admin/users") };
+      }
+      if (item.label === "Role Management") {
+        return { ...item, onClick: () => navigate("/admin/roles") };
+      }
+      if (item.label === "Audit Logs") {
+        return { ...item, onClick: () => navigate("/settings/audit-logs") };
+      }
+      return item;
+    });
+
+  const sections = [
+    { key: "general", title: "General", items: baseItems },
+    ...(adminItems.length
+      ? [{ key: "admin", title: "Admin", items: adminItems }]
+      : []),
+  ];
 
   const handleTabClick = (index) => {
     setActiveTab(index);
@@ -59,7 +125,12 @@ const CertifyHeader = ({ onTabChange }) => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target)) {
+      const clickedOutsideButton =
+        buttonRef.current && !buttonRef.current.contains(e.target);
+      const clickedOutsidePortal =
+        portalRef.current && !portalRef.current.contains(e.target);
+
+      if (clickedOutsideButton && clickedOutsidePortal) {
         setDropdownOpen(false);
       }
     };
@@ -70,7 +141,6 @@ const CertifyHeader = ({ onTabChange }) => {
   return (
     <div className="mx-4 mt-3">
       <div className="bg-white rounded-md border h-10 border-gray-200 shadow-sm flex items-stretch overflow-x-auto">
-        {" "}
         {/* Tabs */}
         <div className="flex items-stretch">
           {tabs.map((tab, index) => (
@@ -94,27 +164,31 @@ const CertifyHeader = ({ onTabChange }) => {
             </div>
           ))}
         </div>
-        <div className="w-px self-stretch bg-gray-200 flex-shrink-0" />
-        <div className="relative flex items-center" ref={buttonRef}>
-          <button
-            onClick={() => {
-              setActiveTab(null);
-              setDropdownOpen((prev) => !prev);
-            }}
-            className={`p-2 rounded-md transition-colors flex-shrink-0 ${
-              dropdownOpen
-                ? "text-[#ee1133] "
-                : "text-gray-400 hover:text-[#ee1133]"
-            }`}
-          >
-            <BsThreeDotsVertical size={16} />
-          </button>
-        </div>
+        <>
+          <div className="w-px self-stretch bg-gray-200 flex-shrink-0" />
+          <div className="relative flex items-center" ref={buttonRef}>
+            <button
+              onClick={() => {
+                setActiveTab(null);
+                setDropdownOpen((prev) => !prev);
+              }}
+              className={`p-2 rounded-md transition-colors flex-shrink-0 ${
+                dropdownOpen
+                  ? "text-[#ee1133]"
+                  : "text-gray-400 hover:text-[#ee1133]"
+              }`}
+            >
+              <BsThreeDotsVertical size={16} />
+            </button>
+          </div>
+        </>
       </div>
       {dropdownOpen && (
         <DropdownPortal
           anchorRef={buttonRef}
+          portalRef={portalRef}
           onClose={() => setDropdownOpen(false)}
+          sections={sections}
         />
       )}
     </div>

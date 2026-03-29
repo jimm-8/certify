@@ -315,15 +315,24 @@ export default function CertifyDashboard() {
   }, []);
 
   useEffect(() => {
-    dashboardService.getSummary(statusPeriod).then(setStatusSummary).catch(() => {});
+    dashboardService
+      .getSummary(statusPeriod)
+      .then(setStatusSummary)
+      .catch(() => {});
   }, [statusPeriod]);
 
   useEffect(() => {
-    dashboardService.getSummary(trendPeriod).then(setTrendSummary).catch(() => {});
+    dashboardService
+      .getSummary(trendPeriod)
+      .then(setTrendSummary)
+      .catch(() => {});
   }, [trendPeriod]);
 
   useEffect(() => {
-    dashboardService.getSummary(historyPeriod).then(setHistorySummary).catch(() => {});
+    dashboardService
+      .getSummary(historyPeriod)
+      .then(setHistorySummary)
+      .catch(() => {});
   }, [historyPeriod]);
   const tabs = [
     { name: "Dashboard", icon: <CalIcon /> },
@@ -351,7 +360,8 @@ export default function CertifyDashboard() {
   const changes = dashboardData?.changes || {};
   const breakdown =
     statusSummary?.status_breakdown || dashboardData?.status_breakdown || {};
-  const trend = trendSummary?.requests_over_time || dashboardData?.requests_over_time || [];
+  const trend =
+    trendSummary?.requests_over_time || dashboardData?.requests_over_time || [];
 
   const formatChangeBadge = (change) => {
     if (!change || change.direction === "flat") return "";
@@ -455,7 +465,9 @@ export default function CertifyDashboard() {
   }));
 
   const certHistory =
-    historySummary?.certificate_history || dashboardData?.certificate_history || [];
+    historySummary?.certificate_history ||
+    dashboardData?.certificate_history ||
+    [];
   const maxHistory = Math.max(...certHistory.map((x) => x.count), 1);
   const totalProcessed = certHistory.reduce((sum, x) => sum + x.count, 0);
 
@@ -548,11 +560,6 @@ export default function CertifyDashboard() {
                     <div className="c-legend-val">{l.val}</div>
                   </div>
                 ))}
-                <div className="c-legend-footer">
-                  <span>
-                    ● Processing <b>{breakdown.processing || 0}</b>
-                  </span>
-                </div>
               </div>
             </div>
           </div>

@@ -69,17 +69,29 @@ const Ready = () => {
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [nowTick, setNowTick] = useState(Date.now());
 
-  const fetchRequests = async () => {
+  const lastSnapshotRef = useRef("");
+
+  const fetchRequests = async (opts = { silent: false }) => {
     try {
-      setLoading(true);
+      if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
       const all = Array.isArray(data) ? data : data.items || [];
-      setRequests(all.filter((r) => r.status === "FOR_RELEASING"));
+      const filtered = all.filter((r) => r.status === "FOR_RELEASING");
+      const snapshot = JSON.stringify(
+        filtered.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
+      );
+      if (snapshot !== lastSnapshotRef.current) {
+        lastSnapshotRef.current = snapshot;
+        setRequests(filtered);
+      }
+      setLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
   };
 
@@ -88,7 +100,12 @@ const Ready = () => {
   }, []);
 
   useEffect(() => {
-    const id = setInterval(fetchRequests, 5000);
+    const id = setInterval(() => fetchRequests({ silent: true }), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -127,6 +144,10 @@ const Ready = () => {
 
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
+
+  const lastUpdatedLabel = lastUpdatedAt
+    ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
+    : "—";
 
   const handleView = async (row) => {
     setPdfLoading(true);
@@ -455,6 +476,9 @@ const Ready = () => {
           }
         />
       </div>
+      <span className="text-[11px] text-gray-400">
+        Last updated: {lastUpdatedLabel}
+      </span>
 
       {/* PDF Viewer Modal */}
       {(pdfUrl || pdfLoading) && (

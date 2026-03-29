@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import { BsSearch, BsCalendar3, BsChevronDown } from "react-icons/bs";
@@ -18,7 +19,34 @@ const getDateFrom = (days) => {
   return d.toISOString().split("T")[0];
 };
 
-const ROWS_PER_PAGE = 15;
+const customStyles = {
+  headRow: {
+    style: {
+      backgroundColor: "#f9fafb",
+      borderBottomWidth: "1px",
+      borderBottomColor: "#e5e7eb",
+      fontSize: "0.75rem",
+      fontWeight: "600",
+      color: "#6b7280",
+      textTransform: "uppercase",
+    },
+  },
+  rows: {
+    style: {
+      fontSize: "0.875rem",
+      color: "#374151",
+      "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
+    },
+  },
+  pagination: {
+    style: {
+      fontSize: "0.875rem",
+      color: "#6b7280",
+      borderTopWidth: "1px",
+      borderTopColor: "#e5e7eb",
+    },
+  },
+};
 
 const Checking = () => {
   const [requests, setRequests] = useState([]);
@@ -33,26 +61,43 @@ const Checking = () => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [actionLoading, setActionLoading] = useState({});
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [nowTick, setNowTick] = useState(Date.now());
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (opts = { silent: false }) => {
     try {
-      setLoading(true);
+      if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
       const all = Array.isArray(data) ? data : data.items || [];
       setRequests(all.filter((r) => r.status === "APPROVED"));
+      setLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
   useEffect(() => {
-    requestService.getCertificateTypes().then(setCertificateTypes).catch(console.error);
+    const id = setInterval(() => fetchRequests({ silent: true }), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    requestService
+      .getCertificateTypes()
+      .then(setCertificateTypes)
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -68,23 +113,24 @@ const Checking = () => {
 
   const filteredRequests = requests.filter((r) => {
     const matchesSearch = Object.values(r).some((val) =>
-      String(val).toLowerCase().includes(search.toLowerCase())
+      String(val).toLowerCase().includes(search.toLowerCase()),
     );
     const dateFrom = getDateFrom(selectedFilter.days);
     const matchesDate = dateFrom
       ? new Date(r.created_at).toISOString().split("T")[0] >= dateFrom
       : true;
-    const matchesType = selectedType ? r.certificate_type_name === selectedType : true;
-    const matchesProgram = selectedProgram ? r.program === selectedProgram : true;
+    const matchesType = selectedType
+      ? r.certificate_type_name === selectedType
+      : true;
+    const matchesProgram = selectedProgram
+      ? r.program === selectedProgram
+      : true;
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredRequests.length / ROWS_PER_PAGE);
-  const paginated = filteredRequests.slice(
-    (currentPage - 1) * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE
-  );
+  const lastUpdatedLabel = lastUpdatedAt
+    ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
+    : "-";
 
   const handleAdvance = async (req) => {
     const nextStatus = "PROCESSING";
@@ -93,7 +139,7 @@ const Checking = () => {
       await requestService.updateStatus(
         req.id,
         nextStatus,
-        "Request moved to processing"
+        "Request moved to processing",
       );
       fetchRequests();
     } catch (error) {
@@ -114,7 +160,7 @@ const Checking = () => {
       await requestService.updateStatus(
         req.id,
         nextStatus,
-        "Request moved to processing"
+        "Request moved to processing",
       );
       setSelectedRequest(null);
       fetchRequests();
@@ -133,9 +179,9 @@ const Checking = () => {
           requestService.updateStatus(
             r.id,
             "PROCESSING",
-            "Request moved to processing"
-          )
-        )
+            "Request moved to processing",
+          ),
+        ),
       );
       fetchRequests();
     } catch (error) {
@@ -145,9 +191,62 @@ const Checking = () => {
     }
   };
 
+  const columns = [
+    {
+      name: "SR Code",
+      selector: (row) => row.reference_number || row.sr_code || "-",
+      sortable: true,
+      cell: (row) => (
+        <span className="text-xs font-mono text-gray-500 whitespace-nowrap">
+          {row.reference_number || row.sr_code || "-"}
+        </span>
+      ),
+    },
+    {
+      name: "Requester Name",
+      selector: (row) => row.student_name || row.requester_name || "-",
+      sortable: true,
+    },
+    {
+      name: "Section",
+      selector: (row) => row.section || "-",
+      sortable: true,
+    },
+    {
+      name: "Campus",
+      selector: (row) => row.campus || "Alangilan",
+      sortable: true,
+    },
+    {
+      name: "Certificate Type",
+      selector: (row) => row.certificate_type_name || "-",
+      sortable: true,
+    },
+    {
+      name: "Action",
+      ignoreRowClick: true,
+      cell: (row) => (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => handleAdvance(row)}
+            disabled={actionLoading[`advance_${row.id}`]}
+            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+          >
+            {actionLoading[`advance_${row.id}`] ? "..." : "Process"}
+          </button>
+          <button
+            onClick={() => handleEmail(row)}
+            className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
+          >
+            Email
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="bg-white w-full rounded-md border border-gray-200 shadow-sm -mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
-
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-3">
         {/* LEFT — Bulk Actions */}
@@ -168,21 +267,31 @@ const Checking = () => {
         <div className="flex items-center gap-2">
           <select
             value={selectedProgram}
-            onChange={(e) => { setSelectedProgram(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => {
+              setSelectedProgram(e.target.value);
+            }}
             className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
           >
             <option value="">All Programs</option>
-            {programs.map((p) => <option key={p} value={p}>{p}</option>)}
+            {programs.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
           </select>
 
           <select
             value={selectedType}
-            onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => {
+              setSelectedType(e.target.value);
+            }}
             className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
           >
             <option value="">All Certificate Types</option>
             {certificateTypes.map((ct) => (
-              <option key={ct.id} value={ct.name}>{ct.name}</option>
+              <option key={ct.id} value={ct.name}>
+                {ct.name}
+              </option>
             ))}
           </select>
 
@@ -198,11 +307,16 @@ const Checking = () => {
             </button>
             {dropdownOpen && (
               <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden">
-                <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">Filter</div>
+                <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                  Filter
+                </div>
                 {filterOptions.map((option) => (
                   <button
                     key={option.label}
-                    onClick={() => { setSelectedFilter(option); setDropdownOpen(false); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSelectedFilter(option);
+                      setDropdownOpen(false);
+                    }}
                     className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${
                       selectedFilter.label === option.label
                         ? "bg-blue-600 text-white font-medium"
@@ -222,7 +336,9 @@ const Checking = () => {
               type="text"
               placeholder="Search..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+              }}
               className="text-xs px-3 py-1.5 focus:outline-none w-40"
             />
             <div className="w-px self-stretch bg-gray-300" />
@@ -234,131 +350,26 @@ const Checking = () => {
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded overflow-hidden">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              {["SR Code", "Requester Name", "Section", "Campus", "Certificate Type", "Action"].map((col) => (
-                <th
-                  key={col}
-                  className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="py-16 text-center text-xs text-gray-400">
-                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-[#ee1133]" />
-                </td>
-              </tr>
-            ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-16 text-center text-xs text-gray-400">
-                  No requests found.
-                </td>
-              </tr>
-            ) : (
-              paginated.map((row, i) => (
-                <tr
-                  key={row.id || i}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedRequest(row)}
-                >
-                  <td className="px-4 py-2.5 text-xs font-mono text-gray-500 whitespace-nowrap">
-                    {row.reference_number || row.sr_code || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
-                    {row.student_name || row.requester_name || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
-                    {row.section || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-700 whitespace-nowrap">
-                    {row.campus || "Alangilan"}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-700">
-                    {row.certificate_type_name || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1.5">
-                      {/* Accept */}
-                      <button
-                        onClick={() => handleAdvance(row)}
-                        disabled={actionLoading[`advance_${row.id}`]}
-                        className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors disabled:opacity-50"
-                      >
-                        {actionLoading[`advance_${row.id}`]
-                          ? "..."
-                          : "Process"}
-                      </button>
-                      {/* Email */}
-                      <button
-                        onClick={() => handleEmail(row)}
-                        className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
-                      >
-                        Email
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="border border-gray-200 rounded mt-2">
+        <DataTable
+          columns={columns}
+          data={filteredRequests}
+          progressPending={loading}
+          pagination
+          customStyles={customStyles}
+          highlightOnHover
+          responsive
+          onRowClicked={(row) => setSelectedRequest(row)}
+          noDataComponent={
+            <div className="py-10 text-xs text-gray-400">
+              No requests found.
+            </div>
+          }
+        />
       </div>
-
-      {/* Pagination */}
-      {!loading && filteredRequests.length > 0 && (
-        <div className="flex items-center justify-between mt-3 px-1">
-          <span className="text-xs text-gray-400">
-            Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}–{Math.min(currentPage * ROWS_PER_PAGE, filteredRequests.length)} of {filteredRequests.length} results
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors"
-            >
-              ‹ Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((item, idx) =>
-                item === "..." ? (
-                  <span key={`ellipsis-${idx}`} className="px-2 text-xs text-gray-400">…</span>
-                ) : (
-                  <button
-                    key={item}
-                    onClick={() => setCurrentPage(item)}
-                    className={`px-2.5 py-1 text-xs border rounded transition-colors ${
-                      currentPage === item
-                        ? "bg-[#ee1133] text-white border-[#ee1133]"
-                        : "border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 transition-colors"
-            >
-              Next ›
-            </button>
-          </div>
-        </div>
-      )}
+      <span className="text-[11px] text-gray-400">
+        Last updated: {lastUpdatedLabel}
+      </span>
 
       <RequestModal
         request={selectedRequest}
