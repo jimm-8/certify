@@ -1,5 +1,5 @@
 import axios from "axios";
-import { clearAuth, isTokenExpired } from "../utils/auth";
+import { clearAuth, getStoredToken, isTokenExpired } from "../utils/auth";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Attach token if available
-    const token = sessionStorage.getItem("access_token");
+    const token = getStoredToken();
     if (token && !isTokenExpired(token)) {
       config.headers.Authorization = `Bearer ${token}`;
     } else if (token && isTokenExpired(token)) {

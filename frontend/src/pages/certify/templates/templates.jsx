@@ -29,6 +29,7 @@ const Templates = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const iframeRef = useRef(null);
   const navigate = useNavigate();
+  const initializedRef = useRef(false);
 
   const apiBase =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
@@ -101,7 +102,8 @@ const Templates = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      let nextContent = content;
+      let nextContent = content; // fallback for HTML mode
+
       if (viewMode === "visual" && iframeRef.current?.contentDocument) {
         const doc = iframeRef.current.contentDocument;
         nextContent = doc.documentElement.outerHTML;
@@ -109,8 +111,14 @@ const Templates = () => {
         nextContent = nextContent.replace(baseTag, "");
         nextContent = nextContent.replaceAll(assetsBase, "");
       }
+
       await templateService.updateTemplate(selected, nextContent);
-      setContent(nextContent);
+
+      // ✅ Only sync state in HTML mode — visual mode manages its own DOM
+      if (viewMode !== "visual") {
+        setContent(nextContent);
+      }
+
       setSuccess("Template saved.");
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
@@ -124,17 +132,24 @@ const Templates = () => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
     doc.execCommand(cmd, false, value);
-    setContent(doc.documentElement.outerHTML);
   };
 
   const handleIframeLoad = () => {
-    const doc = iframeRef.current?.contentDocument;
-    if (!doc) return;
-    try {
-      doc.designMode = "on";
-    } catch {
-      // ignore
+    setTimeout(() => {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) doc.designMode = "on";
+    }, 50);
+  };
+
+  const handleOpenPreview = () => {
+    if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+      const doc = iframeRef.current.contentDocument;
+      let live = doc.documentElement.outerHTML;
+      live = live.replace(`<base href="${assetsBase}">`, "");
+      live = live.replaceAll(assetsBase, "");
+      setContent(live);
     }
+    setPreviewOpen(true);
   };
 
   const toolbarBtn =
@@ -186,8 +201,17 @@ const Templates = () => {
             <button
               onClick={() => {
                 setContent(originalContent);
-                setSuccess("Reset to default.");
-                setTimeout(() => setSuccess(""), 1500);
+                if (
+                  viewMode === "visual" &&
+                  iframeRef.current?.contentDocument
+                ) {
+                  iframeRef.current.contentDocument.open();
+                  iframeRef.current.contentDocument.write(
+                    normalizeAssetLinks(originalContent),
+                  );
+                  iframeRef.current.contentDocument.close();
+                  iframeRef.current.contentDocument.designMode = "on";
+                }
               }}
               disabled={!originalContent || saving}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -195,7 +219,7 @@ const Templates = () => {
               Reset to Default
             </button>
             <button
-              onClick={() => setPreviewOpen(true)}
+              onClick={handleOpenPreview}
               disabled={!content}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
@@ -326,6 +350,7 @@ const Templates = () => {
                   </select>
                 </div>
                 <iframe
+                  key={selected}
                   ref={iframeRef}
                   title="template-editor"
                   srcDoc={editorHtml}

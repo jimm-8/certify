@@ -11,8 +11,23 @@ export const decodeJwt = (token) => {
   }
 };
 
+export const getStoredToken = () =>
+  localStorage.getItem("access_token") ||
+  sessionStorage.getItem("access_token");
+
+export const setStoredToken = (token, rememberMe) => {
+  if (!token) return;
+  if (rememberMe) {
+    localStorage.setItem("access_token", token);
+    sessionStorage.removeItem("access_token");
+  } else {
+    sessionStorage.setItem("access_token", token);
+    localStorage.removeItem("access_token");
+  }
+};
+
 export const getTokenPayload = () => {
-  const token = sessionStorage.getItem("access_token");
+  const token = getStoredToken();
   if (!token) return null;
   return decodeJwt(token);
 };
@@ -26,4 +41,5 @@ export const isTokenExpired = (token) => {
 
 export const clearAuth = () => {
   sessionStorage.removeItem("access_token");
+  localStorage.removeItem("access_token");
 };

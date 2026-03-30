@@ -1,7 +1,8 @@
 import api from "./api";
+import { setStoredToken, clearAuth } from "../utils/auth";
 
 const authService = {
-  login: async (username, password) => {
+  login: async (username, password, rememberMe = false) => {
     // OAuth2 password grant expects form data
     const params = new URLSearchParams();
     params.append("username", username);
@@ -12,13 +13,20 @@ const authService = {
     });
     const token = response.data.access_token;
     if (token) {
-      sessionStorage.setItem("access_token", token);
+      setStoredToken(token, rememberMe);
     }
+    return response.data;
+  },
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await api.post("/auth/change-password", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
     return response.data;
   },
 
   logout: () => {
-    sessionStorage.removeItem("access_token");
+    clearAuth();
   },
 };
 
