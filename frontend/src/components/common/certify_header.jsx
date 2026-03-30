@@ -15,7 +15,7 @@ const tabs = [
 ];
 
 const baseMenuItems = [
-  { label: "Settings" },
+  { label: "Reports" },
   { label: "Template" },
   { label: "FAQs" },
 ];
@@ -83,8 +83,8 @@ const CertifyHeader = ({ onTabChange }) => {
   const navigate = useNavigate();
 
   const baseItems = baseMenuItems.map((item) => {
-    if (item.label === "Settings") {
-      return { ...item, onClick: () => navigate("/settings") };
+    if (item.label === "Reports") {
+      return { ...item, onClick: () => navigate("/reports") };
     }
     if (item.label === "Template") {
       return { ...item, onClick: () => navigate("/templates") };

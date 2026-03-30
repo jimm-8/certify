@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Key, LogOut, Settings, HelpCircle } from "lucide-react";
+import { LogOut, Settings, HelpCircle, Activity } from "lucide-react";
 import authService from "../../services/authService";
 import { getTokenPayload } from "../../utils/auth";
 
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [open, setOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -57,6 +58,33 @@ const CertifyNavbar = () => {
     .map((part) => part[0]?.toUpperCase())
     .join("");
 
+  const supportContacts = [
+    {
+      label: "Registrar Head",
+      name: "Office of the Registrar",
+      email: "registrar@batstate-u.edu.ph",
+      phone: "(043) 980-0385",
+    },
+    {
+      label: "Records Processing",
+      name: "Records Section",
+      email: "records@batstate-u.edu.ph",
+      phone: "(043) 980-0386",
+    },
+    {
+      label: "Payments & Cashier",
+      name: "Cashier Office",
+      email: "cashier@batstate-u.edu.ph",
+      phone: "(043) 980-0387",
+    },
+    {
+      label: "ICT Support",
+      name: "ICT Helpdesk",
+      email: "ictsupport@batstate-u.edu.ph",
+      phone: "(043) 980-0390",
+    },
+  ];
+
   return (
     <div className="w-full">
       <div className="bg-[#343A3F] text-white px-6 py-2 flex justify-between items-center shadow-md">
@@ -95,17 +123,35 @@ const CertifyNavbar = () => {
                 </div>
               </div>
 
-              <button className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate("/settings");
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
+              >
                 <Settings className="w-4 h-4" />
                 Settings
               </button>
 
-              <button className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left">
-                <Key className="w-4 h-4" />
-                Change Password
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate("/activity");
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
+              >
+                <Activity className="w-4 h-4" />
+                Activity
               </button>
 
-              <button className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left">
+              <button
+                onClick={() => {
+                  setHelpOpen(true);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
+              >
                 <HelpCircle className="w-4 h-4" />
                 Get Help
               </button>
@@ -127,6 +173,64 @@ const CertifyNavbar = () => {
           )}
         </div>
       </div>
+
+      {helpOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setHelpOpen(false)}
+          />
+          <div className="relative w-full max-w-xl bg-white rounded-xl shadow-2xl border border-gray-200 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Help & Contacts
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Reach out to the registrar team or ICT support for assistance.
+                </p>
+              </div>
+              <button
+                onClick={() => setHelpOpen(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {supportContacts.map((contact) => (
+                <div
+                  key={contact.label}
+                  className="border border-gray-200 rounded-lg p-3"
+                >
+                  <div className="text-xs uppercase tracking-wide text-gray-400">
+                    {contact.label}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-800 mt-1">
+                    {contact.name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {contact.email}
+                  </div>
+                  <div className="text-xs text-gray-500">{contact.phone}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setHelpOpen(false)}
+                className="px-4 py-2 text-sm rounded-md bg-[#ee1133] text-white hover:bg-[#c50f2a]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

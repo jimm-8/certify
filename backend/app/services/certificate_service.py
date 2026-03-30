@@ -20,9 +20,7 @@ from app.repositories import (
 
 
 def generate_certificate_pdf(
-    db: Session,
-    request_id: int,
-    user_name: str = "System"
+    db: Session, request_id: int, user_name: str = "System"
 ) -> str:
     """
     Generate PDF certificate for a request.
@@ -41,7 +39,9 @@ def generate_certificate_pdf(
     request = request_repo.get_by_id(request_id)
 
     if not request:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
+        )
 
     if not request.verification_token:
         raise HTTPException(
@@ -49,7 +49,11 @@ def generate_certificate_pdf(
             detail="Cannot generate certificate: Request must be approved first to have a verification token",
         )
 
-    if request.status not in [RequestStatus.PROCESSING]:
+    if request.status not in [
+        RequestStatus.PROCESSING,
+        RequestStatus.FOR_RELEASING,
+        RequestStatus.RELEASED,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot generate certificate for request in {request.status.value} status",
@@ -87,9 +91,7 @@ def generate_certificate_pdf(
     student_id_record = dependencies.get("student_id_record")
 
     try:
-        default_signature = (
-            signature_repo.latest_active()
-        )
+        default_signature = signature_repo.latest_active()
     except Exception:
         # Signature table may not be present yet in new schema.
         try:
@@ -113,17 +115,21 @@ def generate_certificate_pdf(
 
     student_address = ""
     if student:
-        addr = (
-            student_address_repo.latest_for_student(student.id)
-        )
+        addr = student_address_repo.latest_for_student(student.id)
         if addr:
-            student_address = ", ".join([p for p in [
-                addr.address_line,
-                addr.city,
-                addr.province,
-                addr.zip_code,
-                addr.country,
-            ] if p])
+            student_address = ", ".join(
+                [
+                    p
+                    for p in [
+                        addr.address_line,
+                        addr.city,
+                        addr.province,
+                        addr.zip_code,
+                        addr.country,
+                    ]
+                    if p
+                ]
+            )
 
     year_level = ""
     current_semester = ""
@@ -160,6 +166,7 @@ def generate_certificate_pdf(
     enrollment_to_academic_year = ""
     first_enrollment_semester = ""
     first_enrollment_academic_year = ""
+    curriculum = dependencies.get("curriculum")
     if enrollments:
         sorted_enrollments = sorted(
             enrollments,
@@ -169,7 +176,11 @@ def generate_certificate_pdf(
                 getattr(row, "year_level", 0) or 0,
             ),
         )
+        print(f"[DEBUG] All enrollments for student:")
+        for e in sorted_enrollments:
+            print(f"  {e.academic_year} | {e.semester} | yr{e.year_level}")
         first = sorted_enrollments[0]
+        print(f"[DEBUG] Resolved first: {first.semester} {first.academic_year}")
         last = sorted_enrollments[-1]
         first_enrollment_semester = str(getattr(first, "semester", "") or "")
         first_enrollment_academic_year = str(getattr(first, "academic_year", "") or "")
@@ -191,9 +202,19 @@ def generate_certificate_pdf(
         is_graduated = bool(getattr(graduation_record, "is_graduated", False))
         graduation_status = str(getattr(graduation_record, "status", "") or "")
 
-    overall_gwa = academic_summary.get("gwa") if isinstance(academic_summary, dict) else None
-    total_units_earned = academic_summary.get("total_units_earned") if isinstance(academic_summary, dict) else None
-    cumulative_units_earned = academic_summary.get("cumulative_units_earned") if isinstance(academic_summary, dict) else None
+    overall_gwa = (
+        academic_summary.get("gwa") if isinstance(academic_summary, dict) else None
+    )
+    total_units_earned = (
+        academic_summary.get("total_units_earned")
+        if isinstance(academic_summary, dict)
+        else None
+    )
+    cumulative_units_earned = (
+        academic_summary.get("cumulative_units_earned")
+        if isinstance(academic_summary, dict)
+        else None
+    )
 
     data = {
         "student_name": student_name,
@@ -201,7 +222,8 @@ def generate_certificate_pdf(
         "program": program_name,
         "program_name": program_name,
         "major": (student.major if student else None) or request.major,
-        "year_graduated": request.year_graduated or (date_of_graduation[-4:] if date_of_graduation else ""),
+        "year_graduated": request.year_graduated
+        or (date_of_graduation[-4:] if date_of_graduation else ""),
         "is_graduated": is_graduated,
         "graduation_status": graduation_status,
         "reference_number": request.reference_number,
@@ -214,6 +236,9 @@ def generate_certificate_pdf(
         "requestor_contact": request.requestor_contact,
         "requestor_email": request.requestor_email,
         "certificate_type": resolved_key,
+        "curriculum_acad_year": (
+            getattr(curriculum, "academic_year", "") if curriculum else ""
+        ),
         "name_official": default_signature.name if default_signature else "",
         "official_title": default_signature.title if default_signature else "",
         "signature_path": default_signature.signature_path if default_signature else "",
@@ -229,14 +254,27 @@ def generate_certificate_pdf(
         "academic_year": academic_year,
         "student_address": student_address,
         "graduated_date": date_of_graduation,
-        "board_resolution_num": getattr(graduation_record, "board_resolution_number", "") if graduation_record else "",
-        "course_board_resolution_num": getattr(program, "course_board_resolution_num", "") if program else "",
-        "course_academic_year": getattr(program, "course_academic_year", "") if program else "",
+        "board_resolution_num": (
+            getattr(graduation_record, "board_resolution_number", "")
+            if graduation_record
+            else ""
+        ),
+        "course_board_resolution_num": (
+            getattr(program, "course_board_resolution_num", "") if program else ""
+        ),
+        "course_academic_year": (
+            getattr(program, "course_academic_year", "") if program else ""
+        ),
         "overall_gwa": overall_gwa if overall_gwa is not None else "",
-        "total_credits_earned": total_units_earned if total_units_earned is not None else "",
-        "total_units_earned": total_units_earned if total_units_earned is not None else "",
+        "total_credits_earned": (
+            total_units_earned if total_units_earned is not None else ""
+        ),
+        "total_units_earned": (
+            total_units_earned if total_units_earned is not None else ""
+        ),
         "first_enrollment_semester": first_enrollment_semester or current_semester,
-        "first_enrollment_academic_year": first_enrollment_academic_year or academic_year,
+        "first_enrollment_academic_year": first_enrollment_academic_year
+        or academic_year,
         "enrollment_from_semester": enrollment_from_semester,
         "enrollment_from_academic_year": enrollment_from_academic_year,
         "enrollment_to_semester": enrollment_to_semester,
@@ -251,7 +289,9 @@ def generate_certificate_pdf(
         "series_no": getattr(request, "or_number", "") or "",
         "student_id_number": student.sr_code if student else request.sr_code,
         "nstp_component": getattr(nstp_record, "component", "") if nstp_record else "",
-        "nstp_serial_number": getattr(nstp_record, "serial_number", "") if nstp_record else "",
+        "nstp_serial_number": (
+            getattr(nstp_record, "serial_number", "") if nstp_record else ""
+        ),
     }
 
     if data.get("signature_path"):
@@ -284,7 +324,7 @@ def generate_certificate_pdf(
             {
                 "course_code": row.get("course_code", ""),
                 "course_credits": row.get("units", ""),
-                "course_description": row.get("course_description", ""),
+                "course_description": row.get("course_title", ""),
             }
             for row in student_courses
         ]
@@ -316,7 +356,9 @@ def generate_certificate_pdf(
             engine = CertificateTemplateEngine()
             template_path = engine.resolve_template_path(resolved_key, data)
             rendered_html = engine.render_template(template_path, data)
-            header_lines, title, body_lines, footer = engine.extract_render_content(rendered_html)
+            header_lines, title, body_lines, footer = engine.extract_render_content(
+                rendered_html
+            )
 
             generator = CertificateGenerator(output_dir=output_dir)
             certificate_data = {
@@ -330,7 +372,9 @@ def generate_certificate_pdf(
                 "template_footer": footer,
                 "source_template": template_path.name,
             }
-            pdf_path = generator.generate_certificate(certificate_data, filename=filename)
+            pdf_path = generator.generate_certificate(
+                certificate_data, filename=filename
+            )
         except Exception as fallback_exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -355,14 +399,12 @@ def generate_certificate_pdf(
     return pdf_path
 
 
-def get_certificate_data_from_student_db(
-    db: Session,
-    sr_code: str
-) -> dict:
+def get_certificate_data_from_student_db(db: Session, sr_code: str) -> dict:
     """
     Fetch student data from mock database and prepare for certificate.
     """
     from app.models.student import Student
+
     student_repo = StudentRepository(db)
     student = student_repo.get_by_sr_code(sr_code)
 

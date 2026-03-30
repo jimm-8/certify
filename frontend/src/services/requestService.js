@@ -1,4 +1,5 @@
 import api from "./api";
+import { getTokenPayload } from "../utils/auth";
 
 const requestService = {
   // track
@@ -67,10 +68,12 @@ const requestService = {
   // update request status
   updateStatus: async (id, newStatus, notes = "", userName = "") => {
     try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
       const response = await api.patch(`/requests/${id}/status`, {
         new_status: newStatus,
         notes,
-        user_name: userName,
+        user_name: resolvedUser,
       });
       return response.data;
     } catch (error) {

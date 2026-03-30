@@ -26,6 +26,7 @@ PERMISSIONS = [
     "signatures.manage",
     "users.manage",
     "dashboard.read",
+    "reports.read",
 ]
 
 ROLE_PERMISSIONS = {
@@ -44,6 +45,7 @@ ROLE_PERMISSIONS = {
         "signatures.manage",
         "users.manage",
         "dashboard.read",
+        "reports.read",
     ],
     "registrar_staff": [
         "requests.read",
@@ -55,6 +57,7 @@ ROLE_PERMISSIONS = {
         "payments.read",
         "templates.read",
         "dashboard.read",
+        "reports.read",
     ],
 }
 

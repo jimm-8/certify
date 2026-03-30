@@ -12,7 +12,7 @@ import app.models.grade
 import app.models.nstp_record
 import app.models.payment
 
-from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users, payments, rbac, template_files
+from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users, payments, rbac, template_files, reports
 from app.services.rbac_service import ensure_rbac_setup
 from app.services.audit_service import log_api_request
 
@@ -62,6 +62,7 @@ app.include_router(mock_student_db.router, prefix="/api/v1")
 app.include_router(signatures.router, prefix="/api/v1")
 app.include_router(program.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(payments.router, prefix="/api/v1")

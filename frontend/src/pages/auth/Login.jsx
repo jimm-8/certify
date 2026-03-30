@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
 import bg from "../../assets/bsu-bg.png";
 import bsuLogo from "../../assets/bsu_logo.png";
@@ -9,13 +9,14 @@ import bsuNEU from "../../assets/system-logo.png";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await authService.login(username, password);
+      await authService.login(username, password, rememberMe);
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data || "Login failed");
@@ -65,17 +66,26 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <div className="flex justify-between">
-              <p className="text-gray-300 text-xs hover:text-gray-500 justify-end flex">
+              <Link
+                to="/forgot-password"
+                className="text-gray-300 text-xs hover:text-gray-500 justify-end flex"
+              >
                 Forgot Password?
-              </p>
-              <p className="text-gray-300 text-xs hover:text-gray-500 justify-end flex items-center gap-1.5">
+              </Link>
+              <label
+                htmlFor="remember_me"
+                className="text-gray-300 text-xs hover:text-gray-500 justify-end flex items-center gap-1.5 cursor-pointer select-none"
+              >
                 <input
+                  id="remember_me"
                   type="checkbox"
                   name="remember_me"
-                  className="w-3 h-3 appearance-none border border-gray-300 rounded bg-white checked:bg-gray-500 checked:border-gray-500 cursor-pointer"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-3 h-3 accent-gray-500 cursor-pointer"
                 />
                 Remember me
-              </p>
+              </label>
             </div>
           </div>
 

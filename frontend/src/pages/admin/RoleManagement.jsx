@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import rbacService from "../../services/rbacService";
+import { BsChevronLeft } from "react-icons/bs";
+import { useNavigate } from "react-router-dom";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
@@ -9,6 +11,7 @@ export default function RoleManagement() {
   const [filter, setFilter] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const load = async () => {
     try {
@@ -64,11 +67,9 @@ export default function RoleManagement() {
       setStatus("Saving...");
       const updated = await rbacService.updateRolePermissions(
         activeRoleId,
-        selectedPerms
+        selectedPerms,
       );
-      setRoles((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r))
-      );
+      setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       setStatus("Saved.");
       setTimeout(() => setStatus(""), 1500);
     } catch (err) {
@@ -78,9 +79,16 @@ export default function RoleManagement() {
   };
 
   return (
-    <div className="p-4">
+    <div className="mt-3 bg-white rounded-md border border-gray-200 shadow-sm p-2">
       <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2 className="mb-0">Role & Permission Management</h2>
+        <button
+          onClick={() => navigate("/dashboard")}
+          title="Back to Dashboard"
+          className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+        >
+          <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+          <span>Role & Permission Management</span>
+        </button>
         <button onClick={load} className="btn btn-outline-secondary btn-sm">
           Refresh
         </button>
@@ -130,7 +138,10 @@ export default function RoleManagement() {
               </div>
             </div>
 
-            <div className="row g-2 mt-2" style={{ maxHeight: 320, overflowY: "auto" }}>
+            <div
+              className="row g-2 mt-2"
+              style={{ maxHeight: 320, overflowY: "auto" }}
+            >
               {filteredPermissions.map((perm) => (
                 <div key={perm.id} className="col-md-6">
                   <label className="d-flex align-items-center gap-2 small">

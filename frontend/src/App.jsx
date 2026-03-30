@@ -12,6 +12,7 @@ import CertifyIndex from "./pages/certify/index";
 import CertifyDashboard from './pages/certify/dashboard';
 import TemplatePreview from "./pages/templates/TemplatePreview";
 import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleManagement from "./pages/admin/RoleManagement";
 import RequireAuth from "./components/common/RequireAuth";
@@ -21,6 +22,8 @@ import Settings from "./pages/certify/settings/settings";
 import Faqs from "./pages/certify/settings/faqs";
 import AuditLogs from "./pages/certify/settings/auditlogs";
 import Templates from "./pages/certify/templates/templates";
+import Reports from "./pages/certify/reports";
+import Activity from "./pages/certify/activity";
 
 function App() {
   return (
@@ -82,6 +85,7 @@ function AppContent() {
       />
 
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route
         path="/admin/users"
@@ -151,6 +155,28 @@ function AppContent() {
           <RequireAuth>
             <MainLayout>
               <Templates />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/reports"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <Reports />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/activity"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <Activity />
             </MainLayout>
           </RequireAuth>
         }
