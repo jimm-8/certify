@@ -162,12 +162,14 @@ class CertificateEngine:
             except Exception:
                 pass
 
-        async def _render_pdf_async(html: str) -> bytes:
+        async def _render_pdf_async(html: str, header_template: str = None) -> bytes:
             from playwright.async_api import async_playwright
 
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch()
-                context = await browser.new_context(viewport={"width": 816, "height": 1056})
+                context = await browser.new_context(
+                    viewport={"width": 816, "height": 1056}
+                )
                 page = await context.new_page()
                 await page.set_content(html, wait_until="load")
                 try:
@@ -178,12 +180,19 @@ class CertificateEngine:
                     await page.emulate_media(media="print")
                 except Exception:
                     pass
+
+                use_header = header_template is not None
+                top_margin = "1.8in" if use_header else "0in"
+
                 try:
                     pdf_bytes = await page.pdf(
                         print_background=True,
                         prefer_css_page_size=True,
+                        display_header_footer=use_header,
+                        header_template=header_template or "<div></div>",
+                        footer_template="<div></div>",
                         margin={
-                            "top": "0in",
+                            "top": top_margin,
                             "bottom": "0in",
                             "left": "0in",
                             "right": "0in",
@@ -193,7 +202,7 @@ class CertificateEngine:
                     pdf_bytes = await page.pdf(
                         print_background=True,
                         margin={
-                            "top": "0in",
+                            "top": top_margin,
                             "bottom": "0in",
                             "left": "0in",
                             "right": "0in",
@@ -201,6 +210,8 @@ class CertificateEngine:
                     )
                 await browser.close()
                 return pdf_bytes
+
+            # After _inline_known_local_images and before _run_async
 
         def _run_async(coro: asyncio.Future) -> bytes:
             try:
@@ -212,7 +223,11 @@ class CertificateEngine:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 return executor.submit(lambda: asyncio.run(coro)).result()
 
-        return _run_async(_render_pdf_async(html_content))
+        header_template = None
+
+        return _run_async(
+            _render_pdf_async(html_content, header_template=header_template)
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers

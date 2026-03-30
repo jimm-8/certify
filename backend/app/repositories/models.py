@@ -64,6 +64,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
             .order_by(AuditLog.created_at.desc())
         )
 
+
 class AuthorizedOfficialRepository(BaseRepository[AuthorizedOfficial]):
     def __init__(self, db: Session):
         super().__init__(db, AuthorizedOfficial)
@@ -74,12 +75,14 @@ class AuthorizedOfficialRepository(BaseRepository[AuthorizedOfficial]):
     def latest_active(self):
         return self.active().order_by(AuthorizedOfficial.created_at.desc()).first()
 
+
 class CampusRepository(BaseRepository[Campus]):
     def __init__(self, db: Session):
         super().__init__(db, Campus)
 
     def get_by_name(self, name: str):
         return self.query().filter(Campus.name == name).first()
+
 
 class CertificateRepository(BaseRepository[Certificate]):
     def __init__(self, db: Session):
@@ -91,6 +94,7 @@ class CertificateRepository(BaseRepository[Certificate]):
             .filter(Certificate.certificate_request_id == request_id)
             .first()
         )
+
 
 class CertificateRequestRepository(BaseRepository[CertificateRequest]):
     def __init__(self, db: Session):
@@ -124,6 +128,7 @@ class CertificateRequestRepository(BaseRepository[CertificateRequest]):
     def by_status(self, status):
         return self.query().filter(CertificateRequest.status == status)
 
+
 class CertificateTypeRepository(BaseRepository[CertificateType]):
     def __init__(self, db: Session):
         super().__init__(db, CertificateType)
@@ -133,6 +138,7 @@ class CertificateTypeRepository(BaseRepository[CertificateType]):
 
     def get_active_by_id(self, type_id: int):
         return self.active().filter(CertificateType.id == type_id).first()
+
 
 class CertificateTemplateRepository(BaseRepository[CertificateTemplate]):
     def __init__(self, db: Session):
@@ -154,12 +160,14 @@ class CollegeRepository(BaseRepository[College]):
     def get_by_code(self, code: str):
         return self.query().filter(College.code == code).first()
 
+
 class CourseRepository(BaseRepository[Course]):
     def __init__(self, db: Session):
         super().__init__(db, Course)
 
     def get_by_code(self, course_code: str):
         return self.query().filter(Course.course_code == course_code).first()
+
 
 class CurriculumRepository(BaseRepository[Curriculum]):
     def __init__(self, db: Session):
@@ -170,6 +178,7 @@ class CurriculumRepository(BaseRepository[Curriculum]):
             Curriculum.program_id == program_id,
             Curriculum.is_active == True,
         )
+
 
 class CurriculumCourseRepository(BaseRepository[CurriculumCourse]):
     def __init__(self, db: Session):
@@ -194,6 +203,7 @@ class EnrollmentRepository(BaseRepository[Enrollment]):
             .first()
         )
 
+
 class GradeRepository(BaseRepository[Grade]):
     def __init__(self, db: Session):
         super().__init__(db, Grade)
@@ -204,11 +214,7 @@ class GraduationRecordRepository(BaseRepository[GraduationRecordNew]):
         super().__init__(db, GraduationRecordNew)
 
     def get_by_sr_code(self, sr_code: str):
-        return (
-            self.query()
-            .filter(GraduationRecordNew.sr_code == sr_code)
-            .first()
-        )
+        return self.query().filter(GraduationRecordNew.sr_code == sr_code).first()
 
     def get_by_student_name(self, student_name: str):
         return (
@@ -217,6 +223,7 @@ class GraduationRecordRepository(BaseRepository[GraduationRecordNew]):
             .order_by(GraduationRecordNew.id.desc())
             .first()
         )
+
 
 class InstitutionRepository(BaseRepository[Institution]):
     def __init__(self, db: Session):
@@ -228,11 +235,8 @@ class NSTPRecordRepository(BaseRepository[NSTPRecord]):
         super().__init__(db, NSTPRecord)
 
     def get_by_student_id(self, student_id: str):
-        return (
-            self.query()
-            .filter(NSTPRecord.student_id == student_id)
-            .first()
-        )
+        return self.query().filter(NSTPRecord.student_id == student_id).first()
+
 
 class PaymentRepository(BaseRepository[Payment]):
     def __init__(self, db: Session):
@@ -240,10 +244,9 @@ class PaymentRepository(BaseRepository[Payment]):
 
     def get_by_reference(self, reference_number: str):
         return (
-            self.query()
-            .filter(Payment.purpose.ilike(f"%{reference_number}%"))
-            .first()
+            self.query().filter(Payment.purpose.ilike(f"%{reference_number}%")).first()
         )
+
 
 class PermissionRepository(BaseRepository[Permission]):
     def __init__(self, db: Session):
@@ -251,6 +254,7 @@ class PermissionRepository(BaseRepository[Permission]):
 
     def get_by_name(self, name: str):
         return self.query().filter(Permission.name == name).first()
+
 
 class ProgramRepository(BaseRepository[Program]):
     def __init__(self, db: Session):
@@ -262,12 +266,14 @@ class ProgramRepository(BaseRepository[Program]):
     def get_by_name(self, name: str):
         return self.query().filter(Program.name == name).first()
 
+
 class RoleRepository(BaseRepository[Role]):
     def __init__(self, db: Session):
         super().__init__(db, Role)
 
     def get_by_name(self, name: str):
         return self.query().filter(Role.name == name).first()
+
 
 class RolePermissionRepository(BaseRepository[RolePermission]):
     def __init__(self, db: Session):
@@ -276,12 +282,14 @@ class RolePermissionRepository(BaseRepository[RolePermission]):
     def for_role(self, role_id: int):
         return self.query().filter(RolePermission.role_id == role_id)
 
+
 class StudentRepository(BaseRepository[Student]):
     def __init__(self, db: Session):
         super().__init__(db, Student)
 
     def get_by_sr_code(self, sr_code: str):
         return self.query().filter(Student.sr_code == sr_code).first()
+
 
 class StudentAddressRepository(BaseRepository[StudentAddress]):
     def __init__(self, db: Session):
@@ -295,12 +303,14 @@ class StudentAddressRepository(BaseRepository[StudentAddress]):
             .first()
         )
 
+
 class StudentCourseRepository(BaseRepository[StudentCourse]):
     def __init__(self, db: Session):
         super().__init__(db, StudentCourse)
 
     def for_enrollment(self, enrollment_id: int):
         return self.query().filter(StudentCourse.enrollment_id == enrollment_id)
+
 
 class StudentIdRecordRepository(BaseRepository[StudentIdRecord]):
     def __init__(self, db: Session):
@@ -319,6 +329,7 @@ class UserRepository(BaseRepository[User]):
 
     def get_by_email(self, email: str):
         return self.query().filter(User.email == email).first()
+
 
 class UserRoleRepository(BaseRepository[UserRole]):
     def __init__(self, db: Session):

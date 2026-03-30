@@ -18,6 +18,7 @@ from app.models.student_course import StudentCourse
 from app.models.academic_summary import AcademicSummary
 from app.models.graduation_record import GraduationRecordNew
 from app.models.student_id_record import StudentIdRecord
+from app.models.curriculum import Curriculum
 from app.repositories import (
     AcademicSummaryRepository,
     CampusRepository,
@@ -140,6 +141,8 @@ class CertificateDependencyEngine:
             "campus",
             "student_courses",
             "courses",
+            "enrollments",
+            "curriculum",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ID_ISSUANCE_V1": [
@@ -314,6 +317,17 @@ class CertificateDependencyEngine:
             elif dependency == "student_courses":
                 dependencies["student_courses"] = (
                     CertificateDependencyEngine._get_student_courses(db, sr_code)
+                )
+
+            elif dependency == "curriculum":
+                program = dependencies.get("program")
+                dependencies["curriculum"] = (
+                    db.query(Curriculum)
+                    .filter(Curriculum.program_id == program.id)
+                    .order_by(Curriculum.academic_year.desc())
+                    .first()
+                    if program
+                    else None
                 )
 
             elif dependency == "courses":

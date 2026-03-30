@@ -11,6 +11,7 @@ import {
   BsDownload,
   BsX,
 } from "react-icons/bs";
+import { FaXmark } from "react-icons/fa6";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -498,15 +499,15 @@ const Ready = () => {
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-4xl h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100 shrink-0">
               <p className="text-sm font-semibold text-gray-800">
                 Certificate Preview
               </p>
               <button
                 onClick={handleClosePdf}
-                className="flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                className="text-lg rounded-md  border-gray-200 hover:text-[#B22222] transition-colors"
               >
-                <BsX size={18} />
+                <FaXmark />
               </button>
             </div>
 
