@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" alt="CERTIFY Logo" width="180"/>
+  <img src="frontend/src/assets/system-logo.png" alt="CERTIFY Logo" width="180"/>
 </p>
 
 <h1 align="center">CERTIFY</h1>
