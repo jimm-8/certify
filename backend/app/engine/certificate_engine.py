@@ -31,7 +31,7 @@ class CertificateEngine:
         "CERTIFICATE_OF_EARNED_UNITS": "certificate_of_earned_units.html",
         "CERTIFICATE_OF_ENGLISH_MEDIUM_V1": "certificate_of_english_medium_v1.html",
         "CERTIFICATE_OF_ENGLISH_MEDIUM_V2": "certificate_of_english_medium_v2.html",
-        "CERTIFICATE_OF_COMPLETED_ACAD_REQUIREMENTS": "certificate_of_completed_acad_requirements.html",
+        "CERTIFICATE_OF_COMPLETED_ACAD_REQUIREMENTS": "certificate_of_completed_acad_requirement.html",
         "CERTIFICATE_OF_HONOR_GRADUATE": "certificate_of_honor_graduate.html",
         "CERTIFICATE_OF_COURSE_DESCRIPTION": "certificate_of_course_description.html",
         "CERTIFICATE_OF_ID_ISSUANCE_V1": "certificate_of_id_issuance_v1.html",

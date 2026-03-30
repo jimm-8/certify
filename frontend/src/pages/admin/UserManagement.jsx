@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getTokenPayload } from "../../utils/auth";
 import userService from "../../services/userService";
 import rbacService from "../../services/rbacService";
+import { BsChevronLeft } from "react-icons/bs";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -36,7 +37,8 @@ export default function UserManagement() {
       .catch((err) => console.error(err));
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
   const handlePermissionToggle = (permName) => {
     setForm((prev) => {
       const next = new Set(prev.permissions || []);
@@ -74,9 +76,16 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="p-4">
+    <div className="mt-3 bg-white rounded-md border border-gray-200 shadow-sm p-2">
       <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2 className="mb-0">User Management</h2>
+        <button
+          onClick={() => navigate("/dashboard")}
+          title="Back to Dashboard"
+          className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+        >
+          <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+          <span>User Management</span>
+        </button>
         {getTokenPayload()?.role === "superadmin" && (
           <button
             className="btn btn-outline-secondary btn-sm"
@@ -92,28 +101,62 @@ export default function UserManagement() {
         <form onSubmit={handleSubmit}>
           <div className="row g-2 align-items-start">
             <div className="col-md-3">
-              <input name="username" value={form.username} onChange={handleChange} className="form-control" placeholder="Username" required />
+              <input
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Username"
+                required
+              />
             </div>
             <div className="col-md-3">
-              <input name="email" value={form.email} onChange={handleChange} className="form-control" placeholder="Email" required />
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Email"
+                required
+              />
             </div>
             <div className="col-md-2">
-              <input name="password" value={form.password} onChange={handleChange} className="form-control" placeholder="Password" required />
+              <input
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Password"
+                required
+              />
             </div>
             <div className="col-md-2">
-              <select name="role" value={form.role} onChange={handleChange} className="form-select">
+              <select
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                className="form-select"
+              >
                 <option value="superadmin">Superadmin</option>
                 <option value="registrar_head">Registrar Head</option>
                 <option value="registrar_staff">Registrar Staff</option>
               </select>
             </div>
             <div className="col-md-2">
-              <input name="campus_id" value={form.campus_id || ""} onChange={handleChange} className="form-control" placeholder="Campus ID" />
+              <input
+                name="campus_id"
+                value={form.campus_id || ""}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Campus ID"
+              />
             </div>
             <div className="col-12">
               <div className="border rounded p-2">
                 <div className="d-flex align-items-center justify-content-between mb-2">
-                  <label className="form-label mb-0">Extra Permissions (optional)</label>
+                  <label className="form-label mb-0">
+                    Extra Permissions (optional)
+                  </label>
                   <input
                     type="text"
                     className="form-control form-control-sm w-auto"
@@ -122,7 +165,10 @@ export default function UserManagement() {
                     onChange={(e) => setPermissionFilter(e.target.value)}
                   />
                 </div>
-                <div className="row g-2" style={{ maxHeight: 160, overflowY: "auto" }}>
+                <div
+                  className="row g-2"
+                  style={{ maxHeight: 160, overflowY: "auto" }}
+                >
                   {filteredPermissions.map((perm) => (
                     <div key={perm.id} className="col-md-4">
                       <label className="d-flex align-items-center gap-2 small">
@@ -136,7 +182,9 @@ export default function UserManagement() {
                     </div>
                   ))}
                   {filteredPermissions.length === 0 && (
-                    <div className="text-muted small">No permissions found.</div>
+                    <div className="text-muted small">
+                      No permissions found.
+                    </div>
                   )}
                 </div>
               </div>

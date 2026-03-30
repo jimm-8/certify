@@ -540,13 +540,19 @@ def download_certificate(
         files = glob.glob(pattern)
 
         if not files:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Certificate PDF not found. Please generate it first."
-            )
+            # Attempt on-demand generation when missing
+            try:
+                pdf_path = generate_certificate_pdf(db=db, request_id=request_id, user_name="System")
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Certificate PDF not found. Please generate it first."
+                )
 
         files.sort(key=os.path.getmtime, reverse=True)
-        pdf_path = files[0]
+        pdf_path = pdf_path or files[0]
 
     if not os.path.exists(pdf_path):
         raise HTTPException(

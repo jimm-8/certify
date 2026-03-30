@@ -42,11 +42,6 @@
       height: 124.8px;
     }
 
-    /* .header-center {
-        text-align: center;
-        line-height: 1.15;
-      } */
-
     .republic {
       font-size: 16px;
       font-weight: bold;
@@ -262,13 +257,10 @@
 
       <div class="signature">
         {% if signature_path %}
-          <img
-            src="{{ signature_path }}"
-            alt="Signature"
-            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
-          />
-          {% endif %}
-<div class="signature-line"></div>
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;" />
+        {% endif %}
+        <div class="signature-line"></div>
         <strong>{{ name_official }}</strong><br />
         {{ official_title }}
       </div>

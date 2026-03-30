@@ -49,7 +49,7 @@ def generate_certificate_pdf(
             detail="Cannot generate certificate: Request must be approved first to have a verification token",
         )
 
-    if request.status not in [RequestStatus.PROCESSING]:
+    if request.status not in [RequestStatus.PROCESSING, RequestStatus.FOR_RELEASING, RequestStatus.RELEASED]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot generate certificate for request in {request.status.value} status",
