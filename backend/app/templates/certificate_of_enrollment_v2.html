@@ -1,222 +1,226 @@
 ﻿<!doctype html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Certificate of Enrolments</title>
 
-    <style>
-      @page {
-        size: 8.5in 11in;
-        margin: 0;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <title>Certificate of Enrolments</title>
+  <style>
+    @page {
+      size: 8.5in 11in;
+      margin: 0;
+    }
 
-      body {
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        background: #e5e5e5;
-      }
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      background: #e5e5e5;
+    }
 
-      .paper {
-        width: 8.5in;
-        min-height: 11in;
-        background: #fff;
-        padding: 0.5in;
-        box-sizing: border-box;
-        font-family: "Times New Roman", serif;
-      }
+    .paper {
+      width: 8.5in;
+      min-height: 11in;
+      background: #fff;
+      padding: 0.5in;
+      box-sizing: border-box;
+      font-family: "Times New Roman", serif;
+    }
 
-      /* ================= HEADER ================= */
+    /* ================= HEADER ================= */
 
-      .header {
-        position: relative;
-        text-align: center;
-      }
+    .header {
+      position: relative;
+      text-align: center;
+    }
 
-      .logo {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 132.48px;
-        height: 124.8px;
-      }
+    .logo {
+      position: absolute;
+      left: 0;
+      top: -10px;
+      width: 132.48px;
+      height: 124.8px;
+    }
 
-      /* .header-center {
-        text-align: center;
-        line-height: 1.15;
-      } */
+    .republic {
+      font-size: 16px;
+      font-weight: bold;
+    }
 
-      .republic {
-        font-size: 16px;
-        font-weight: bold;
-      }
-      .university {
-        font-size: 21.33px;
-        font-weight: bold;
-      }
-      .subtitle {
-        font-family: Arial, sans-serif;
-        font-size: 16px;
-        font-weight: bold;
-        color: #d10000;
-      }
-      .details {
-        font-size: 16px;
-        /* line-height: 1.35; */
-      }
-      .details .campus {
-        font-size: 16px;
-        font-weight: bold;
-      }
-      .details .address {
-        font-weight: bold;
-        font-size: 13.33px;
-      }
-      .telNo {
-        font-size: 13.33px;
-      }
-      .email {
-        font-size: 13.33px;
-      }
+    .university {
+      font-size: 21.33px;
+      font-weight: bold;
+    }
 
-      .divider {
-        border-top: 1pt solid #000;
-        margin: 2px 0 14px 0;
-      }
+    .subtitle {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #d10000;
+    }
 
-      /* ================= TITLES ================= */
+    .details {
+      font-size: 16px;
+      /* line-height: 1.35; */
+    }
 
-      .registrar {
-        text-align: center;
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 45px;
-      }
+    .details .campus {
+      font-size: 16px;
+      font-weight: bold;
+    }
 
-      .bold {
-        font-weight: bold;
-      }
+    .details .address {
+      font-weight: bold;
+      font-size: 13.33px;
+    }
 
-      .fill {
-        display: inline;
-      }
+    .telNo {
+      font-size: 13.33px;
+    }
 
-      .cert-title {
-        text-align: center;
-        font-size: 16pt;
-        font-weight: bold;
-        margin-bottom: 45px;
-      }
+    .email {
+      font-size: 13.33px;
+    }
 
-      /* ================= BODY ================= */
+    .divider {
+      border-top: 1pt solid #000;
+      margin: 2px 0 14px 0;
+    }
 
-      .text-body {
-        margin-left: 0.4in;
-        margin-right: 0.4in;
-      }
+    /* ================= TITLES ================= */
 
-      .content {
-        font-size: 14pt;
-        line-height: 2.5;
-        text-align: justify;
-        text-justify: inter-word;
-      }
+    .registrar {
+      font-family: "Times New Roman", serif;
+      font-size: 18.67px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.15;
+      break-after: avoid;
+      page-break-after: avoid;
+      widows: 2;
+      orphans: 2;
+      margin-bottom: 35px;
+    }
 
-      .paragraph {
-        text-indent: 0.5in;
-        margin-bottom: 2px;
-      }
+    .bold {
+      font-weight: bold;
+    }
 
-      .bold {
-        font-weight: bold;
-      }
+    .fill {
+      display: inline;
+    }
 
-      .name {
-        text-transform: uppercase;
-      }
+    .cert-title {
+      text-align: center;
+      font-size: 16pt;
+      font-weight: bold;
+      margin-bottom: 32px;
+    }
 
-      .f {
-        display: inline;
-      }
+    /* ================= BODY ================= */
 
-      .fill {
-        display: inline;
-      }
+    .text-body {
+      margin-left: 0.4in;
+      margin-right: 0.4in;
+    }
 
-      .f.blank {
-        display: inline-block;
-        border-bottom: 1px solid #000;
-        height: 0.9em;
-        vertical-align: bottom;
-      }
+    .content {
+      font-size: 14pt;
+      line-height: 1.6;
+      text-align: justify;
+      text-justify: inter-word;
+    }
 
-      .f-short {
-        width: 0.8in;
-      }
-      .f-medium {
-        width: 1.3in;
-      }
-      .f-long {
-        width: 2in;
-      }
+    .paragraph {
+      text-indent: 0.5in;
+      margin-bottom: 2px;
+    }
 
-      /* ================= SIGNATURE ================= */
+    .bold {
+      font-weight: bold;
+    }
 
-      .signature {
-        margin-top: 130px;
-        width: 3.5in;
-        margin-left: 3.5in;
-        text-align: center;
-        font-size: 12pt;
-        margin-bottom: 100px;
-      }
+    .name {
+      text-transform: uppercase;
+    }
 
-      .signature-line {
-        width: 100%;
-        border-top: 1px solid #000;
-        margin-bottom: 6px;
-      }
+    .f {
+      display: inline;
+    }
 
-      .footer-note {
-        margin-left: 0.4in;
-        margin-top: 10px;
-        font-size: 13.33px;
-        font-style: italic;
-        margin-bottom: 50px;
-        text-align: left;
-      }
+    .fill {
+      display: inline;
+    }
 
-      .ref {
-        font-size: 13.33px;
-        margin-left: 0.4in;
-        margin-top: 0;
-        margin-bottom: 0;
-        text-align: left;
-      }
-    </style>
-  </head>
+    .f.blank {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      height: 0.9em;
+      vertical-align: bottom;
+    }
 
-  <body>
-    <div class="paper">
-      <!-- Header -->
-      <div class="header">
-          <div class="logo-cell">
-            <img src="bsu.png" class="logo" />
-          </div>
-            <div class="republic">Republic of the Philippines</div>
-            <div class="university">BATANGAS STATE UNIVERSITY</div>
-            <div class="subtitle">The National Engineering University</div>
-            <div class="details">
-              <div class="campus">
-                {{ campus_name }}{% if campus_name %} Campus{% endif %}
-              </div>
-              <div class="address">{{ campus_address }}</div>
-              <div class="telNo">{{ campus_telNo }}</div>
-              <div class="email">Email Address:
-                {{ campus_email }} | Website Address:
-                https://www.batstate-u.edu.ph
-              </div>
-          </div>
+    .f-short {
+      width: 0.8in;
+    }
+
+    .f-medium {
+      width: 1.3in;
+    }
+
+    .f-long {
+      width: 2in;
+    }
+
+    /* ================= SIGNATURE ================= */
+
+    .signature {
+      margin-top: 109px;
+      width: 3.5in;
+      margin-left: 3.5in;
+      text-align: center;
+      font-size: 12pt;
+      margin-bottom: 115px;
+    }
+
+    .footer-note {
+      margin-left: 0.4in;
+      margin-top: 10px;
+      font-size: 13.33px;
+      font-style: italic;
+      margin-bottom: 80px;
+      text-align: left;
+    }
+
+    .ref {
+      font-size: 13.33px;
+      margin-left: 0.4in;
+      margin-top: 0;
+      margin-bottom: 0;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="paper">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-cell">
+        <img src="bsu.png" class="logo" />
+      </div>
+      <div class="republic">Republic of the Philippines</div>
+      <div class="university">BATANGAS STATE UNIVERSITY</div>
+      <div class="subtitle">The National Engineering University</div>
+      <div class="details">
+        <div class="campus">
+          {{ campus_name }}{% if campus_name %} Campus{% endif %}
+        </div>
+        <div class="address">{{ campus_address }}</div>
+        <div class="telNo">{{ campus_telNo }}</div>
+        <div class="email">Email Address:
+          {{ campus_email }} | Website Address:
+          https://www.batstate-u.edu.ph
+        </div>
+      </div>
       <div class="divider"></div>
 
       <div class="registrar">OFFICE OF THE REGISTRAR</div>
@@ -226,59 +230,36 @@
         <div class="content">
           <div class="paragraph">
             This is to certify that <span class="bold">Mr./Ms.</span>
-            <span class="f f-long{% if not student_name %} blank{% endif %} name"
-              >{{ student_name }}</span
-            >
+            <span class="f f-long{% if not student_name %} blank{% endif %} name bold">{{ student_name }}</span>
             has enrolled in
-            <span class="f f-long{% if not course_name %} blank{% endif %}"
-              >{{ course_name }}</span
-            >
-            under the 
-            <span class="f f-long{% if not college_name %} blank{% endif %}"
-              >{{ college_name }}</span
-            >
+            <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
+            under the College of
+            <span class="f f-long{% if not college_name %} blank{% endif %}">{{ college_name }}</span>
             during
-            <span
-              class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}"
-              >{{ enrollment_from_semester or current_sem }}</span
-            >
+            <span class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}">{{
+              enrollment_from_semester or current_sem }}</span>
             Semester, AY
-            <span
-              class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}"
-              >{{ enrollment_from_academic_year or academic_year }}</span
-            >
+            <span class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}">{{
+              enrollment_from_academic_year or academic_year }}</span>
             to
-            <span
-              class="f f-short{% if not (enrollment_to_semester or current_sem) %} blank{% endif %}"
-              >{{ enrollment_to_semester or current_sem }}</span
-            >
+            <span class="f f-short{% if not (enrollment_to_semester or current_sem) %} blank{% endif %}">{{
+              enrollment_to_semester or current_sem }}</span>
             Semester, AY
-            <span
-              class="f f-short{% if not (enrollment_to_academic_year or academic_year) %} blank{% endif %}"
-              >{{ enrollment_to_academic_year or academic_year }}</span
-            >.
+            <span class="f f-short{% if not (enrollment_to_academic_year or academic_year) %} blank{% endif %}">{{
+              enrollment_to_academic_year or academic_year }}</span>.
           </div>
 
           <div class="paragraph">
             This certification is issued upon request of
             <span class="bold">Mr./Ms.</span>
-            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold"
-              >{{ requestor_name }}</span
-            >
+            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
             this
-            <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}"
-              >{{ date_issued_day }}</span
-            >
+            <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+              }}</span>
             day of
-            <span
-              class="f f-medium{% if not date_issued_month %} blank{% endif %}"
-              >{{ date_issued_month }}</span
-            >
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
             for
-            <span
-              class="f f-medium{% if not request_purpose %} blank{% endif %}"
-              >{{ request_purpose }}</span
-            >
+            <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose }}</span>
             purposes only.
           </div>
         </div>
@@ -286,13 +267,9 @@
 
       <div class="signature">
         {% if signature_path %}
-          <img
-            src="{{ signature_path }}"
-            alt="Signature"
-            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
-          />
-          {% endif %}
-<div class="signature-line"></div>
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
+        {% endif %}
         <strong>{{ name_official }}</strong><br />
         {{ official_title }}
       </div>
@@ -306,28 +283,29 @@
     </div>
     <script>
       function getOrdinalSuffix(day) {
-          if (day % 100 >= 11 && day % 100 <= 13) return 'th';
+        if (day % 100 >= 11 && day % 100 <= 13) return 'th';
 
-          switch (day % 10) {
-              case 1: return 'st';
-              case 2: return 'nd';
-              case 3: return 'rd';
-              default: return 'th';
-          }
+        switch (day % 10) {
+          case 1: return 'st';
+          case 2: return 'nd';
+          case 3: return 'rd';
+          default: return 'th';
+        }
       }
 
       document.addEventListener("DOMContentLoaded", function () {
-          const el = document.getElementById("dateDay");
+        const el = document.getElementById("dateDay");
 
-          if (!el) return;
+        if (!el) return;
 
-          const day = parseInt(el.textContent.trim());
+        const day = parseInt(el.textContent.trim());
 
-          if (!isNaN(day)) {
-              const suffix = getOrdinalSuffix(day);
-              el.innerHTML = `${day}<sup>${suffix}</sup>`;
-          }
+        if (!isNaN(day)) {
+          const suffix = getOrdinalSuffix(day);
+          el.innerHTML = `${day}<sup>${suffix}</sup>`;
+        }
       });
     </script>
-  </body>
+</body>
+
 </html>

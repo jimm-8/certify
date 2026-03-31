@@ -37,15 +37,10 @@
     .logo {
       position: absolute;
       left: 0;
-      top: 0;
+      top: -10px;
       width: 132.48px;
       height: 124.8px;
     }
-
-    /* .header-center {
-        text-align: center;
-        line-height: 1.15;
-      } */
 
     .republic {
       font-size: 16px;
@@ -95,10 +90,16 @@
     /* ================= TITLES ================= */
 
     .registrar {
-      text-align: center;
-      font-size: 20px;
+      font-family: "Times New Roman", serif;
+      font-size: 18.67px;
       font-weight: bold;
-      margin-bottom: 45px;
+      text-align: center;
+      line-height: 1.15;
+      break-after: avoid;
+      page-break-after: avoid;
+      widows: 2;
+      orphans: 2;
+      margin-bottom: 35px;
     }
 
     .bold {
@@ -113,7 +114,7 @@
       text-align: center;
       font-size: 16pt;
       font-weight: bold;
-      margin-bottom: 45px;
+      margin-bottom: 32px;
     }
 
     /* ================= BODY ================= */
@@ -125,7 +126,7 @@
 
     .content {
       font-size: 14pt;
-      line-height: 2.5;
+      line-height: 1.6;
       text-align: justify;
       text-justify: inter-word;
     }
@@ -173,18 +174,12 @@
     /* ================= SIGNATURE ================= */
 
     .signature {
-      margin-top: 130px;
+      margin-top: 109px;
       width: 3.5in;
       margin-left: 3.5in;
       text-align: center;
       font-size: 12pt;
-      margin-bottom: 100px;
-    }
-
-    .signature-line {
-      width: 100%;
-      border-top: 1px solid #000;
-      margin-bottom: 6px;
+      margin-bottom: 115px;
     }
 
     .footer-note {
@@ -192,7 +187,7 @@
       margin-top: 10px;
       font-size: 13.33px;
       font-style: italic;
-      margin-bottom: 50px;
+      margin-bottom: 80px;
       text-align: left;
     }
 
@@ -236,7 +231,7 @@
         <div class="content">
           <div class="paragraph">
             This is to certify that <strong>Mr./Ms.</strong>
-            <span class="f f-long{% if not student_name %} blank{% endif %} name">{{ student_name }}</span>
+            <span class="f f-long{% if not student_name %} blank{% endif %} name bold">{{ student_name }}</span>
             is currently enrolled in this University as a
             <span class="f f-medium{% if not student_year %} blank{% endif %}">{{ student_year }}</span>
             year student of
@@ -263,13 +258,9 @@
 
       <div class="signature">
         {% if signature_path %}
-          <img
-            src="{{ signature_path }}"
-            alt="Signature"
-            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;"
-          />
-          {% endif %}
-<div class="signature-line"></div>
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
+        {% endif %}
         <strong>{{ name_official }}</strong><br />
         {{ official_title }}
       </div>

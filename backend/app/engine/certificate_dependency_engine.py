@@ -37,6 +37,7 @@ from app.repositories import (
 
 class CertificateDependencyEngine:
     TYPE_ALIASES = {
+        "certificationauthenticationandverification": "CERTIFICATION_AUTHENTICATION_AND_VERIFICATION",
         "certificationauthenticationandverificationcav": "CERTIFICATION_AUTHENTICATION_AND_VERIFICATION",
         "certificateofgraduation": "CERTIFICATE_OF_GRADUATION",
         "certificateofenrolment": "CERTIFICATE_OF_ENROLLMENT",
@@ -102,6 +103,7 @@ class CertificateDependencyEngine:
             "campus",
             "student_courses",
             "enrollment",
+            "academic_summary",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ENGLISH_MEDIUM_V1": [
@@ -110,6 +112,8 @@ class CertificateDependencyEngine:
             "campus",
             "student_courses",
             "certificate_request",
+            "enrollment",
+            "enrollments",
         ],
         "CERTIFICATE_OF_ENGLISH_MEDIUM_V2": [
             "student",
@@ -151,6 +155,7 @@ class CertificateDependencyEngine:
             "campus",
             "student_id_record",
             "enrollment",
+            "enrollments",
             "certificate_request",
         ],
         "CERTIFICATE_OF_ID_ISSUANCE_V2": [
@@ -158,6 +163,8 @@ class CertificateDependencyEngine:
             "program",
             "campus",
             "student_id_record",
+            "enrollment",
+            "enrollments",
             "certificate_request",
         ],
         "CERTIFICATE_OF_NSTP_SERIAL_NUMBER": [
@@ -179,6 +186,7 @@ class CertificateDependencyEngine:
             "student",
             "program",
             "campus",
+            "college",
             "certificate_request",
         ],
         "CERTIFICATION_OF_GRADES": [

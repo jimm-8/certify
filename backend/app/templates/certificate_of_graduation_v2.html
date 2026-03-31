@@ -38,15 +38,9 @@
       position: absolute;
       left: 0;
       top: -10px;
-      /* raise the logo */
       width: 132.48px;
       height: 124.8px;
     }
-
-    /* .header-center {
-        text-align: center;
-        line-height: 1.15;
-      } */
 
     .republic {
       font-size: 16px;
@@ -96,10 +90,16 @@
     /* ================= TITLES ================= */
 
     .registrar {
-      text-align: center;
-      font-size: 20px;
+      font-family: "Times New Roman", serif;
+      font-size: 18.67px;
       font-weight: bold;
-      margin-bottom: 40px;
+      text-align: center;
+      line-height: 1.15;
+      break-after: avoid;
+      page-break-after: avoid;
+      widows: 2;
+      orphans: 2;
+      margin-bottom: 35px;
     }
 
     .bold {
@@ -114,7 +114,7 @@
       text-align: center;
       font-size: 16pt;
       font-weight: bold;
-      margin-bottom: 35px;
+      margin-bottom: 32px;
     }
 
     /* ================= BODY ================= */
@@ -126,7 +126,7 @@
 
     .content {
       font-size: 14pt;
-      line-height: 1.8;
+      line-height: 1.6;
       text-align: justify;
       text-justify: inter-word;
     }
@@ -174,17 +174,12 @@
     /* ================= SIGNATURE ================= */
 
     .signature {
-      margin-top: 30px;
+      margin-top: 84px;
       width: 3.5in;
       margin-left: 3.5in;
       text-align: center;
       font-size: 12pt;
-      margin-bottom: 100px;
-    }
-
-    .signature-line {
-      width: 100%;
-      margin-bottom: 6px;
+      margin-bottom: 26.67px;
     }
 
     .footer-note {
@@ -192,7 +187,7 @@
       margin-top: 10px;
       font-size: 13.33px;
       font-style: italic;
-      margin-bottom: 50px;
+      margin-bottom: 80px;
       text-align: left;
     }
 
@@ -241,7 +236,7 @@
             <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
             at <strong>BATANGAS STATE UNIVERSITY</strong>, on
             <span class="f f-medium{% if not graduated_date %} blank{% endif %}">{{ graduated_date }}</span>
-            as per Board Resolution Number
+            as per BOR Res. No.
             <span class="f f-medium{% if not board_resolution_num %} blank{% endif %}">{{ board_resolution_num
               }}</span>.
           </div>
@@ -270,9 +265,8 @@
       <div class="signature">
         {% if signature_path %}
         <img src="{{ signature_path }}" alt="Signature"
-          style="max-width: 2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -40px;" />
+          style="max-width: 2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
         {% endif %}
-        <div class="signature-line"></div>
         <strong>{{ name_official }}</strong><br />
         {{ official_title }}
       </div>

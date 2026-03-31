@@ -124,8 +124,8 @@ def generate_certificate_pdf(
                         addr.address_line,
                         addr.city,
                         addr.province,
-                        addr.zip_code,
                         addr.country,
+                        addr.zip_code,
                     ]
                     if p
                 ]
@@ -197,7 +197,12 @@ def generate_certificate_pdf(
         if hasattr(date_val, "strftime"):
             date_of_graduation = date_val.strftime("%B %d, %Y")
         else:
-            date_of_graduation = str(date_val)
+            try:
+                date_of_graduation = datetime.strptime(
+                    str(date_val), "%Y-%m-%d"
+                ).strftime("%B %d, %Y")
+            except ValueError:
+                date_of_graduation = str(date_val)
     if graduation_record:
         is_graduated = bool(getattr(graduation_record, "is_graduated", False))
         graduation_status = str(getattr(graduation_record, "status", "") or "")
@@ -236,6 +241,7 @@ def generate_certificate_pdf(
         "requestor_contact": request.requestor_contact,
         "requestor_email": request.requestor_email,
         "certificate_type": resolved_key,
+        "attendance_periods": "",
         "curriculum_acad_year": (
             getattr(curriculum, "academic_year", "") if curriculum else ""
         ),
@@ -305,8 +311,24 @@ def generate_certificate_pdf(
 
     # Attendance periods for English Medium V1
     if enrollments:
-        periods = [f"{e.semester} {e.academic_year}" for e in enrollments]
-        data["attendance_periods"] = ", ".join(periods)
+
+        def _format_period(e):
+            sem = str(getattr(e, "semester", "") or "").strip()
+            ay = str(getattr(e, "academic_year", "") or "").strip()
+            # Only append "Semester" after 1st and 2nd
+            if sem.lower() in ("1st", "2nd"):
+                sem = f"{sem} Semester"
+            return f"{sem}, Academic Year {ay}".strip()
+
+        seen = set()
+        unique_periods = []
+        for e in sorted_enrollments:
+            period = _format_period(e)
+            if period not in seen:
+                seen.add(period)
+                unique_periods.append(period)
+
+        data["attendance_periods"] = unique_periods  # pass as list
 
     # Grades + course descriptions
     student_courses = dependencies.get("student_courses") or []
