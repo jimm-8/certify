@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from app.database import get_db
 from app.models.authorized_official import AuthorizedOfficial
@@ -151,6 +153,35 @@ def get_signature(
         )
     
     return signature
+
+
+@router.get("/{signature_id}/file")
+def get_signature_file(
+    signature_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
+):
+    """
+    Download a signature image file
+    """
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
+
+    if not signature or not signature.signature_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    upload_root = Path(UPLOAD_DIR).resolve()
+    file_path = Path(signature.signature_path).resolve()
+    if upload_root not in file_path.parents or not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    return FileResponse(path=str(file_path), filename=file_path.name)
 
 @router.patch("/{signature_id}", response_model=SignatureResponse)
 def update_signature(

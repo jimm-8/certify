@@ -21,6 +21,7 @@ import AllRequests from "./pages/certify/all_requests";
 import Settings from "./pages/certify/settings/settings";
 import Faqs from "./pages/certify/settings/faqs";
 import AuditLogs from "./pages/certify/settings/auditlogs";
+import SignatureManager from "./pages/certify/settings/signatures";
 import Templates from "./pages/certify/templates/templates";
 import Reports from "./pages/certify/reports";
 import Activity from "./pages/certify/activity";
@@ -137,6 +138,16 @@ function AppContent() {
               <AuditLogs />
             </MainLayout>
           </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings/signatures"
+        element={
+          <RequireRole roles={["superadmin", "registrar_head"]}>
+            <MainLayout>
+              <SignatureManager />
+            </MainLayout>
+          </RequireRole>
         }
       />
       <Route

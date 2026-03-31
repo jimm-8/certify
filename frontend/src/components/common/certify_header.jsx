@@ -23,6 +23,7 @@ const baseMenuItems = [
 const adminMenuItems = [
   { label: "Audit Logs", roles: ["superadmin", "registrar_head"] },
   { label: "User Management", roles: ["superadmin", "registrar_head"] },
+  { label: "Signatures", roles: ["superadmin", "registrar_head"] },
   { label: "Role Management", roles: ["superadmin"] },
 ];
 
@@ -106,6 +107,9 @@ const CertifyHeader = ({ onTabChange }) => {
       }
       if (item.label === "Audit Logs") {
         return { ...item, onClick: () => navigate("/settings/audit-logs") };
+      }
+      if (item.label === "Signatures") {
+        return { ...item, onClick: () => navigate("/settings/signatures") };
       }
       return item;
     });

@@ -4,119 +4,112 @@
 <head>
   <meta charset="UTF-8" />
   <title>Certificate of Grades</title>
-
   <style>
-    /* 1. Physical Page Setup */
     @page {
       size: 8.5in 13in;
-      margin: 0;
+      margin: 0.4in 0.5in;
+      /* Defined margins for the physical page */
     }
 
-    html,
     body {
       margin: 0;
       padding: 0;
-      background: #e5e5e5;
       font-family: "Times New Roman", serif;
       color: #000;
+      background: #e5e5e5;
     }
 
-    :root {
-      --header-height: 2.25in;
-      --header-gap: 0.3in;
-    }
-
-    /* 2. The Header (normal flow on screen) */
-    .page-header {
-      position: relative;
+    .paper-table {
       width: 100%;
-      height: auto;
-      text-align: center;
+      border-collapse: collapse;
       background: #fff;
-      z-index: 1;
-      /* padding: 0.35in 0.4in 0; */
-      box-sizing: border-box;
+    }
+
+    /* THE MAGIC: This forces the content inside <thead> to repeat on every page */
+    thead {
+      display: table-header-group;
+    }
+
+    /* HEADER STYLES */
+    .header-wrapper {
+      position: relative;
+      text-align: center;
+      padding-top: 10px;
+    }
+
+    .logo-container {
+      position: absolute;
+      left: 0;
+      top: 10px;
     }
 
     .logo {
-      position: absolute;
-      left: 0;
-      top: -10px;
-      width: 132.48px;
-      height: 124.8px;
+      width: 110px;
+      height: auto;
     }
 
     .republic {
-      font-size: 16px;
+      font-size: 14pt;
       font-weight: bold;
     }
 
     .university {
-      font-size: 21.33px;
+      font-size: 18pt;
       font-weight: bold;
+      margin-top: -2px;
     }
 
     .subtitle {
       font-family: Arial, sans-serif;
-      font-size: 16px;
+      font-size: 14pt;
       font-weight: bold;
       color: #d10000;
+      margin-top: -2px;
     }
 
     .details {
-      font-size: 16px;
-      /* line-height: 1.35; */
+      font-size: 11pt;
+      line-height: 1.2;
     }
 
-    .details .campus {
-      font-size: 16px;
+    .campus-bold {
       font-weight: bold;
     }
 
-    .details .address {
+    .address-bold {
       font-weight: bold;
-      font-size: 13.33px;
+      font-size: 10pt;
     }
 
-    .telNo {
-      font-size: 13.33px;
-    }
-
-    .email {
-      font-size: 13.33px;
-    }
-
-    .divider {
-      border-top: 1pt solid #000;
-      margin: 2px 0 14px 0;
-    }
-
-    .registrar {
-      font-size: 21.33px;
-      font-weight: bold;
-      margin-bottom: 16px;
-    }
-
-    /* 3. The Content Area */
-    .page-content {
-      margin-top: 0;
-      position: relative;
+    .header-divider {
+      border-top: 1.5pt solid #000;
+      margin: 10px 0;
       width: 100%;
+    }
+
+    .registrar-label {
+      font-size: 16pt;
+      font-weight: bold;
+      margin: 15px 0 25px 0;
+      display: block;
+    }
+
+    /* CONTENT STYLES */
+    .main-content {
+      padding: 0;
+      vertical-align: top;
     }
 
     .cert-title {
       text-align: center;
-      font-size: 21.33px;
+      font-size: 18pt;
       font-weight: bold;
-      margin-bottom: 15.3329px;
+      margin-bottom: 25px;
     }
 
-    /* 4. Body Text Styling */
-    .content {
-      font-size: 14.67px;
-      line-height: 1.3;
-      margin-left: 0.4in;
-      margin-right: 0.4in;
+    .text-body {
+      font-size: 12pt;
+      line-height: 1.5;
       text-align: justify;
     }
 
@@ -125,61 +118,26 @@
       margin-bottom: 15px;
     }
 
-    .bold {
-      font-weight: bold;
-    }
-
-    .name {
-      text-transform: uppercase;
-    }
-
-    /* Updated Field Styling: Removes border if data is present */
-    .field-data {
-      display: inline-block;
-      padding: 0 2px;
-      text-indent: 0;
-    }
-
-    /* Use this class for items that MUST have an underline even with data */
-    .underline {
-      border-bottom: 1px solid #000;
-    }
-
-    /* Use this for blanks that only show a line if the variable is missing */
-    .f-blank {
-      border-bottom: 1px solid #000;
-      min-width: 80px;
-    }
-
-    /* 5. Course Blocks */
-    .grade-block-wrap {
-      margin-top: 33.7px;
-    }
-
-    .grade-block {
+    /* GRADES TABLE */
+    .grade-table {
       width: 100%;
+      margin: 20px 0;
       border-collapse: collapse;
-      font-size: 14.67px;
-      page-break-inside: auto;
-      break-inside: auto;
     }
 
-    .grade-block thead {
-      display: table-header-group;
+    .grade-table th {
+      text-align: left;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #000;
     }
 
-    .grade-block tfoot {
-      display: table-footer-group;
+    .grade-table td {
+      padding: 5px 0;
     }
 
-    .grade-block tr {
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    /* 6. Signatures and Footer */
-    .signature-wrap {
-      margin-top: 104.3px;
+    /* SIGNATURE & FOOTER */
+    .signature-section {
+      margin-top: 60px;
       page-break-inside: avoid;
     }
 
@@ -189,225 +147,148 @@
       text-align: center;
     }
 
-    .footer-note {
-      margin-top: 108.87px;
-      margin-left: 0.4in;
-      margin-bottom: 80px;
-      font-size: 13.33px;
+    .footer-seal {
+      margin-top: 80px;
+      font-size: 11pt;
       font-style: italic;
     }
 
-    .reference {
-      margin-left: 0.4in;
-      font-size: 13.33px;
-    }
-
-    .paper {
-      width: 8.5in;
-      min-height: 13in;
-      background: #fff;
-      padding: 0 0.5in 0.5in 0.5in;
-      /* was: 0.5in — remove top padding */
-      box-sizing: border-box;
-      margin: 0 auto;
-      font-family: "Times New Roman", serif;
+    .ref-codes {
+      margin-top: 10px;
+      font-size: 10pt;
     }
 
     @media print {
-      @page {
-        size: 8.5in 13in;
-        /* Reserves space on EVERY page for the fixed header, no doubling because
-       the fixed header fills this space — content starts below it naturally */
-        margin-top: calc(var(--header-height) + var(--header-gap));
-        margin-bottom: 0.75in;
-        margin-left: 0;
-        margin-right: 0;
-      }
-    }
-
-    @media print {
-
-      html,
       body {
-        background: #fff;
+        background: none;
       }
 
-      .paper {
-        margin: 0;
-        box-shadow: none;
-        padding-bottom: 0.75in;
-      }
-    }
-
-    @media print {
-      .page-header {
-        position: fixed;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 8.5in;
-        height: var(--header-height);
-        padding: 0.35in 0.4in 0;
-        box-sizing: border-box;
-        z-index: 9999;
-      }
-
-      .logo {
-        left: 0;
-        top: -5px;
-      }
-
-      .page-content {
-        margin-top: 0;
-        /* ← was calc(var(--header-height) + var(--header-gap)) */
+      .paper-table {
+        width: 100%;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="paper">
-    <!-- Header -->
-    <div class="page-header">
-      <div style="position: relative;">
-        <img src="bsu.png" class="logo" />
-        <div class="republic">Republic of the Philippines</div>
-        <div class="university">BATANGAS STATE UNIVERSITY</div>
-        <div class="subtitle">The National Engineering University</div>
-        <div class="details">
-          <div class="campus">{{ campus_name }}{% if campus_name %} Campus{% endif %}</div>
-          <div class="address">{{ campus_address }}</div>
-          <div class="telNo">{{ campus_telNo }}</div>
-          <div class="email">Email Address: {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph</div>
-        </div>
-        <div class="divider"></div>
-        <div class="registrar">OFFICE OF THE REGISTRAR</div>
-      </div>
-    </div>
 
-    <div class="page-content">
-      <div class="cert-title">CERTIFICATION OF GRADES</div>
-      <div class="content">
-        <div class="paragraph">
-          This is to certify that <strong>Mr./Ms.</strong>
-          <span class="f f-long{% if not student_name %} blank{% endif %} name">{{ student_name }}</span>
-          has enrolled in the
-          <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
-          under the
-          <span class="f f-long{% if not college_name %} blank{% endif %}">{{ college_name }}</span>
-          of this institution, <strong>BATANGAS STATE UNIVERSITY</strong>,
-          during the
-          <span class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}">{{
-            enrollment_from_semester or current_sem }}</span>
-          Semester of Academic Year
-          <span class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}">{{
-            enrollment_from_academic_year or academic_year }}</span>
-          <!-- If student has previous semester records proceed to this next sentences -->
-          from
-          <span class="f f-short{% if not (first_enrollment_semester) %} blank{% endif %}">{{
-            first_enrollment_semester }}</span>
-          Semester, AY
-          <span class="f f-short{% if not (first_enrollment_academic_year) %} blank{% endif %}">{{
-            first_enrollment_academic_year }}</span>
-          to
-          <span class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}">{{
-            enrollment_from_semester or current_sem }}</span>
-          Semester, AY
-          <span class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}">{{
-            enrollment_from_academic_year or academic_year }}</span>.
-        </div>
-
-        <div class="paragraph">
-          This further certifies that he/she enrolled this/these course/s and
-          obtained the following grade/s:
-        </div>
-
-        <div class="grade-block-wrap">
-          <table class="grade-block">
-            <thead>
-              <tr>
-                <th>Course Code / Title</th>
-                <th>Unit/s</th>
-                <th>Grade/s</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if grades_detail %}
-              {% for row in grades_detail %}
-              <tr>
-                <td>{{ row.course_code }} - {{ row.course_title }}</td>
-                <td>{{ row.units }}</td>
-                <td>{{ row.grade }}</td>
-              </tr>
-              {% endfor %}
-              {% else %}
-              <tr>
-                <td>{{course_code}} - {{ course_title }}</td>
-                <td>{{ course_units }}</td>
-                <td>{{ course_grades }}</td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="paragraph">
-          This certification is issued upon request of
-          <strong>Mr./Ms.</strong>
-          <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
-          this
-          <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
-            }}</span>
-          day of
-          <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
-          for whatever legal purpose it may serve him/her.
-        </div>
-      </div>
-      <div class="signature-wrap">
-        <div class="signature-box">
-          {% if signature_path %}
-          <img src="{{ signature_path }}"
-            style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
-          {% endif %}
-          <div>
-            <strong>{{ name_official }}</strong><br />
-            {{ official_title }}
+  <table class="paper-table">
+    <thead>
+      <tr>
+        <td>
+          <div class="header-wrapper">
+            <div class="logo-container">
+              <img src="bsu.png" class="logo" alt="Logo">
+            </div>
+            <div class="header-text">
+              <div class="republic">Republic of the Philippines</div>
+              <div class="university">BATANGAS STATE UNIVERSITY</div>
+              <div class="subtitle">The National Engineering University</div>
+              <div class="details">
+                <div class="campus-bold">{{ campus_name|default('Alangilan') }} Campus</div>
+                <div class="address-bold">{{ campus_address }}</div>
+                <div class="contact-info">
+                  ({{ campus_telNo }})<br>
+                  Email Address: {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph
+                </div>
+              </div>
+            </div>
+            <div class="header-divider"></div>
+            <span class="registrar-label">OFFICE OF THE REGISTRAR</span>
           </div>
-        </div>
-      </div>
+        </td>
+      </tr>
+    </thead>
 
-      <div class="footer-note">Not valid without university seal</div>
+    <tbody>
+      <tr>
+        <td class="main-content">
+          <div class="cert-title">CERTIFICATION OF GRADES</div>
 
-      <div class="reference">
-        <div>{{ campus_certCode }}</div>
-        <div>{{ or_number }}</div>
-      </div>
-    </div>
-    <script>
-      function getOrdinalSuffix(day) {
-        if (day % 100 >= 11 && day % 100 <= 13) return 'th';
+          <div class="text-body">
+            <div class="paragraph">
+              This is to certify that <strong>Mr./Ms. <span style="text-transform: uppercase;">{{ student_name
+                  }}</span></strong>
+              has enrolled in the <strong>{{ course_name }}</strong> under the <strong>{{ college_name }}</strong>
+              of this institution, <strong>BATANGAS STATE UNIVERSITY</strong>, during the 1st Semester of Academic Year
+              <strong>{{ academic_year }}</strong> from {{ first_enrollment_semester }} Semester,
+              AY {{ first_enrollment_academic_year }} to {{ current_sem }} Semester, AY {{ academic_year }}.
+            </div>
 
-        switch (day % 10) {
-          case 1: return 'st';
-          case 2: return 'nd';
-          case 3: return 'rd';
-          default: return 'th';
-        }
+            <div class="paragraph">
+              This further certifies that he/she enrolled this/these course/s and obtained the following grade/s:
+            </div>
+
+            <table class="grade-table">
+              <thead>
+                <tr>
+                  <th width="70%">Course Code / Title</th>
+                  <th width="15%" style="text-align: center;">Unit/s</th>
+                  <th width="15%" style="text-align: center;">Grade/s</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if grades_detail %}
+                {% for row in grades_detail %}
+                <tr>
+                  <td>{{ row.course_code }} - {{ row.course_title }}</td>
+                  <td style="text-align: center;">{{ row.units }}</td>
+                  <td style="text-align: center;">{{ row.grade }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                  <td>{{ course_code }} - {{ course_title }}</td>
+                  <td style="text-align: center;">{{ course_units }}</td>
+                  <td style="text-align: center;">{{ course_grades }}</td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+
+            <div class="paragraph">
+              This certification is issued upon request of <strong>Mr./Ms. {{ requestor_name }}</strong>
+              this <span id="dateDay">{{ date_issued_day }}</span> day of {{ date_issued_month }}
+              for whatever legal purpose it may serve him/her.
+            </div>
+          </div>
+
+          <div class="signature-section">
+            <div class="signature-box">
+              {% if signature_path %}
+              <img src="{{ signature_path }}"
+                style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -20px;" />
+              {% endif %}
+              <div style="margin-top: 10px;">
+                <strong>{{ name_official }}</strong><br />
+                {{ official_title }}
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-seal">Not valid without university seal</div>
+
+          <div class="ref-codes">
+            <div>{{ campus_certCode }}</div>
+            <div>{{ or_number }}</div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const el = document.getElementById("dateDay");
+      if (!el) return;
+      const day = parseInt(el.textContent.trim());
+      if (!isNaN(day)) {
+        const s = ["th", "st", "nd", "rd"], v = day % 100;
+        el.innerHTML = day + `<sup>${(s[(v - 20) % 10] || s[v] || s[0])}</sup>`;
       }
+    });
+  </script>
 
-      document.addEventListener("DOMContentLoaded", function () {
-        const el = document.getElementById("dateDay");
-
-        if (!el) return;
-
-        const day = parseInt(el.textContent.trim());
-
-        if (!isNaN(day)) {
-          const suffix = getOrdinalSuffix(day);
-          el.innerHTML = `${day}<sup>${suffix}</sup>`;
-        }
-      });
-    </script>
 </body>
 
 </html>
