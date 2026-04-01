@@ -79,88 +79,118 @@ export default function RoleManagement() {
   };
 
   return (
-    <div className="mt-3 bg-white rounded-md border border-gray-200 shadow-sm p-2">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <button
-          onClick={() => navigate("/dashboard")}
-          title="Back to Dashboard"
-          className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
-        >
-          <BsChevronLeft style={{ strokeWidth: "0.5" }} />
-          <span>Role & Permission Management</span>
-        </button>
-        <button onClick={load} className="btn btn-outline-secondary btn-sm">
-          Refresh
-        </button>
+    <div className="py-3 space-y-4">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm px-2 py-2">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/dashboard")}
+            title="Back to Dashboard"
+            className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors rounded"
+          >
+            <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+            <span>Role & Permission Management</span>
+          </button>
+          <button
+            onClick={load}
+            className="text-xs font-semibold px-3 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:text-[#B22222] hover:border-[#B22222] transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 ml-5">
+          Manage role access and fine-grained permissions for the system.
+        </p>
       </div>
-      {error && <div className="alert alert-danger">{String(error)}</div>}
 
-      <div className="row g-3">
-        <div className="col-md-4">
-          <div className="border rounded p-3 h-100">
-            <div className="fw-semibold mb-2">Roles</div>
-            <div className="list-group">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  className={`list-group-item list-group-item-action ${
-                    activeRoleId === role.id ? "active" : ""
-                  }`}
-                  onClick={() => setActiveRoleId(role.id)}
-                >
-                  {role.name}
-                </button>
-              ))}
-              {roles.length === 0 && (
-                <div className="text-muted small">No roles found.</div>
-              )}
-            </div>
+      {error && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+          {String(error)}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
+          <div className="text-sm font-semibold text-gray-800 mb-2">Roles</div>
+          <p className="text-xs text-gray-500 mb-4">
+            Select a role to edit its permissions.
+          </p>
+          <div className="space-y-2">
+            {roles.map((role) => (
+              <button
+                key={role.id}
+                onClick={() => setActiveRoleId(role.id)}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm border transition-colors ${
+                  activeRoleId === role.id
+                    ? "border-[#ee1133] bg-red-50 text-[#B22222]"
+                    : "border-gray-200 text-gray-700 hover:border-[#ee1133] hover:text-[#B22222]"
+                }`}
+              >
+                {role.name}
+              </button>
+            ))}
+            {roles.length === 0 && (
+              <div className="text-xs text-gray-500">No roles found.</div>
+            )}
           </div>
         </div>
 
-        <div className="col-md-8">
-          <div className="border rounded p-3 h-100">
-            <div className="d-flex align-items-center justify-content-between">
-              <div className="fw-semibold">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6 lg:col-span-2">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-gray-800">
                 Permissions for {activeRole?.name || "role"}
               </div>
-              <div className="d-flex align-items-center gap-2">
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Filter permissions"
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                />
-                <button onClick={handleSave} className="btn btn-primary btn-sm">
-                  Save
-                </button>
-              </div>
+              <p className="text-xs text-gray-500">
+                Toggle permissions to control access for this role.
+              </p>
             </div>
-
-            <div
-              className="row g-2 mt-2"
-              style={{ maxHeight: 320, overflowY: "auto" }}
-            >
-              {filteredPermissions.map((perm) => (
-                <div key={perm.id} className="col-md-6">
-                  <label className="d-flex align-items-center gap-2 small">
-                    <input
-                      type="checkbox"
-                      checked={selectedPerms.includes(perm.name)}
-                      onChange={() => togglePerm(perm.name)}
-                    />
-                    <span>{perm.name}</span>
-                  </label>
-                </div>
-              ))}
-              {filteredPermissions.length === 0 && (
-                <div className="text-muted small">No permissions found.</div>
-              )}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="border border-gray-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-200"
+                placeholder="Filter permissions"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+              <button
+                onClick={handleSave}
+                className="bg-[#ee1133] hover:bg-[#c50f2a] text-white text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+              >
+                Save
+              </button>
             </div>
-
-            {status && <div className="text-muted small mt-2">{status}</div>}
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-80 overflow-y-auto mt-3">
+            {filteredPermissions.map((perm) => (
+              <label
+                key={perm.id}
+                className="flex items-center gap-2 text-xs text-gray-700 border border-gray-200 rounded-md px-3 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedPerms.includes(perm.name)}
+                  onChange={() => togglePerm(perm.name)}
+                />
+                <span>{perm.name}</span>
+              </label>
+            ))}
+            {filteredPermissions.length === 0 && (
+              <div className="text-xs text-gray-500">No permissions found.</div>
+            )}
+          </div>
+
+          {status && (
+            <div
+              className={`text-xs mt-3 rounded-md px-3 py-2 border ${
+                status === "Saved."
+                  ? "text-green-600 bg-green-50 border-green-200"
+                  : "text-gray-600 bg-gray-50 border-gray-200"
+              }`}
+            >
+              {status}
+            </div>
+          )}
         </div>
       </div>
     </div>

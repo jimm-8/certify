@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from app.database import get_db
 from app.models.authorized_official import AuthorizedOfficial
@@ -152,6 +154,35 @@ def get_signature(
     
     return signature
 
+
+@router.get("/{signature_id}/file")
+def get_signature_file(
+    signature_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
+):
+    """
+    Download a signature image file
+    """
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
+
+    if not signature or not signature.signature_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    upload_root = Path(UPLOAD_DIR).resolve()
+    file_path = Path(signature.signature_path).resolve()
+    if upload_root not in file_path.parents or not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    return FileResponse(path=str(file_path), filename=file_path.name)
+
 @router.patch("/{signature_id}", response_model=SignatureResponse)
 def update_signature(
     signature_id: int,
@@ -194,15 +225,13 @@ def update_signature(
 @router.delete("/{signature_id}")
 def delete_signature(
     signature_id: int,
-    hard_delete: bool = False,
     db: Session = Depends(get_db),
     _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
-    Delete a signature
+    Soft delete a signature
     
-    By default, soft delete (mark as inactive)
-    Set hard_delete=true to permanently delete
+    Marks the record as deleted without removing it or the file.
     """
     
     signature_repo = AuthorizedOfficialRepository(db)
@@ -214,20 +243,10 @@ def delete_signature(
             detail="Signature not found"
         )
     
-    if hard_delete:
-        # Delete file
-        if signature.signature_path and os.path.exists(signature.signature_path):
-            os.remove(signature.signature_path)
-        
-        # Delete from database
-        signature_repo.delete(signature)
-        db.commit()
-        
-        return {"message": "Signature permanently deleted"}
-    else:
-        # Soft delete - just mark as inactive
-        signature.is_active = False
-        db.commit()
-        
-        return {"message": "Signature deactivated"}
+    # Soft delete - mark as deleted and inactive
+    signature.is_active = False
+    signature.deleted_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Signature deleted"}
 

@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { BsChevronLeft } from "react-icons/bs";
 
 const Faqs = () => {
   const [openIndex, setOpenIndex] = useState(0);
+  const navigate = useNavigate();
 
   const faqs = [
     {
@@ -48,10 +51,18 @@ const Faqs = () => {
 
   return (
     <div className="m-4 space-y-4">
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-800">FAQs</h2>
-        <p className="text-sm text-gray-500 mt-2">
-          Quick answers to common questions about CERTIFY.
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm px-2 py-2">
+        <button
+          onClick={() => navigate("/dashboard")}
+          title="Back to Dashboard"
+          className="text-lg font-bold  text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+        >
+          <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+          <span>Frequently Asked Questions</span>
+        </button>
+        <p className="text-xs text-gray-500 ml-5">
+          Descriptive, diagnostic, and predictive insights for certificate
+          requests.
         </p>
       </div>
 

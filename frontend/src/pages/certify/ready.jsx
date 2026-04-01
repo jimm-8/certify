@@ -184,13 +184,11 @@ const Ready = () => {
       const url = window.URL.createObjectURL(
         new Blob([blob], { type: "application/pdf" }),
       );
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Certificate_${row.student_name}_${row.reference_number}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(url), 3000);
+      const win = window.open(url);
+      win?.addEventListener("load", () => {
+        win.print();
+        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+      });
     } catch (error) {
       console.error("Failed to download certificate:", error);
       alert("Failed to download certificate. Please try again.");

@@ -226,6 +226,9 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
 
 # Certificate-type to dependency variant mapping.
 CERTIFICATE_TYPE_VARIANTS: dict[str, list[str]] = {
+    "certificationauthenticationandverification": [
+        "certification_authentication_and_verification_cav",
+    ],
     "certificationauthenticationandverificationcav": [
         "certification_authentication_and_verification_cav",
     ],

@@ -1,6 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getTokenPayload } from "../../../utils/auth";
 import authService from "../../../services/authService";
+import userService from "../../../services/userService";
+import { useNavigate } from "react-router-dom";
+import { BsChevronLeft } from "react-icons/bs";
 
 const Settings = () => {
   const payload = getTokenPayload();
@@ -23,23 +26,53 @@ const Settings = () => {
   const [contact, setContact] = useState("");
   const [department, setDepartment] = useState("");
   const [success, setSuccess] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changeError, setChangeError] = useState("");
   const [changeSuccess, setChangeSuccess] = useState("");
   const [changing, setChanging] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadProfile = async () => {
+      try {
+        const data = await userService.getMe();
+        if (!mounted) return;
+        setFullName(data.full_name || "");
+        setEmail(data.email || "");
+        setContact(data.contact_number || "");
+        setDepartment(data.department || "");
+      } catch (err) {
+        if (!mounted) return;
+        setSuccess("");
+      }
+    };
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
-    <div className="m-4 space-y-4">
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-800">Profile Settings</h2>
-        <p className="text-sm text-gray-500 mt-2">
+    <div className="py-3 space-y-4">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm px-2 py-2">
+        <button
+          onClick={() => navigate("/dashboard")}
+          title="Back to Dashboard"
+          className="text-lg font-bold  text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+        >
+          <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+          <span>Profile Settings</span>
+        </button>
+        <p className="text-xs text-gray-500 ml-5">
           Manage your profile details and account information.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-[#ee1133] text-white flex items-center justify-center text-lg font-semibold">
@@ -71,9 +104,23 @@ const Settings = () => {
 
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6 lg:col-span-2">
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              setSuccess("Profile details saved locally.");
+              setSuccess("");
+              try {
+                setSavingProfile(true);
+                await userService.updateMe({
+                  full_name: fullName,
+                  email,
+                  contact_number: contact,
+                  department,
+                });
+                setSuccess("Profile details saved.");
+              } catch (err) {
+                setSuccess("");
+              } finally {
+                setSavingProfile(false);
+              }
             }}
             className="space-y-4"
           >
@@ -152,26 +199,27 @@ const Settings = () => {
 
             {success && (
               <div className="text-xs text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                {success} This is stored in your browser for now.
+                {success}
               </div>
             )}
 
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-gray-500">
-                Profile updates will be connected to the backend later.
+                Profile updates are saved to your account.
               </p>
               <button
                 type="submit"
+                disabled={savingProfile}
                 className="bg-[#ee1133] hover:bg-[#c50f2a] text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
               >
-                Save Changes
+                {savingProfile ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6 lg:col-span-2">
           <div className="text-sm font-semibold text-gray-800 mb-2">
             Change Password

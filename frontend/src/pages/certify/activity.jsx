@@ -91,7 +91,7 @@ const Activity = () => {
   }, [logs]);
 
   return (
-    <div className="bg-white rounded-md border border-gray-200 shadow-sm mt-3 mb-4 p-4 min-h-[calc(100vh-10rem)]">
+    <div className="bg-white rounded-md border border-gray-200 shadow-sm mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
       <div className="flex items-center justify-between gap-2 mb-4">
         <button
           onClick={() => navigate("/dashboard")}
@@ -120,23 +120,19 @@ const Activity = () => {
       )}
 
       {!loading && timeline.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {timeline.map((log) => (
             <div
               key={log.id}
-              className="border border-gray-200 rounded-md p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+              className="border border-gray-200 rounded-md px-3 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
             >
               <div>
                 <div className="text-sm font-semibold text-gray-800">
                   {actionLabel(log)}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {entityLabel(log)}
-                </div>
+                <div className="text-xs text-gray-500">{entityLabel(log)}</div>
                 {log.notes && (
-                  <div className="text-xs text-gray-600 mt-2">
-                    {log.notes}
-                  </div>
+                  <div className="text-xs text-gray-600">{log.notes}</div>
                 )}
               </div>
               <div className="text-xs text-gray-500 whitespace-nowrap">

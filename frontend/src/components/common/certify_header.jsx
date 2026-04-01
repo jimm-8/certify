@@ -23,6 +23,7 @@ const baseMenuItems = [
 const adminMenuItems = [
   { label: "Audit Logs", roles: ["superadmin", "registrar_head"] },
   { label: "User Management", roles: ["superadmin", "registrar_head"] },
+  { label: "Signatures", roles: ["superadmin", "registrar_head"] },
   { label: "Role Management", roles: ["superadmin"] },
 ];
 
@@ -33,7 +34,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
     if (anchorRef.current) {
       const rect = anchorRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + window.scrollY + 4,
+        top: rect.bottom + window.scrollY - 6,
         left: rect.right + window.scrollX - 224,
       });
     }
@@ -106,6 +107,9 @@ const CertifyHeader = ({ onTabChange }) => {
       }
       if (item.label === "Audit Logs") {
         return { ...item, onClick: () => navigate("/settings/audit-logs") };
+      }
+      if (item.label === "Signatures") {
+        return { ...item, onClick: () => navigate("/settings/signatures") };
       }
       return item;
     });

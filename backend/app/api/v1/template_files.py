@@ -19,11 +19,24 @@ def _templates_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "templates"
 
 
+def _templates_defaults_dir() -> Path:
+    return Path(__file__).resolve().parents[2] / "templates_defaults"
+
+
 def _safe_template_path(name: str) -> Path:
     if not name or ".." in name or name.startswith(("/", "\\")):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid template name")
     path = (_templates_dir() / name).resolve()
     if _templates_dir().resolve() not in path.parents:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid template path")
+    return path
+
+
+def _safe_template_path_in_dir(root: Path, name: str) -> Path:
+    if not name or ".." in name or name.startswith(("/", "\\")):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid template name")
+    path = (root / name).resolve()
+    if root.resolve() not in path.parents:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid template path")
     return path
 
@@ -45,10 +58,17 @@ def list_templates(
 @router.get("/{template_name}", response_model=TemplateContentResponse)
 def get_template(
     template_name: str,
+    source: str | None = None,
     db: Session = Depends(get_db),
     _: dict = Depends(require_permissions("templates.read")),
 ):
-    path = _safe_template_path(template_name)
+    if source == "defaults":
+        defaults_dir = _templates_defaults_dir()
+        if not defaults_dir.exists():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Default templates not found")
+        path = _safe_template_path_in_dir(defaults_dir, template_name)
+    else:
+        path = _safe_template_path(template_name)
     if not path.exists() or path.suffix.lower() not in {".html", ".htm"}:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     content = path.read_text(encoding="utf-8")

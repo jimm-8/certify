@@ -25,6 +25,7 @@ class SignatureResponse(BaseModel):
     campus_id: Optional[int]
     signature_path: Optional[str]
     is_active: bool
+    deleted_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -37,3 +38,4 @@ class SignatureUpdate(BaseModel):
     campus_id: Optional[int] = None
     signature_path: Optional[str] = None
     is_active: Optional[bool] = None
+    deleted_at: Optional[datetime] = None

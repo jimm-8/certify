@@ -70,7 +70,10 @@ class AuthorizedOfficialRepository(BaseRepository[AuthorizedOfficial]):
         super().__init__(db, AuthorizedOfficial)
 
     def active(self):
-        return self.query().filter(AuthorizedOfficial.is_active == True)
+        return self.query().filter(
+            AuthorizedOfficial.is_active == True,
+            AuthorizedOfficial.deleted_at.is_(None),
+        )
 
     def latest_active(self):
         return self.active().order_by(AuthorizedOfficial.created_at.desc()).first()
