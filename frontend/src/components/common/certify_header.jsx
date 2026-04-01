@@ -34,7 +34,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
     if (anchorRef.current) {
       const rect = anchorRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + window.scrollY + 4,
+        top: rect.bottom + window.scrollY - 6,
         left: rect.right + window.scrollX - 224,
       });
     }

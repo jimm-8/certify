@@ -108,7 +108,7 @@ const CertifyNavbar = () => {
           </div>
 
           {open && (
-            <div className="absolute right-0 top-14 w-56 bg-white text-gray-700 rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+            <div className="absolute right-0 top-12 w-56 bg-white text-gray-700 rounded-xl shadow-xl border border-gray-100 py-2 z-50">
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#ee1133] text-white flex items-center justify-center text-sm font-semibold">
@@ -230,7 +230,6 @@ const CertifyNavbar = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

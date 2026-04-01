@@ -9,6 +9,9 @@ class UserBase(BaseModel):
     role: Optional[str] = "user"
     campus_id: Optional[int] = None
     permissions: Optional[Union[List[str], str]] = None
+    full_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    department: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -22,6 +25,9 @@ class UserResponse(BaseModel):
     role: str
     campus_id: Optional[int]
     permissions: Optional[str] = None
+    full_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    department: Optional[str] = None
     created_at: Optional[datetime]
 
     class Config:
@@ -41,3 +47,10 @@ class TokenData(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    department: Optional[str] = None

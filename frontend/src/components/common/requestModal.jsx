@@ -164,6 +164,11 @@ const RequestModal = ({
             value={request.reference_number}
           />
           <DetailRow
+            icon={BsHash}
+            label="SR-Code"
+            value={request.sr_code || "-"}
+          />
+          <DetailRow
             icon={BsPersonFill}
             label="Student Name"
             value={request.student_name}

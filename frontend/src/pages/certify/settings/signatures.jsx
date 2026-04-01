@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
 import signatureService from "../../../services/signatureService";
+import campusService from "../../../services/campusService";
 
 const SignatureManager = () => {
   const navigate = useNavigate();
@@ -19,6 +20,11 @@ const SignatureManager = () => {
 
   const [imageUrls, setImageUrls] = useState({});
   const imageUrlRef = useRef({});
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmSig, setConfirmSig] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [campuses, setCampuses] = useState([]);
+  const [campusLoading, setCampusLoading] = useState(false);
 
   const resetForm = () => {
     setName("");
@@ -42,6 +48,27 @@ const SignatureManager = () => {
 
   useEffect(() => {
     loadSignatures();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadCampuses = async () => {
+      try {
+        setCampusLoading(true);
+        const data = await campusService.list();
+        if (!mounted) return;
+        setCampuses(data || []);
+      } catch (err) {
+        if (!mounted) return;
+        setCampuses([]);
+      } finally {
+        if (mounted) setCampusLoading(false);
+      }
+    };
+    loadCampuses();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -123,32 +150,52 @@ const SignatureManager = () => {
     }
   };
 
-  const handleDelete = async (sig, hardDelete = false) => {
-    const confirmMsg = hardDelete
-      ? "Permanently delete this signature? This cannot be undone."
-      : "Deactivate this signature?";
-    if (!window.confirm(confirmMsg)) return;
+  const handleDelete = (sig) => {
+    setConfirmSig(sig);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmSig) return;
     try {
       setError("");
-      await signatureService.remove(sig.id, hardDelete);
+      setConfirming(true);
+      await signatureService.remove(confirmSig.id);
       await loadSignatures();
+      setConfirmOpen(false);
+      setConfirmSig(null);
     } catch (err) {
       setError("Failed to delete signature.");
+    } finally {
+      setConfirming(false);
     }
   };
 
   const sortedSignatures = useMemo(() => {
     return [...signatures].sort((a, b) => {
-      if (a.is_active === b.is_active) {
+      const rank = (sig) => {
+        if (sig.deleted_at) return 2;
+        return sig.is_active ? 0 : 1;
+      };
+      const rankDiff = rank(a) - rank(b);
+      if (rankDiff === 0) {
         return new Date(b.created_at) - new Date(a.created_at);
       }
-      return a.is_active ? -1 : 1;
+      return rankDiff;
     });
   }, [signatures]);
 
+  const campusNameById = useMemo(() => {
+    const map = new Map();
+    campuses.forEach((campus) => {
+      map.set(String(campus.id), campus.name);
+    });
+    return map;
+  }, [campuses]);
+
   return (
     <div className="py-3 space-y-4">
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-2">
         <button
           onClick={() => navigate("/dashboard")}
           className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors rounded"
@@ -156,13 +203,13 @@ const SignatureManager = () => {
           <BsChevronLeft style={{ strokeWidth: "0.5" }} />
           <span>Signature Management</span>
         </button>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-gray-500 ml-5">
           Upload and manage registrar head signatures used on certificates.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3">
           <h3 className="text-sm font-semibold text-gray-800">
             Upload New Signature
           </h3>
@@ -193,16 +240,21 @@ const SignatureManager = () => {
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
-                Campus ID (optional)
+                Campus (optional)
               </label>
-              <input
-                type="number"
-                min="1"
+              <select
                 value={campusId}
                 onChange={(e) => setCampusId(e.target.value)}
-                placeholder="1"
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-              />
+                disabled={campusLoading}
+              >
+                <option value="">Select campus</option>
+                {campuses.map((campus) => (
+                  <option key={campus.id} value={campus.id}>
+                    {campus.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -244,15 +296,15 @@ const SignatureManager = () => {
           </form>
         </div>
 
-        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 lg:col-span-2">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-sm font-semibold text-gray-800">
                 Uploaded Signatures
               </h3>
               <p className="text-xs text-gray-500">
-                Active signatures appear first. Deactivate to hide without
-                deleting.
+                Active signatures appear first. Deactivate to hide; soft delete
+                marks a signature as deleted.
               </p>
             </div>
             <button
@@ -271,70 +323,120 @@ const SignatureManager = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedSignatures.map((sig) => (
-                <div
-                  key={sig.id}
-                  className="border border-gray-200 rounded-lg p-3 flex flex-col md:flex-row gap-3 md:items-center md:justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 h-16 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
-                      {imageUrls[sig.id] ? (
-                        <img
-                          src={imageUrls[sig.id]}
-                          alt={`${sig.name} signature`}
-                          className="max-h-14 w-auto object-contain"
-                        />
-                      ) : (
-                        <span className="text-[10px] text-gray-400">
-                          No preview
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {sig.name}
+              {sortedSignatures.map((sig) => {
+                const isDeleted = Boolean(sig.deleted_at);
+                return (
+                  <div
+                    key={sig.id}
+                    className="border border-gray-200 rounded-lg p-3 flex flex-col md:flex-row gap-3 md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-24 h-16 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+                        {imageUrls[sig.id] ? (
+                          <img
+                            src={imageUrls[sig.id]}
+                            alt={`${sig.name} signature`}
+                            className="max-h-14 w-auto object-contain"
+                          />
+                        ) : (
+                          <span className="text-[10px] text-gray-400">
+                            No preview
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-500">{sig.title}</div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          {sig.name}
+                        </div>
+                        <div className="text-xs text-gray-500">{sig.title}</div>
                       <div className="text-[11px] text-gray-400 mt-1">
-                        Campus: {sig.campus_id || "N/A"}
+                        Campus:{" "}
+                        {sig.campus_id
+                          ? campusNameById.get(String(sig.campus_id)) ||
+                            sig.campus_id
+                          : "N/A"}
+                      </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] px-2 py-1 rounded-full font-semibold ${
+                          isDeleted
+                            ? "bg-red-50 text-red-700 border border-red-200"
+                            : sig.is_active
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-gray-100 text-gray-500 border border-gray-200"
+                        }`}
+                      >
+                        {isDeleted
+                          ? "DELETED"
+                          : sig.is_active
+                            ? "ACTIVE"
+                            : "INACTIVE"}
+                      </span>
+                      <button
+                        onClick={() => handleToggleActive(sig)}
+                        disabled={isDeleted}
+                        className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {sig.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(sig)}
+                        disabled={isDeleted}
+                        className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Soft Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-[10px] px-2 py-1 rounded-full font-semibold ${
-                        sig.is_active
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : "bg-gray-100 text-gray-500 border border-gray-200"
-                      }`}
-                    >
-                      {sig.is_active ? "ACTIVE" : "INACTIVE"}
-                    </span>
-                    <button
-                      onClick={() => handleToggleActive(sig)}
-                      className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                      {sig.is_active ? "Deactivate" : "Activate"}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(sig, false)}
-                      className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                      Soft Delete
-                    </button>
-                    <button
-                      onClick={() => handleDelete(sig, true)}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-md hover:bg-black"
-                    >
-                      Hard Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
+
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-title"
+        >
+          <div className="w-full max-w-sm rounded-lg bg-white shadow-lg border border-gray-200">
+            <div className="px-4 pt-4">
+              <h4 id="confirm-title" className="text-sm font-semibold text-gray-800">
+                Confirm Deletion
+              </h4>
+              <p className="mt-2 text-xs text-gray-600">
+                Mark this signature as deleted? You can’t activate it again.
+              </p>
+            </div>
+            <div className="px-4 pb-4 pt-3 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirming) return;
+                  setConfirmOpen(false);
+                  setConfirmSig(null);
+                }}
+                className="px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={confirming}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-md hover:bg-black disabled:opacity-60"
+              >
+                {confirming ? "Deleting..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

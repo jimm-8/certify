@@ -1,0 +1,313 @@
+﻿<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Certificate of ID Issuance</title>
+
+  <style>
+    @page {
+      size: 8.5in 11in;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      background: #e5e5e5;
+    }
+
+    .paper {
+      width: 8.5in;
+      min-height: 11in;
+      background: #fff;
+      padding: 0.5in;
+      box-sizing: border-box;
+      font-family: "Times New Roman", serif;
+    }
+
+    /* ================= HEADER ================= */
+
+    .header {
+      position: relative;
+      text-align: center;
+    }
+
+    .logo {
+      position: absolute;
+      left: 0;
+      top: -10px;
+      width: 132.48px;
+      height: 124.8px;
+    }
+
+    .republic {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .university {
+      font-size: 21.33px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #d10000;
+    }
+
+    .details {
+      font-size: 16px;
+      /* line-height: 1.35; */
+    }
+
+    .details .campus {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .details .address {
+      font-weight: bold;
+      font-size: 13.33px;
+    }
+
+    .telNo {
+      font-size: 13.33px;
+    }
+
+    .email {
+      font-size: 13.33px;
+    }
+
+    .divider {
+      border-top: 1pt solid #000;
+      margin: 2px 0 14px 0;
+    }
+
+    /* ================= TITLES ================= */
+
+    .registrar {
+      font-family: "Times New Roman", serif;
+      font-size: 18.67px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.15;
+      break-after: avoid;
+      page-break-after: avoid;
+      widows: 2;
+      orphans: 2;
+      margin-bottom: 35px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .cert-title {
+      text-align: center;
+      font-size: 16pt;
+      font-weight: bold;
+      margin-bottom: 32px;
+    }
+
+    /* ================= BODY ================= */
+
+    .text-body {
+      margin-left: 0.4in;
+      margin-right: 0.4in;
+    }
+
+    .content {
+      font-size: 14pt;
+      line-height: 1.6;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+
+    .paragraph {
+      text-indent: 0.5in;
+    }
+
+    .second {
+      margin-top: 18px;
+    }
+
+    .third {
+      margin-top: 18px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .name {
+      text-transform: uppercase;
+    }
+
+    .f {
+      display: inline;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .f.blank {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      height: 0.9em;
+      vertical-align: bottom;
+    }
+
+    .f-short {
+      width: 0.8in;
+    }
+
+    .f-medium {
+      width: 1.3in;
+    }
+
+    .f-long {
+      width: 2in;
+    }
+
+    /* ================= SIGNATURE ================= */
+
+    .signature {
+      margin-top: 98.67px;
+      width: 3.5in;
+      margin-left: 3.5in;
+      text-align: center;
+      font-size: 12pt;
+      margin-bottom: 88px;
+    }
+
+    .footer-note {
+      margin-left: 0.4in;
+      font-size: 13.33px;
+      font-style: italic;
+      margin-bottom: 80px;
+      text-align: left;
+    }
+
+    .ref {
+      font-size: 13.33px;
+      margin-left: 0.4in;
+      margin-top: 0;
+      margin-bottom: 0;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="paper">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-cell">
+        <img src="bsu.png" class="logo" />
+      </div>
+      <div class="republic">Republic of the Philippines</div>
+      <div class="university">BATANGAS STATE UNIVERSITY</div>
+      <div class="subtitle">The National Engineering University</div>
+      <div class="details">
+        <div class="campus">
+          {{ campus_name }}{% if campus_name %} Campus{% endif %}
+        </div>
+        <div class="address">{{ campus_address }}</div>
+        <div class="telNo">{{ campus_telNo }}</div>
+        <div class="email">
+          Email Address: {{ campus_email }} | Website Address:
+          https://www.batstate-u.edu.ph
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="registrar">OFFICE OF THE REGISTRAR</div>
+      <div class="cert-title">CERTIFICATE OF ID ISSUANCE</div>
+
+      <div class="text-body">
+        <div class="content">
+          <div class="paragraph">
+            This certifies that <strong>Mr./Ms.</strong>
+            <span class="f f-long{% if not student_name %} blank{% endif %} name bold">{{ student_name }}</span>
+            who is enrolled this
+            <span class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}">{{
+              enrollment_from_semester or current_sem }}</span>
+            Semester, AY
+            <span class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}">{{
+              enrollment_from_academic_year or academic_year }}</span>
+            is a holder of ID No.
+            <span class="f f-medium{% if not student_id_number %} blank{% endif %}">{{ student_id_number }}</span>
+            issued by this University.
+          </div>
+
+          <div class="paragraph">
+            Issued this
+            <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+              }}</span>
+            day of
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+            upon request of <strong>Mr./Ms.</strong>
+            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
+            for whatever legal purpose it may serve him/her.
+          </div>
+        </div>
+      </div>
+
+      <div class="signature">
+        {% if signature_path %}
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
+        {% endif %}
+        <strong>{{ name_official }}</strong><br />
+        {{ official_title }}
+      </div>
+
+      <div class="footer-note">Not valid without university dry seal</div>
+
+      <div>
+        <p class="ref">{{ campus_certCode }}</p>
+        <p class="ref">{{ or_number }}</p>
+      </div>
+    </div>
+    <script>
+      function getOrdinalSuffix(day) {
+        if (day % 100 >= 11 && day % 100 <= 13) return "th";
+
+        switch (day % 10) {
+          case 1:
+            return "st";
+          case 2:
+            return "nd";
+          case 3:
+            return "rd";
+          default:
+            return "th";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const el = document.getElementById("dateDay");
+
+        if (!el) return;
+
+        const day = parseInt(el.textContent.trim());
+
+        if (!isNaN(day)) {
+          const suffix = getOrdinalSuffix(day);
+          el.innerHTML = `${day}<sup>${suffix}</sup>`;
+        }
+      });
+    </script>
+  </div>
+</body>
+
+</html>

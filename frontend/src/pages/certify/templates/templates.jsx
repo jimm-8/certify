@@ -16,6 +16,32 @@ import {
 } from "react-icons/bi";
 import { FaXmark } from "react-icons/fa6";
 
+const INJECTED_PAPER_STYLE = `
+  <style>
+    body { 
+      background-color: #e5e7eb !important; 
+      display: flex; 
+      justify-content: center; 
+      margin: 0; 
+    }
+    .paper-shell {
+      background-color: white !important;
+      /* Long Paper Dimensions (8.5 x 13 inches) */
+      width: 216mm; 
+      min-height: 330mm; 
+      padding: 10mm;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      box-sizing: border-box;
+      margin-top: -30px;
+      margin-bottom: 40px; /* Space at the bottom */
+    }
+    /* Ensure content doesn't break weirdly when editing */
+    .paper-shell:focus {
+      outline: none;
+    }
+  </style>
+`;
+
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState("");
@@ -47,19 +73,50 @@ const Templates = () => {
     );
   };
 
+  const needsPaperStyle = useMemo(() => {
+    return [
+      "certificate_of_course_description.html",
+      "certificate_of_grades.html",
+    ].includes(selected);
+  }, [selected]);
+
+  const editorHtml = useMemo(() => {
+    if (!content) return "";
+    let html = normalizeAssetLinks(content);
+
+    if (needsPaperStyle) {
+      // Inject the style and wrap the content
+      html = `<!DOCTYPE html><html><head>${INJECTED_PAPER_STYLE}</head><body><div class="paper-shell">${html}</div></body></html>`;
+    }
+    return html;
+  }, [content, needsPaperStyle]);
+
   const previewHtml = useMemo(() => {
     if (!content) return "";
     const baseTag = `<base href="${assetsBase}">`;
+    let html = content;
+
+    if (needsPaperStyle) {
+      html = `<div class="paper-shell">${content}</div>`;
+      const fullHtml = content.includes("<head>")
+        ? content.replace("<head>", `<head>${baseTag}${INJECTED_PAPER_STYLE}`)
+        : `<!DOCTYPE html><html><head>${baseTag}${INJECTED_PAPER_STYLE}</head><body>${html}</body></html>`;
+      return normalizeAssetLinks(fullHtml);
+    }
+
+    // Fallback for other templates
     const withBase = content.includes("<head>")
       ? content.replace("<head>", `<head>${baseTag}`)
       : `<!doctype html><html><head>${baseTag}</head><body>${content}</body></html>`;
     return normalizeAssetLinks(withBase);
-  }, [content, assetsBase]);
+  }, [content, assetsBase, needsPaperStyle]);
 
-  const editorHtml = useMemo(() => {
-    if (!content) return "";
-    return normalizeAssetLinks(content);
-  }, [content, assetsBase]);
+  // const editorHtml = useMemo(() => {
+  //   if (!content) return "";
+  //   // We apply the same wrapper logic here for the visual editor
+  //   const wrapped = `<!doctype html><html><head>${PAPER_STYLE}</head><body><div class="paper-container">${content}</div></body></html>`;
+  //   return normalizeAssetLinks(wrapped);
+  // }, [content]);
 
   useEffect(() => {
     const load = async () => {
@@ -99,26 +156,92 @@ const Templates = () => {
     loadTemplate();
   }, [selected]);
 
+  const handleResetToDefault = async () => {
+    // 1. Confirm with the user (optional but safer)
+    if (
+      !window.confirm(
+        "Are you sure? This will revert all unsaved changes to the original template file.",
+      )
+    )
+      return;
+
+    if (!selected) return;
+
+    // 2. Re-load from the default template file (source of truth)
+    let fileContent = "";
+    try {
+      setLoading(true);
+      setSaving(true);
+      const data = await templateService.getDefaultTemplate(selected);
+      fileContent = data.content || "";
+      await templateService.updateTemplate(selected, fileContent);
+      setContent(fileContent);
+      setOriginalContent(fileContent);
+      setError("");
+    } catch (err) {
+      setError(
+        "Failed to reload default template. Ensure backend has templates_defaults.",
+      );
+      return;
+    } finally {
+      setSaving(false);
+      setLoading(false);
+    }
+
+    // 3. Force the Iframe to re-render with the 'Paper' shell if needed
+    if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+      const doc = iframeRef.current.contentDocument;
+
+      // Construct the reset HTML with the Paper Shell logic
+      let resetHtml = normalizeAssetLinks(fileContent);
+
+      if (needsPaperStyle) {
+        resetHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>${INJECTED_PAPER_STYLE}</head>
+          <body>
+            <div class="paper-shell">${resetHtml}</div>
+          </body>
+        </html>`;
+      }
+
+      doc.open();
+      doc.write(resetHtml);
+      doc.close();
+
+      // Re-enable editing
+      setTimeout(() => {
+        if (iframeRef.current?.contentDocument) {
+          iframeRef.current.contentDocument.designMode = "on";
+        }
+      }, 50);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      let nextContent = content; // fallback for HTML mode
+      let nextContent = content;
 
       if (viewMode === "visual" && iframeRef.current?.contentDocument) {
         const doc = iframeRef.current.contentDocument;
-        nextContent = doc.documentElement.outerHTML;
-        const baseTag = `<base href="${assetsBase}">`;
-        nextContent = nextContent.replace(baseTag, "");
+
+        if (needsPaperStyle) {
+          // Only grab what is INSIDE the paper shell
+          const shell = doc.querySelector(".paper-shell");
+          nextContent = shell ? shell.innerHTML : doc.body.innerHTML;
+        } else {
+          nextContent = doc.documentElement.outerHTML;
+          const baseTag = `<base href="${assetsBase}">`;
+          nextContent = nextContent.replace(baseTag, "");
+        }
+
         nextContent = nextContent.replaceAll(assetsBase, "");
       }
 
       await templateService.updateTemplate(selected, nextContent);
-
-      // ✅ Only sync state in HTML mode — visual mode manages its own DOM
-      if (viewMode !== "visual") {
-        setContent(nextContent);
-      }
-
+      if (viewMode !== "visual") setContent(nextContent);
       setSuccess("Template saved.");
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
@@ -199,20 +322,7 @@ const Templates = () => {
               </button>
             </div>
             <button
-              onClick={() => {
-                setContent(originalContent);
-                if (
-                  viewMode === "visual" &&
-                  iframeRef.current?.contentDocument
-                ) {
-                  iframeRef.current.contentDocument.open();
-                  iframeRef.current.contentDocument.write(
-                    normalizeAssetLinks(originalContent),
-                  );
-                  iframeRef.current.contentDocument.close();
-                  iframeRef.current.contentDocument.designMode = "on";
-                }
-              }}
+              onClick={handleResetToDefault}
               disabled={!originalContent || saving}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
             >

@@ -15,6 +15,9 @@ class User(Base):
     permissions = Column(Text, nullable=True)
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    full_name = Column(String(255), nullable=True)
+    contact_number = Column(String(50), nullable=True)
+    department = Column(String(255), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

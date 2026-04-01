@@ -2,7 +2,7 @@ import api from "./api";
 
 const signatureService = {
   list: async (activeOnly = false) => {
-    const resp = await api.get("/signatures", {
+    const resp = await api.get("/signatures/", {
       params: { active_only: activeOnly },
     });
     return resp.data;
@@ -16,7 +16,7 @@ const signatureService = {
     }
     formData.append("file", file);
 
-    const resp = await api.post("/signatures", formData, {
+    const resp = await api.post("/signatures/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return resp.data;
@@ -25,10 +25,8 @@ const signatureService = {
     const resp = await api.patch(`/signatures/${id}`, payload);
     return resp.data;
   },
-  remove: async (id, hardDelete = false) => {
-    const resp = await api.delete(`/signatures/${id}`, {
-      params: { hard_delete: hardDelete },
-    });
+  remove: async (id) => {
+    const resp = await api.delete(`/signatures/${id}`);
     return resp.data;
   },
   fetchFile: async (id) => {

@@ -13,5 +13,6 @@ class AuthorizedOfficial(Base):
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True)
     signature_path = Column(String(500), nullable=True)
     is_active = Column(Boolean, default=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

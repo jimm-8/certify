@@ -225,15 +225,13 @@ def update_signature(
 @router.delete("/{signature_id}")
 def delete_signature(
     signature_id: int,
-    hard_delete: bool = False,
     db: Session = Depends(get_db),
     _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
-    Delete a signature
+    Soft delete a signature
     
-    By default, soft delete (mark as inactive)
-    Set hard_delete=true to permanently delete
+    Marks the record as deleted without removing it or the file.
     """
     
     signature_repo = AuthorizedOfficialRepository(db)
@@ -245,20 +243,10 @@ def delete_signature(
             detail="Signature not found"
         )
     
-    if hard_delete:
-        # Delete file
-        if signature.signature_path and os.path.exists(signature.signature_path):
-            os.remove(signature.signature_path)
-        
-        # Delete from database
-        signature_repo.delete(signature)
-        db.commit()
-        
-        return {"message": "Signature permanently deleted"}
-    else:
-        # Soft delete - just mark as inactive
-        signature.is_active = False
-        db.commit()
-        
-        return {"message": "Signature deactivated"}
+    # Soft delete - mark as deleted and inactive
+    signature.is_active = False
+    signature.deleted_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Signature deleted"}
 

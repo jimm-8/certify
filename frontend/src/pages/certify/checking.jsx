@@ -157,7 +157,13 @@ const Checking = () => {
   };
 
   const handleEmail = (req) => {
-    window.location.href = `mailto:${req.email || ""}?subject=Certificate Request Update`;
+    const to = req.requestor_email || req.email || "";
+    const subject = "Certificate Request Update";
+    const gmailUrl =
+      "https://mail.google.com/mail/?view=cm&fs=1" +
+      `&to=${encodeURIComponent(to)}` +
+      `&su=${encodeURIComponent(subject)}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleModalApprove = async (req) => {
@@ -203,20 +209,12 @@ const Checking = () => {
       name: "SR Code",
       selector: (row) => row.reference_number || row.sr_code || "-",
       sortable: true,
-      cell: (row) => (
-        <span className="text-xs font-mono text-gray-500 whitespace-nowrap">
-          {row.reference_number || row.sr_code || "-"}
-        </span>
-      ),
+      cell: (row) => row.reference_number || row.sr_code || "-",
+      width: "180px",
     },
     {
       name: "Requester Name",
       selector: (row) => row.student_name || row.requester_name || "-",
-      sortable: true,
-    },
-    {
-      name: "Section",
-      selector: (row) => row.section || "-",
       sortable: true,
     },
     {
@@ -227,6 +225,11 @@ const Checking = () => {
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name || "-",
+      sortable: true,
+    },
+    {
+      name: "Date Requested",
+      selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
     },
     {
@@ -246,6 +249,12 @@ const Checking = () => {
             className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
           >
             Email
+          </button>
+          <button
+            onClick={() => setSelectedRequest(row)}
+            className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+          >
+            View
           </button>
         </div>
       ),
