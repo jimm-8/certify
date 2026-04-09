@@ -199,23 +199,6 @@ const Ready = () => {
     setPdfUrl(null);
   };
 
-  const handlePrint = async (row) => {
-    try {
-      const blob = await requestService.downloadCertificate(row.id);
-      const url = window.URL.createObjectURL(
-        new Blob([blob], { type: "application/pdf" }),
-      );
-      const win = window.open(url);
-      win?.addEventListener("load", () => {
-        win.print();
-        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-      });
-    } catch (error) {
-      console.error("Failed to download certificate:", error);
-      alert("Failed to download certificate. Please try again.");
-    }
-  };
-
   const handleComplete = async (row) => {
     try {
       await requestService.updateStatus(row.id, "RELEASED");
@@ -369,14 +352,6 @@ const Ready = () => {
             className="flex items-center px-3 py-1.5 text-xs font-medium text-[#ee1133] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
           >
             <BsEye size={13} />
-          </button>
-
-          <button
-            onClick={() => handlePrint(row)}
-            title="Download Certificate"
-            className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
-          >
-            <BsPrinter size={13} />
           </button>
 
           {wetSignature && (
