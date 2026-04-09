@@ -137,6 +137,7 @@ def generate_certificate_pdf(
     now = datetime.now()
     day_text = str(now.day)
     month_text = now.strftime("%B")
+    year_text = str(now.year)
 
     student_name = _format_student_name(student) or request.student_name
     student_gender = (getattr(student, "gender", None) if student else None) or ""
@@ -336,6 +337,7 @@ def generate_certificate_pdf(
         "date_issued": now.strftime("%B %d, %Y"),
         "date_issued_day": day_text,
         "date_issued_month": month_text,
+        "date_issued_year": year_text,
         "request_purpose": request.purpose,
         "request_amount": getattr(request, "request_cost", "") or "",
         "cav_no": request.reference_number,

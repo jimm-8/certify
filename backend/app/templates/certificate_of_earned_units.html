@@ -358,6 +358,7 @@
               }}</span>
             day of
             <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+            <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
             for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower }}</span>
             purposes only.
           </div>
