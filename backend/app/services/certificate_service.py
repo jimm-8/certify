@@ -6,6 +6,7 @@ from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.authorized_official import AuthorizedOfficial
 import os
 from datetime import datetime
+import json
 
 from app.engine.certificate_engine import CertificateEngine
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
@@ -17,6 +18,7 @@ from app.repositories import (
     StudentAddressRepository,
     StudentRepository,
 )
+from app.services.settings_service import get_bool_setting
 
 
 def generate_certificate_pdf(
@@ -90,6 +92,7 @@ def generate_certificate_pdf(
     nstp_record = dependencies.get("nstp_record")
     student_id_record = dependencies.get("student_id_record")
 
+    use_wet_signature = get_bool_setting(db, "use_wet_signature", False)
     try:
         default_signature = signature_repo.latest_active()
     except Exception:
@@ -247,7 +250,11 @@ def generate_certificate_pdf(
         ),
         "name_official": default_signature.name if default_signature else "",
         "official_title": default_signature.title if default_signature else "",
-        "signature_path": default_signature.signature_path if default_signature else "",
+        "signature_path": (
+            ""
+            if use_wet_signature
+            else (default_signature.signature_path if default_signature else "")
+        ),
         "campus_name": campus_name,
         "campus_address": campus_address,
         "campus_telNo": campus_telNo,
@@ -332,6 +339,43 @@ def generate_certificate_pdf(
 
     # Grades + course descriptions
     student_courses = dependencies.get("student_courses") or []
+    selected_codes = []
+    if getattr(request, "course_description_selection", None):
+        try:
+            selected_codes = json.loads(request.course_description_selection) or []
+        except Exception:
+            selected_codes = []
+    if selected_codes:
+        code_set = {str(c).strip() for c in selected_codes if str(c).strip()}
+        filtered = [
+            row for row in student_courses if row.get("course_code") in code_set
+        ]
+        if filtered:
+            by_code = {row.get("course_code"): row for row in filtered}
+            ordered = [by_code[c] for c in selected_codes if c in by_code]
+            student_courses = ordered or filtered
+    if "grade" in str(request.certificate_type_name or "").lower() and getattr(
+        request, "grade_selection", None
+    ):
+        try:
+            selected_keys = json.loads(request.grade_selection) or []
+        except Exception:
+            selected_keys = []
+        if selected_keys:
+            key_set = {str(k).strip() for k in selected_keys if str(k).strip()}
+
+            def _row_key(row):
+                return (
+                    f"{row.get('course_code','')}||"
+                    f"{row.get('academic_year','')}||"
+                    f"{row.get('semester','')}"
+                )
+
+            filtered = [row for row in student_courses if _row_key(row) in key_set]
+            if filtered:
+                by_key = {_row_key(r): r for r in filtered}
+                ordered = [by_key[k] for k in selected_keys if k in by_key]
+                student_courses = ordered or filtered
     if student_courses:
         data["grades_detail"] = [
             {
@@ -344,9 +388,9 @@ def generate_certificate_pdf(
         ]
         data["course_descriptions"] = [
             {
-                "course_code": row.get("course_code", ""),
+                "course": f"{row.get('course_code', '')} - {row.get('course_title', '')}",
                 "course_credits": row.get("units", ""),
-                "course_description": row.get("course_title", ""),
+                # "course_description": row.get("course_description", ""),
             }
             for row in student_courses
         ]

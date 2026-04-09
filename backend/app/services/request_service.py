@@ -5,6 +5,13 @@ import secrets
 import os
 from datetime import datetime
 from app.services.email_service import EmailService
+from app.services.settings_service import get_bool_setting
+from app.services.fee_service import (
+    compute_request_cost,
+    is_certification_of_grades,
+    is_course_description,
+)
+from pypdf import PdfReader
 
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.certificate import Certificate
@@ -166,6 +173,40 @@ async def update_request_status(
             # Save PDF path to request
             request.pdf_path = pdf_path
 
+            # Compute cost based on actual PDF pages
+            try:
+                reader = PdfReader(pdf_path)
+                page_count = len(reader.pages)
+            except Exception:
+                page_count = None
+
+            if page_count:
+                old_cost = request.request_cost
+                request.request_cost = compute_request_cost(
+                    request.certificate_type_name, pages=page_count
+                )
+                if old_cost != request.request_cost:
+                    audit_repo.add(
+                        AuditLog(
+                            action="DATA_UPDATED",
+                            entity_type="certificate_request",
+                            entity_id=request_id,
+                            field_name="request_cost",
+                            old_value=str(old_cost) if old_cost is not None else None,
+                            new_value=str(request.request_cost),
+                            user_name="System",
+                            notes=f"Updated request cost based on {page_count} PDF page(s).",
+                        )
+                    )
+
+            if page_count is None and not (
+                is_course_description(request.certificate_type_name)
+                or is_certification_of_grades(request.certificate_type_name)
+            ):
+                request.request_cost = compute_request_cost(
+                    request.certificate_type_name
+                )
+
             # Add note about auto-generation
             audit_repo.add(
                 AuditLog(
@@ -200,15 +241,14 @@ async def update_request_status(
     
     db.commit()
     db.refresh(request)
-    
-    if new_status == RequestStatus.FOR_RELEASING:
+
+    if new_status == RequestStatus.PROCESSING and request.request_cost is not None:
         try:
+            campus_email = None
             campus_telNo = None
             student = None
             if request.sr_code:
-                student = (
-                    student_repo.get_by_sr_code(request.sr_code)
-                )
+                student = student_repo.get_by_sr_code(request.sr_code)
             campus = None
             if student is not None:
                 campus = student.campus or (student.program.campus if student.program else None)
@@ -216,18 +256,57 @@ async def update_request_status(
                 program = program_repo.get_by_name(request.program)
                 campus = program.campus if program else None
             if campus is not None:
+                campus_email = campus.campus_email
                 campus_telNo = campus.campus_telNo
 
             email_service = EmailService()
-            await email_service.send_ready_for_release(
+            await email_service.send_request_confirmation(
                 to_email=request.requestor_email,
                 reference_number=request.reference_number,
+                pin=request.pin,
                 requestor_name=request.requestor_name,
                 student_name=request.student_name,
                 certificate_type=request.certificate_type_name,
+                submitted_date=request.created_at,
+                request_cost=request.request_cost,
+                campus_email=campus_email,
                 campus_telNo=campus_telNo,
             )
-            print(f"✅ Release email sent to {request.requestor_email}")
+            print(f"✅ Confirmation email sent to {request.requestor_email}")
+        except Exception as e:
+            print(f"⚠️ Confirmation email failed: {e}")
+
+    if new_status == RequestStatus.FOR_RELEASING:
+        try:
+            # When wet signature is enabled, ready email is sent manually
+            skip_ready_email = get_bool_setting(db, "use_wet_signature", False)
+            if not skip_ready_email:
+                campus_telNo = None
+                student = None
+                if request.sr_code:
+                    student = (
+                        student_repo.get_by_sr_code(request.sr_code)
+                    )
+                campus = None
+                if student is not None:
+                    campus = student.campus or (student.program.campus if student.program else None)
+                if campus is None and request.program:
+                    program = program_repo.get_by_name(request.program)
+                    campus = program.campus if program else None
+                if campus is not None:
+                    campus_telNo = campus.campus_telNo
+
+                email_service = EmailService()
+                await email_service.send_ready_for_release(
+                    to_email=request.requestor_email,
+                    reference_number=request.reference_number,
+                    requestor_name=request.requestor_name,
+                    student_name=request.student_name,
+                    certificate_type=request.certificate_type_name,
+                    campus_telNo=campus_telNo,
+                )
+                request.ready_email_sent_at = datetime.now()
+                print(f"✅ Release email sent to {request.requestor_email}")
         except Exception as e:
             print(f"⚠️ Release email failed: {e}")
     

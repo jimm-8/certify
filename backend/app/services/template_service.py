@@ -25,6 +25,7 @@ from sqlalchemy import func
 from app.utils.pdf_generator import CertificateGenerator
 from app.utils.template_engine import CertificateTemplateEngine
 import re
+import json
 
 
 class CertificateTemplateService:
@@ -259,6 +260,12 @@ class CertificateTemplateService:
         sr_code = (request.sr_code or "").strip()
         if not sr_code or limit <= 0:
             return []
+        selected_codes: list[str] = []
+        if getattr(request, "course_description_selection", None):
+            try:
+                selected_codes = json.loads(request.course_description_selection) or []
+            except Exception:
+                selected_codes = []
 
         db = SessionLocal()
         try:
@@ -283,7 +290,7 @@ class CertificateTemplateService:
             )
 
             if rows:
-                return [
+                mapped = [
                     (
                         str(code or ""),
                         str(units or ""),
@@ -291,6 +298,14 @@ class CertificateTemplateService:
                     )
                     for code, units, description in rows
                 ]
+                if selected_codes:
+                    code_set = {str(c).strip() for c in selected_codes if str(c).strip()}
+                    filtered = [row for row in mapped if row[0] in code_set]
+                    if filtered:
+                        by_code = {row[0]: row for row in filtered}
+                        ordered = [by_code[c] for c in selected_codes if c in by_code]
+                        return ordered or filtered
+                return mapped
             return []
         finally:
             db.close()

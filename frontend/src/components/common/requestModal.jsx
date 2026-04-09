@@ -65,6 +65,26 @@ const RequestModal = ({
   const [showDeclineInput, setShowDeclineInput] = useState(false);
   const [declineNotes, setDeclineNotes] = useState("");
   const [notes, setNotes] = useState([]);
+  const [courseOptions, setCourseOptions] = useState([]);
+  const [courseLoading, setCourseLoading] = useState(false);
+  const [courseError, setCourseError] = useState("");
+  const [courseSearch, setCourseSearch] = useState("");
+  const [selectedCourseCodes, setSelectedCourseCodes] = useState([]);
+  const [savingSelection, setSavingSelection] = useState(false);
+  const [selectionTouched, setSelectionTouched] = useState(false);
+  const [gradeSearch, setGradeSearch] = useState("");
+  const [selectedGradeKeys, setSelectedGradeKeys] = useState([]);
+  const [gradeSelectionTouched, setGradeSelectionTouched] = useState(false);
+  const [savingGradesSelection, setSavingGradesSelection] = useState(false);
+  const [yearFilter, setYearFilter] = useState("");
+  const [semesterFilter, setSemesterFilter] = useState("");
+
+  const isCourseDescription = (request?.certificate_type_name || "")
+    .toLowerCase()
+    .includes("course description");
+  const isCertificationOfGrades = (request?.certificate_type_name || "")
+    .toLowerCase()
+    .includes("grades");
 
   useEffect(() => {
     if (!request) return;
@@ -78,6 +98,16 @@ const RequestModal = ({
       setShowDeclineInput(false);
       setDeclineNotes("");
       setNotes([]);
+      setCourseOptions([]);
+      setCourseError("");
+      setCourseSearch("");
+      setSelectedCourseCodes([]);
+      setSelectionTouched(false);
+      setGradeSearch("");
+      setSelectedGradeKeys([]);
+      setGradeSelectionTouched(false);
+      setYearFilter("");
+      setSemesterFilter("");
       return;
     }
     if (request.status === "REJECTED") {
@@ -87,6 +117,47 @@ const RequestModal = ({
         .catch(() => setNotes([]));
     }
   }, [request]);
+
+  useEffect(() => {
+    if (!request || (!isCourseDescription && !isCertificationOfGrades)) return;
+
+    const parseSelection = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    };
+
+    if (isCourseDescription) {
+      setSelectedCourseCodes(parseSelection(request.course_description_selection));
+      setSelectionTouched(false);
+    }
+    if (isCertificationOfGrades) {
+      setSelectedGradeKeys(parseSelection(request.grade_selection));
+      setGradeSelectionTouched(false);
+    }
+    setCourseError("");
+    setCourseLoading(true);
+    requestService
+      .getRequestTakenCourses(request.id)
+      .then((data) => {
+        const items = Array.isArray(data) ? data : [];
+        setCourseOptions(items);
+      })
+      .catch((err) => {
+        const detail =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to load courses.";
+        setCourseError(detail);
+      })
+      .finally(() => setCourseLoading(false));
+  }, [request, isCourseDescription, isCertificationOfGrades]);
 
   const handleDeclineClick = () => {
     if (!showDeclineInput) {
@@ -104,14 +175,244 @@ const RequestModal = ({
     };
   }, [request]);
 
+  useEffect(() => {
+    if (readOnly || !isCertificationOfGrades || !request) return;
+    const query = gradeSearch.trim().toLowerCase();
+    const buildKey = (row) =>
+      `${row.course_code || ""}||${row.academic_year || ""}||${row.semester || ""}`;
+    const keys = courseOptions
+      .filter((row) => {
+        if (query) {
+          const haystack = [
+            row.course_code,
+            row.course_title,
+            row.grade,
+            row.units,
+            row.academic_year,
+            row.semester,
+            row.year_level,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+        if (yearFilter && String(row.year_level) !== String(yearFilter)) {
+          return false;
+        }
+        if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
+          return false;
+        }
+        return true;
+      })
+      .map((row) => buildKey(row));
+    setSelectedGradeKeys(keys);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yearFilter, semesterFilter]);
+
   if (!request) return null;
 
   const status = request.status?.toUpperCase() ?? "PENDING";
   const sc = statusConfig[status] ?? statusConfig.PENDING;
-  const canAct = status === "PENDING" || status === "PROCESSING";
+  const canAct =
+    status === "PENDING" || status === "PROCESSING" || status === "APPROVED";
 
   const handleOverlayClick = (e) => {
     if (e.target === overlayRef.current) onClose?.();
+  };
+
+  const selectionRequired = isCourseDescription && !readOnly;
+  const gradesSelectionRequired = isCertificationOfGrades && !readOnly;
+  const hasSelection = selectedCourseCodes.length > 0;
+  const hasGradesSelection = selectedGradeKeys.length > 0;
+
+  const courseDescriptionOptions = courseOptions.filter((row, idx, arr) => {
+    const code = row?.course_code;
+    if (!code) return false;
+    return arr.findIndex((r) => r?.course_code === code) === idx;
+  });
+
+  const filteredCourses = courseDescriptionOptions.filter((row) => {
+    const query = courseSearch.trim().toLowerCase();
+    if (!query) return true;
+    const haystack = [
+      row.course_code,
+      row.course_title,
+      row.grade,
+      row.units,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
+  });
+
+  const filteredGrades = courseOptions.filter((row) => {
+    const query = gradeSearch.trim().toLowerCase();
+    const haystack = [
+      row.course_code,
+      row.course_title,
+      row.grade,
+      row.units,
+      row.academic_year,
+      row.semester,
+      row.year_level,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (query && !haystack.includes(query)) return false;
+    if (yearFilter && String(row.year_level) !== String(yearFilter)) {
+      return false;
+    }
+    if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
+      return false;
+    }
+    return true;
+  });
+
+  const buildGradeKey = (row) =>
+    `${row.course_code || ""}||${row.academic_year || ""}||${row.semester || ""}`;
+
+  const toggleCourse = (code) => {
+    setSelectionTouched(true);
+    setSelectedCourseCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+    );
+  };
+
+  const toggleGrade = (key) => {
+    setGradeSelectionTouched(true);
+    setSelectedGradeKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectionTouched(true);
+    const allCodes = filteredCourses.map((row) => row.course_code);
+    setSelectedCourseCodes(allCodes);
+  };
+
+  const handleSelectAllGrades = () => {
+    setGradeSelectionTouched(true);
+    const keys = filteredGrades.map((row) => buildGradeKey(row));
+    setSelectedGradeKeys(keys);
+  };
+
+  const handleClearAll = () => {
+    setSelectionTouched(true);
+    setSelectedCourseCodes([]);
+  };
+
+  const handleClearAllGrades = () => {
+    setGradeSelectionTouched(true);
+    setSelectedGradeKeys([]);
+  };
+
+  const handleSelectByFilter = () => {
+    setGradeSelectionTouched(true);
+    const query = gradeSearch.trim().toLowerCase();
+    const keys = courseOptions
+      .filter((row) => {
+        if (query) {
+          const haystack = [
+            row.course_code,
+            row.course_title,
+            row.grade,
+            row.units,
+            row.academic_year,
+            row.semester,
+            row.year_level,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+        if (yearFilter && String(row.year_level) !== String(yearFilter)) {
+          return false;
+        }
+        if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
+          return false;
+        }
+        return true;
+      })
+      .map((row) => buildGradeKey(row));
+    setSelectedGradeKeys(keys);
+  };
+
+  const yearLevels = Array.from(
+    new Set(
+      courseOptions
+        .map((row) => row.year_level)
+        .filter((val) => String(val || "").trim() !== ""),
+    ),
+  ).sort((a, b) => Number(a) - Number(b));
+
+  const semesters = Array.from(
+    new Set(
+      courseOptions
+        .map((row) => row.semester)
+        .filter((val) => String(val || "").trim() !== ""),
+    ),
+  );
+
+  const formatYearLevel = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return String(value);
+    if (num % 100 >= 11 && num % 100 <= 13) return `${num}th Year`;
+    const suffix = { 1: "st", 2: "nd", 3: "rd" }[num % 10] || "th";
+    return `${num}${suffix} Year`;
+  };
+
+  const handleApproveClick = async () => {
+    if (!request || !onApprove) return;
+    if (selectionRequired) {
+      if (!hasSelection) return;
+      setSavingSelection(true);
+      setCourseError("");
+      try {
+        await requestService.updateCourseDescriptionSelection(
+          request.id,
+          selectedCourseCodes,
+          "Course description selection saved",
+        );
+      } catch (err) {
+        const detail =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to save course selection.";
+        setCourseError(detail);
+        setSavingSelection(false);
+        return;
+      }
+      setSavingSelection(false);
+    }
+    if (gradesSelectionRequired) {
+      if (!hasGradesSelection) return;
+      setSavingGradesSelection(true);
+      setCourseError("");
+      try {
+        await requestService.updateGradeSelection(
+          request.id,
+          selectedGradeKeys,
+          "Certification of grades selection saved",
+        );
+      } catch (err) {
+        const detail =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to save grade selection.";
+        setCourseError(detail);
+        setSavingGradesSelection(false);
+        return;
+      }
+      setSavingGradesSelection(false);
+    }
+    onApprove?.(request);
   };
 
   return (
@@ -282,6 +583,273 @@ const RequestModal = ({
               )}
             </div>
           )}
+
+          {isCourseDescription && (
+            <div className="mt-3 rounded-md border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] uppercase tracking-widest text-blue-400 font-semibold">
+                  Course Description Selection
+                </p>
+                {!readOnly && (
+                  <span className="text-[10px] text-blue-500">
+                    Select courses to include
+                  </span>
+                )}
+              </div>
+
+              {courseLoading && (
+                <div className="py-2 text-xs text-blue-500 flex items-center gap-2">
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-transparent" />
+                  Loading courses...
+                </div>
+              )}
+
+              {!courseLoading && courseError && (
+                <div className="mt-2 text-xs text-red-600">{courseError}</div>
+              )}
+
+              {!courseLoading && !courseError && (
+                <>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search courses..."
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      className="flex-1 text-xs px-3 py-1.5 border border-blue-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-200"
+                      disabled={readOnly}
+                    />
+                    {!readOnly && (
+                      <>
+                        <button
+                          onClick={handleSelectAll}
+                          type="button"
+                          className="px-3 py-1.5 text-[11px] font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          onClick={handleClearAll}
+                          type="button"
+                          className="px-3 py-1.5 text-[11px] font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-blue-100 bg-white">
+                    {filteredCourses.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-gray-500">
+                        No courses found.
+                      </div>
+                    ) : (
+                      filteredCourses.map((row) => {
+                        const code = row.course_code;
+                        const label = `${row.course_code || ""} - ${
+                          row.course_title || ""
+                        }`;
+                        const detail = `Units: ${row.units || "-"} | Grade: ${
+                          row.grade || "-"
+                        }`;
+                        const checked = selectedCourseCodes.includes(code);
+                        return (
+                          <label
+                            key={code}
+                            className={`flex items-start gap-3 px-3 py-2 border-b border-blue-50 last:border-0 ${
+                              readOnly ? "cursor-default" : "cursor-pointer"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={checked}
+                              onChange={() => toggleCourse(code)}
+                              disabled={readOnly}
+                            />
+                            <div>
+                              <div className="text-xs text-gray-800 font-medium">
+                                {label}
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                {detail}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {!readOnly && (
+                    <div className="mt-2 text-[11px] text-blue-600">
+                      Selected: {selectedCourseCodes.length}
+                      {!hasSelection && selectionTouched && (
+                        <span className="text-red-500">
+                          {" "}
+                          â€” Please select at least one course.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {isCertificationOfGrades && (
+            <div className="mt-3 rounded-md border border-purple-100 bg-purple-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] uppercase tracking-widest text-purple-400 font-semibold">
+                  Certification of Grades Selection
+                </p>
+                {!readOnly && (
+                  <span className="text-[10px] text-purple-500">
+                    Select grades to include
+                  </span>
+                )}
+              </div>
+
+              {courseLoading && (
+                <div className="py-2 text-xs text-purple-500 flex items-center gap-2">
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-transparent" />
+                  Loading grades...
+                </div>
+              )}
+
+              {!courseLoading && courseError && (
+                <div className="mt-2 text-xs text-red-600">{courseError}</div>
+              )}
+
+              {!courseLoading && !courseError && (
+                <>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Search courses..."
+                      value={gradeSearch}
+                      onChange={(e) => setGradeSearch(e.target.value)}
+                      className="flex-1 text-xs px-3 py-1.5 border border-purple-200 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-200"
+                      disabled={readOnly}
+                    />
+                    {!readOnly && (
+                      <>
+                        <button
+                          onClick={handleSelectAllGrades}
+                          type="button"
+                          className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          onClick={handleClearAllGrades}
+                          type="button"
+                          className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {!readOnly && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <select
+                        value={yearFilter}
+                        onChange={(e) => setYearFilter(e.target.value)}
+                        className="text-xs px-2 py-1.5 border border-purple-200 rounded-md bg-white"
+                      >
+                        <option value="">All Year Levels</option>
+                        {yearLevels.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            {formatYearLevel(lvl)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={semesterFilter}
+                        onChange={(e) => setSemesterFilter(e.target.value)}
+                        className="text-xs px-2 py-1.5 border border-purple-200 rounded-md bg-white"
+                      >
+                        <option value="">All Semesters</option>
+                        {semesters.map((sem) => (
+                          <option key={sem} value={sem}>
+                            {sem}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleSelectByFilter}
+                        type="button"
+                        className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                      >
+                        Select Filter
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-purple-100 bg-white">
+                    {filteredGrades.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-gray-500">
+                        No courses found.
+                      </div>
+                    ) : (
+                      filteredGrades.map((row) => {
+                        const key = buildGradeKey(row);
+                        const checked = selectedGradeKeys.includes(key);
+                        const label = `${row.course_code || ""} - ${
+                          row.course_title || ""
+                        }`;
+                        const yearLabel = row.year_level
+                          ? formatYearLevel(row.year_level)
+                          : row.academic_year || "-";
+                        const detail = `Units: ${row.units || "-"} | Grade: ${
+                          row.grade || "-"
+                        } | ${yearLabel} | ${row.semester || "-"}`;
+                        return (
+                          <label
+                            key={key}
+                            className={`flex items-start gap-3 px-3 py-2 border-b border-purple-50 last:border-0 ${
+                              readOnly ? "cursor-default" : "cursor-pointer"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={checked}
+                              onChange={() => toggleGrade(key)}
+                              disabled={readOnly}
+                            />
+                            <div>
+                              <div className="text-xs text-gray-800 font-medium">
+                                {label}
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                {detail}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {!readOnly && (
+                    <div className="mt-2 text-[11px] text-purple-600">
+                      Selected: {selectedGradeKeys.length}
+                      {!hasGradesSelection && gradeSelectionTouched && (
+                        <span className="text-red-500">
+                          {" "}
+                          â€” Please select at least one grade.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Footer ── */}
@@ -331,11 +899,17 @@ const RequestModal = ({
 
                 {!showDeclineInput && (
                   <button
-                    onClick={() => onApprove?.(request)}
-                    disabled={loading}
+                    onClick={handleApproveClick}
+                    disabled={
+                      loading ||
+                      savingSelection ||
+                      savingGradesSelection ||
+                      (selectionRequired && !hasSelection) ||
+                      (gradesSelectionRequired && !hasGradesSelection)
+                    }
                     className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#ee1133] border border-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    {loading ? (
+                    {loading || savingSelection ? (
                       <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
                       <BsCheckCircle size={13} />

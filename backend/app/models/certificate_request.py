@@ -49,10 +49,16 @@ class CertificateRequest(Base):
     year_graduated = Column(String(10), nullable=True)
     
     signature_data = Column(Text, nullable=True)
+    
+    # JSON-encoded list of selected course codes for course description certificates
+    course_description_selection = Column(Text, nullable=True)
+    # JSON-encoded list of selected grade row keys for certification of grades
+    grade_selection = Column(Text, nullable=True)
 
     verification_token = Column(String(100), unique=True, nullable=True, index=True)
     pdf_path = Column(String(500), nullable=True)
     request_cost = Column(Numeric(10, 2), nullable=True)
+    ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
     
     status = Column(Enum(RequestStatus), default=RequestStatus.SUBMITTED, nullable=False)
     

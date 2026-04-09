@@ -149,7 +149,7 @@ class EmailService:
 
             <div class="content">
             <p>Dear {requestor_name},</p>
-            <p>Your certificate request for {student_name} has been successfully submitted. Please review your request
+            <p>Your certificate request for {student_name} has been successfully transfered to Certify and is now being processed. Please review your request
                 details below and follow the instructions to complete your payment.</p>
 
             <div class="request-card">
@@ -165,11 +165,20 @@ class EmailService:
             <div class="request-card">
                 <div class="card-header">Payment Instructions</div>
                 <div class="card-content">
-                <p style="text-align: center;">You will pay a total of <strong>Php {payment_amount}</strong>.</p>
-                <p>Step 1: Proceed to the Cashier's Office and state your purpose.</p>
-                <p>Step 2: Provide your <strong>Reference Number</strong> to the cashier so it can be recorded as the purpose
-                    of payment.</p>
-                <p>Step 3: Wait for an email confirmation notifying you that your certificate is ready for pickup.</p>
+                    <p style="text-align: center;">
+                        The total amount is computed as follows:
+                        <br>
+                        <strong>₱30.00 per page + ₱30.00 Documentary Stamp Tax (DST) per page</strong>
+                    </p>
+
+                    <p style="text-align: center;">
+                        You will pay a total of <strong>Php {payment_amount}</strong>.
+                    </p>
+
+                    <p>Step 1: Proceed to the Cashier's Office and inform the cashier that your payment is for <strong>“Certify Request”</strong>.</p>
+                    <p>Step 2: Provide your <strong>Reference Number</strong> so the cashier can locate your request in the Certify system.</p>
+                    <p>Step 3: Once payment is confirmed, your request will be automatically processed and queued for printing.</p>
+                    <p>Step 4: Wait for an email confirmation notifying you that your certificate is ready for pickup.<p>
                 </div>
             </div>
 

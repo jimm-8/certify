@@ -535,6 +535,7 @@ class CertificateDependencyEngine:
                 Grade.grade,
                 Enrollment.academic_year,
                 Enrollment.semester,
+                Enrollment.year_level,
             )
             .join(Grade, Grade.course_id == Course.id)
             .join(Enrollment, Enrollment.id == Grade.enrollment_id)
@@ -551,8 +552,9 @@ class CertificateDependencyEngine:
                 "grade": str(grade or ""),
                 "academic_year": str(academic_year or ""),
                 "semester": str(semester or ""),
+                "year_level": str(year_level or ""),
             }
-            for code, title, units, description, grade, academic_year, semester in rows
+            for code, title, units, description, grade, academic_year, semester, year_level in rows
         ]
 
     @staticmethod

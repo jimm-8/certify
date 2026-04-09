@@ -7,6 +7,7 @@ from datetime import datetime
 import base64
 import os
 import glob
+import json
 
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
@@ -23,7 +24,9 @@ from app.schemas.certificate_request import (
     CertificateRequestCreate,
     CertificateRequestResponse,
     CertificateRequestTrackResponse,
-    CertificateRequestDetail
+    CertificateRequestDetail,
+    CourseDescriptionSelectionUpdate,
+    GradeSelectionUpdate,
 )
 
 from app.services.request_service import (
@@ -39,6 +42,8 @@ from app.schemas.audit import AuditLogResponse, RequestNoteCreate
 from app.schemas.certificate_request import CertificateVerificationResponse
 
 from app.services.certificate_service import generate_certificate_pdf
+from app.services.fee_service import compute_request_cost, is_certification_of_grades, is_course_description
+from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
 
@@ -126,6 +131,18 @@ async def create_certificate_request(
     if request_data.signature_data:
         signature_path = save_signature(request_data.signature_data, reference_number)
     
+    # Compute request cost on the server (pricing rules)
+    computed_cost = None
+    if request_data.sr_code and (
+        is_course_description(cert_type.name) or is_certification_of_grades(cert_type.name)
+    ):
+        student_courses = CertificateDependencyEngine._get_student_courses(
+            db, request_data.sr_code
+        )
+        computed_cost = compute_request_cost(cert_type.name, row_count=len(student_courses))
+    else:
+        computed_cost = compute_request_cost(cert_type.name)
+
     # Create new request
     new_request = CertificateRequest(
         reference_number=reference_number,
@@ -144,7 +161,7 @@ async def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
-        request_cost=request_data.request_cost,
+        request_cost=computed_cost if computed_cost is not None else request_data.request_cost,
         verification_token=generate_verification_token(),
         status=RequestStatus.APPROVED
     )
@@ -155,43 +172,49 @@ async def create_certificate_request(
     db.commit()
     db.refresh(new_request)
     
-    # Send confirmation email
+    # Send confirmation email (optional; can be deferred to processing step)
     try:
-        campus_email = None
-        campus_telNo = None
-
-        student_repo = StudentRepository(db)
-        program_repo = ProgramRepository(db)
-        if request_data.sr_code:
-            student = student_repo.get_by_sr_code(request_data.sr_code)
-        else:
-            student = None
-
-        campus = None
-        if student is not None:
-            campus = student.campus or (student.program.campus if student.program else None)
-        if campus is None and request_data.program:
-            program = program_repo.get_by_name(request_data.program)
-            campus = program.campus if program else None
-
-        if campus is not None:
-            campus_email = campus.campus_email
-            campus_telNo = campus.campus_telNo
-
-        email_service = EmailService()
-        await email_service.send_request_confirmation(
-            to_email=request_data.requestor_email,
-            reference_number=reference_number,
-            pin=pin,
-            requestor_name=request_data.requestor_name, 
-            student_name=request_data.student_name, 
-            certificate_type=cert_type.name,
-            submitted_date=new_request.created_at,
-            request_cost=request_data.request_cost,
-            campus_email=campus_email,
-            campus_telNo=campus_telNo
+        send_on_create = os.getenv("SEND_CONFIRMATION_ON_CREATE", "0").lower() in (
+            "1",
+            "true",
+            "yes",
         )
-        print(f"✅ Email sent to {request_data.requestor_email}")
+        if send_on_create:
+            campus_email = None
+            campus_telNo = None
+
+            student_repo = StudentRepository(db)
+            program_repo = ProgramRepository(db)
+            if request_data.sr_code:
+                student = student_repo.get_by_sr_code(request_data.sr_code)
+            else:
+                student = None
+
+            campus = None
+            if student is not None:
+                campus = student.campus or (student.program.campus if student.program else None)
+            if campus is None and request_data.program:
+                program = program_repo.get_by_name(request_data.program)
+                campus = program.campus if program else None
+
+            if campus is not None:
+                campus_email = campus.campus_email
+                campus_telNo = campus.campus_telNo
+
+            email_service = EmailService()
+            await email_service.send_request_confirmation(
+                to_email=request_data.requestor_email,
+                reference_number=reference_number,
+                pin=pin,
+                requestor_name=request_data.requestor_name,
+                student_name=request_data.student_name,
+                certificate_type=cert_type.name,
+                submitted_date=new_request.created_at,
+                request_cost=new_request.request_cost,
+                campus_email=campus_email,
+                campus_telNo=campus_telNo,
+            )
+            print(f"✅ Email sent to {request_data.requestor_email}")
     except Exception as e:
         print(f"⚠️ Email failed but request was created: {e}")
         # Don't fail the request if email fails
@@ -281,6 +304,32 @@ def get_request_detail(
         )
     
     return request
+
+# Endpoint: Get student courses (taken with grades) for a request
+@router.get("/{request_id}/taken-courses")
+def get_request_taken_courses(
+    request_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
+):
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
+
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+
+    sr_code = (request.sr_code or "").strip()
+    if not sr_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request does not have a student SR code",
+        )
+
+    courses = CertificateDependencyEngine._get_student_courses(db, sr_code)
+    return courses
 
 # Endpoint 5: Update request status
 @router.patch("/{request_id}/status", response_model=CertificateRequestDetail)
@@ -481,6 +530,152 @@ async def mark_as_released(
         notes="Certificate released to student"
     )
     return updated_request
+
+# Endpoint: Send ready-for-release email manually
+@router.post("/{request_id}/send-ready-email")
+async def send_ready_email(
+    request_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    if request.status != RequestStatus.FOR_RELEASING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is not yet for releasing.",
+        )
+
+    campus_telNo = None
+    student = None
+    if request.sr_code:
+        student = student_repo.get_by_sr_code(request.sr_code)
+    campus = None
+    if student is not None:
+        campus = student.campus or (student.program.campus if student.program else None)
+    if campus is None and request.program:
+        program = program_repo.get_by_name(request.program)
+        campus = program.campus if program else None
+    if campus is not None:
+        campus_telNo = campus.campus_telNo
+
+    email_service = EmailService()
+    await email_service.send_ready_for_release(
+        to_email=request.requestor_email,
+        reference_number=request.reference_number,
+        requestor_name=request.requestor_name,
+        student_name=request.student_name,
+        certificate_type=request.certificate_type_name,
+        campus_telNo=campus_telNo,
+    )
+    request.ready_email_sent_at = datetime.now()
+    db.commit()
+    db.refresh(request)
+    return {"message": "Ready-for-release email sent."}
+
+# Endpoint: Save course description selection for a request
+@router.patch("/{request_id}/course-description-selection", response_model=CertificateRequestDetail)
+def update_course_description_selection(
+    request_id: int,
+    data_update: CourseDescriptionSelectionUpdate,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_data")),
+):
+    request_repo = CertificateRequestRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
+
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+
+    normalized = [
+        str(code or "").strip()
+        for code in (data_update.course_codes or [])
+        if str(code or "").strip()
+    ]
+
+    old_value = request.course_description_selection
+    new_value = json.dumps(normalized)
+
+    request.course_description_selection = new_value
+    request.request_cost = compute_request_cost(
+        request.certificate_type_name, row_count=len(normalized)
+    )
+
+    audit_log = AuditLog(
+        action="COURSE_DESCRIPTION_SELECTION_UPDATED",
+        entity_type="certificate_request",
+        entity_id=request_id,
+        field_name="course_description_selection",
+        old_value=old_value,
+        new_value=new_value,
+        user_name=data_update.user_name,
+        notes=data_update.notes or "Course description selection updated",
+    )
+    audit_repo.add(audit_log)
+    db.commit()
+    db.refresh(request)
+
+    return request
+
+# Endpoint: Save certification of grades selection for a request
+@router.patch("/{request_id}/grade-selection", response_model=CertificateRequestDetail)
+def update_grade_selection(
+    request_id: int,
+    data_update: GradeSelectionUpdate,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_data")),
+):
+    request_repo = CertificateRequestRepository(db)
+    audit_repo = AuditLogRepository(db)
+    request = request_repo.get_by_id(request_id)
+
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+
+    normalized = [
+        str(key or "").strip()
+        for key in (data_update.selection_keys or [])
+        if str(key or "").strip()
+    ]
+
+    old_value = request.grade_selection
+    new_value = json.dumps(normalized)
+
+    request.grade_selection = new_value
+    request.request_cost = compute_request_cost(
+        request.certificate_type_name, row_count=len(normalized)
+    )
+
+    audit_log = AuditLog(
+        action="GRADE_SELECTION_UPDATED",
+        entity_type="certificate_request",
+        entity_id=request_id,
+        field_name="grade_selection",
+        old_value=old_value,
+        new_value=new_value,
+        user_name=data_update.user_name,
+        notes=data_update.notes or "Certification of grades selection updated",
+    )
+    audit_repo.add(audit_log)
+    db.commit()
+    db.refresh(request)
+
+    return request
 
 # Endpoint 13: Generate certificate PDF
 @router.post("/{request_id}/generate-certificate")

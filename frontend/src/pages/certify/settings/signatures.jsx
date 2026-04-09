@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
 import signatureService from "../../../services/signatureService";
 import campusService from "../../../services/campusService";
+import settingsService from "../../../services/settingsService";
 
 const SignatureManager = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const SignatureManager = () => {
   const [confirming, setConfirming] = useState(false);
   const [campuses, setCampuses] = useState([]);
   const [campusLoading, setCampusLoading] = useState(false);
+  const [wetSignature, setWetSignature] = useState(false);
+  const [wetSaving, setWetSaving] = useState(false);
 
   const resetForm = () => {
     setName("");
@@ -48,6 +51,23 @@ const SignatureManager = () => {
 
   useEffect(() => {
     loadSignatures();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadWetSignature = async () => {
+      try {
+        const data = await settingsService.getWetSignature();
+        if (!mounted) return;
+        setWetSignature(Boolean(data?.use_wet_signature));
+      } catch (err) {
+        // ignore; keep toggle usable
+      }
+    };
+    loadWetSignature();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -193,6 +213,19 @@ const SignatureManager = () => {
     return map;
   }, [campuses]);
 
+  const handleWetSignatureToggle = async () => {
+    const next = !wetSignature;
+    setWetSignature(next);
+    setWetSaving(true);
+    try {
+      await settingsService.updateWetSignature(next);
+    } catch (err) {
+      setWetSignature(!next);
+    } finally {
+      setWetSaving(false);
+    }
+  };
+
   return (
     <div className="py-3 space-y-4">
       <div className="bg-white rounded-md border border-gray-200 shadow-sm p-2">
@@ -210,6 +243,33 @@ const SignatureManager = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3">
+          <div className="mb-4 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-gray-700">
+                  Use wet signature
+                </div>
+                <div className="text-[11px] text-gray-500">
+                  When on, certificates will not use digital signatures.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleWetSignatureToggle}
+                disabled={wetSaving}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  wetSignature ? "bg-green-500" : "bg-gray-300"
+                }`}
+                aria-pressed={wetSignature}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    wetSignature ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <h3 className="text-sm font-semibold text-gray-800">
             Upload New Signature
           </h3>

@@ -72,6 +72,13 @@ const Checking = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
 
+  const isCourseDescriptionType = (name) =>
+    String(name || "").toLowerCase().includes("course description");
+  const isGradesType = (name) =>
+    String(name || "").toLowerCase().includes("grades");
+  const requiresCourseSelection = (name) =>
+    isCourseDescriptionType(name) || isGradesType(name);
+
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
@@ -140,6 +147,10 @@ const Checking = () => {
     : "-";
 
   const handleAdvance = async (req) => {
+    if (requiresCourseSelection(req.certificate_type_name)) {
+      setSelectedRequest(req);
+      return;
+    }
     const nextStatus = "PROCESSING";
     setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: true }));
     try {
@@ -185,6 +196,13 @@ const Checking = () => {
   };
 
   const handleBulkApprove = async () => {
+    if (
+      filteredRequests.some((r) =>
+        requiresCourseSelection(r.certificate_type_name),
+      )
+    ) {
+      return;
+    }
     setBulkApproveLoading(true);
     try {
       await Promise.all(
@@ -269,7 +287,13 @@ const Checking = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleBulkApprove}
-            disabled={bulkApproveLoading || filteredRequests.length === 0}
+            disabled={
+              bulkApproveLoading ||
+              filteredRequests.length === 0 ||
+              filteredRequests.some((r) =>
+                requiresCourseSelection(r.certificate_type_name),
+              )
+            }
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
           >
             {bulkApproveLoading && (
@@ -277,6 +301,14 @@ const Checking = () => {
             )}
             Process All
           </button>
+          {filteredRequests.some((r) =>
+            requiresCourseSelection(r.certificate_type_name),
+          ) && (
+            <span className="text-[11px] text-gray-400">
+              Course Description and Certification of Grades require selecting
+              courses individually.
+            </span>
+          )}
         </div>
 
         {/* RIGHT — Filters */}

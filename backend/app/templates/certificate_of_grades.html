@@ -220,13 +220,6 @@
           </div>
 
 
-          {% if grades_detail %}
-          {% for row in grades_detail %}
-
-          {% endfor %}
-          {% else %}
-
-          {% endif %}
           <table class="grade-table">
             <thead>
               <tr>
@@ -236,16 +229,21 @@
               </tr>
             </thead>
             <tbody>
+              {% if grades_detail %}
+              {% for row in grades_detail %}
               <tr>
                 <td>{{ row.course_code }} - {{ row.course_title }}</td>
                 <td style="text-align: center;">{{ row.units }}</td>
                 <td style="text-align: center;">{{ row.grade }}</td>
               </tr>
+              {% endfor %}
+              {% else %}
               <tr>
                 <td>{{ course_code }} - {{ course_title }}</td>
                 <td style="text-align: center;">{{ course_units }}</td>
                 <td style="text-align: center;">{{ course_grades }}</td>
               </tr>
+              {% endif %}
             </tbody>
           </table>
 

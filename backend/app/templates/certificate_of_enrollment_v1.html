@@ -236,7 +236,7 @@
             <span class="f f-medium{% if not student_year %} blank{% endif %}">{{ student_year }}</span>
             year student of
             <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
-            in the
+            in the College of
             <span class="f f-long{% if not college_name %} blank{% endif %}">{{ college_name }}</span>
             this <span class="f f-short{% if not current_sem %} blank{% endif %}">{{ current_sem }}</span>
             Semester, Academic Year
@@ -247,7 +247,8 @@
             This certification is issued upon request of
             <strong>Mr./Ms.</strong>
             <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
-            this <span class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day }}</span> day
+            this <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+              }}</span> day
             of
             <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span> for
             <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose }}</span>
