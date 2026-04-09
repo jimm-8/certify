@@ -5,6 +5,8 @@ import math
 
 BASE_CERT_FEE = 30.0
 DOCUMENTARY_STAMP_FEE = 30.0
+TRANSFER_CREDENTIALS_BASE_FEE = 100.0
+TRANSFER_CREDENTIALS_DOC_STAMP_FEE = 60.0
 
 # Adjust these if your templates fit more/less rows per page
 ROWS_PER_PAGE = {
@@ -25,6 +27,10 @@ def is_certification_of_grades(cert_name: str | None) -> bool:
     return "grades" in _normalize(cert_name)
 
 
+def is_transfer_credentials(cert_name: str | None) -> bool:
+    return "transfer credentials" in _normalize(cert_name)
+
+
 def _pages_for_rows(row_count: int, rows_per_page: int) -> int:
     if rows_per_page <= 0:
         return 1
@@ -40,7 +46,11 @@ def compute_request_cost(
     Pricing rule:
     - Standard certificates: base + documentary stamp (30 + 30)
     - Course Description / Grades: per page (30 + 30) * pages
+    - Transfer Credentials: base + two documentary stamps (100 + 60)
     """
+    if is_transfer_credentials(certificate_type_name):
+        return TRANSFER_CREDENTIALS_BASE_FEE + TRANSFER_CREDENTIALS_DOC_STAMP_FEE
+
     if is_course_description(certificate_type_name):
         if pages is None:
             rows = row_count if row_count is not None else 1

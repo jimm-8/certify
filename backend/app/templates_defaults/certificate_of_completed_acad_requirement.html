@@ -6,7 +6,7 @@
   <title>Certification of Completed Academic Requirements</title>
   <style>
     @page {
-      size: 8.5in 13in;
+      size: 8.5in 11in;
       margin: 0;
     }
 
@@ -19,11 +19,13 @@
 
     .paper {
       width: 8.5in;
-      min-height: 13in;
+      min-height: 11in;
       background: #fff;
       padding: 0.5in;
       box-sizing: border-box;
       font-family: "Times New Roman", serif;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ================= HEADER ================= */
@@ -31,14 +33,33 @@
     .header {
       position: relative;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+    }
+
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      /* spreads them evenly */
+      font-family: "Times New Roman", serif;
+      font-size: 9pt;
+      margin-bottom: 15px;
+      margin-top: -20px;
+
+    }
+
+    .doc-meta p {
+      margin: 0;
+      font-style: italic;
     }
 
     .logo {
       position: absolute;
       left: 0;
-      top: -10px;
-      width: 132.48px;
-      height: 124.8px;
+      top: 0;
+      width: 141.12px;
+      height: 123.84px;
     }
 
     .republic {
@@ -83,22 +104,22 @@
 
     .divider {
       border-top: 1pt solid #000;
-      margin: 2px 0 14px 0;
+      margin: 5px 0 5px 0;
     }
 
     /* ================= TITLES ================= */
 
     .registrar {
       font-family: "Times New Roman", serif;
-      font-size: 18.67px;
+      font-size: 16px;
       font-weight: bold;
-      text-align: center;
+      text-align: left;
       line-height: 1.15;
       break-after: avoid;
       page-break-after: avoid;
       widows: 2;
       orphans: 2;
-      margin-bottom: 67.5px;
+      margin-bottom: 32px;
     }
 
     .bold {
@@ -110,16 +131,10 @@
     }
 
     .cert-title {
-      font-family: "Times New Roman", serif;
-      font-size: 18.67px;
-      font-weight: bold;
       text-align: center;
-      line-height: 1.15;
-      break-after: avoid;
-      page-break-after: avoid;
-      orphans: 2;
-      widows: 2;
-      margin-bottom: 76.7px;
+      font-size: 17.33px;
+      font-weight: bold;
+      margin-bottom: 32px;
     }
 
     /* ================= BODY ================= */
@@ -130,21 +145,19 @@
     }
 
     .content {
-      font-family: "Times New Roman", serif;
-      font-size: 18.67px;
+      font-size: 13pt;
       line-height: 1.6;
       text-align: justify;
       text-justify: inter-word;
-      widows: 2;
-      orphans: 2;
     }
 
     .paragraph {
       text-indent: 0.5in;
+      margin-bottom: 2px;
     }
 
     .second {
-      margin-top: 42.9px;
+      margin-top: 26px;
     }
 
     .bold {
@@ -153,7 +166,6 @@
 
     .name {
       text-transform: uppercase;
-      font-weight: bold;
     }
 
     .f {
@@ -186,29 +198,96 @@
     /* ================= SIGNATURE ================= */
 
     .signature {
-      margin-top: 101px;
+      margin-top: 72px;
       width: 3.5in;
       margin-left: 3.5in;
       text-align: center;
       font-size: 12pt;
-      margin-bottom: 113.464px;
+      margin-bottom: 150px;
+    }
+
+    .dst {
+      border: 2px solid #000;
+      font-family: "Bahnschrift Condensed", "Bahnschrift", "Arial Narrow", Arial, sans-serif;
+      font-stretch: condensed;
+      padding: 4px;
+      width: 188.98px;
+      height: 75.59px;
+      box-sizing: border-box;
+      margin-left: 0.7in;
+    }
+
+    /* Title */
+    .dst-title {
+      text-align: center;
+      margin: 0;
+      font-size: 9.5pt;
+    }
+
+    .dst-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 35px;
+      gap: 12px;
+      /* space BETWEEN the two fields */
+    }
+
+    /* Each column */
+    .gor,
+    .date {
+      width: 45%;
+      text-align: center;
+      font-size: 6.5pt;
+      font-style: italic;
+    }
+
+    /* The LINE above each */
+    .gor::before,
+    .date::before {
+      content: "";
+      display: block;
+      border-top: 1px solid #000;
+      margin-bottom: 3px;
+    }
+
+    .qr {
+      position: absolute;
+      left: 0.4in;
+      margin-top: 15px;
     }
 
     .footer-note {
-      margin-left: 0.4in;
+      margin-left: 1.2in;
       margin-top: 10px;
       font-size: 13.33px;
       font-style: italic;
-      margin-bottom: 80px;
+      margin-bottom: 16px;
       text-align: left;
     }
 
     .ref {
       font-size: 13.33px;
-      margin-left: 0.4in;
+      margin-left: 1.2in;
       margin-top: 0;
       margin-bottom: 0;
       text-align: left;
+    }
+
+    .footer {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 14.67px;
+      text-align: center;
+
+      font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+      font-size: 11pt;
+    }
+
+    .footer p {
+      margin: 0;
+      font-style: italic;
+      color: #d10000;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -216,6 +295,17 @@
 <body>
   <div class="paper">
     <div class="header">
+      <div class="doc-meta">
+        <div>
+          <p><i>BatStateU-CE-REG-04</i></p>
+        </div>
+        <div>
+          <p><i>Effectivity Date: February 23, 2026</i></p>
+        </div>
+        <div>
+          <p><i>Revision No. 03</i></p>
+        </div>
+      </div>
       <div class="logo-cell">
         <img src="bsu.png" class="logo" />
       </div>
@@ -235,19 +325,19 @@
       </div>
       <div class="divider"></div>
 
-      <div class="registrar">OFFICE OF THE REGISTRAR</div>
+      <div class="registrar">Registration Services Office</div>
       <div class="cert-title">
-        CERTIFICATION OF COMPLETED ACADEMIC REQUIREMENTS
+        CERTIFICATION OF COMPLETION OF <br /> ACADEMIC REQUIREMENTS
       </div>
 
       <div class="text-body">
         <div class="content">
           <div class="paragraph">
-            This is to certify that <strong>Mr./Ms.</strong>
-            <span class="f f-long{% if not student_name %} blank{% endif %} name">{{ student_name }}</span>
-            had completed all the academic requirements of
+            This is to certify that <strong>{{ student_honorific }}</strong>
+            <span class="f f-long{% if not student_name %} blank{% endif %} name bold">{{ student_name }}</span>
+            has successfuly completed all academic requirements, totalling
             <span class="f f-medium{% if not total_units_earned %} blank{% endif %}">{{ total_units_earned }}</span>
-            credit units leading to the Degree of
+            credit units, leading to the Degree of
             <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
             as of
             <span class="f f-short{% if not (graduation_to_semester or current_sem) %} blank{% endif %}">{{
@@ -259,13 +349,15 @@
 
           <div class="paragraph second">
             This certification is issued upon request of
-            <strong>Mr./Ms.</strong>
-            <span class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span>
+            <strong>{{ student_honorific }}</strong>
+            <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
             this <span class="f f-short{% if not date_issued_day %} blank{% endif %}" id="dateDay">{{ date_issued_day
               }}</span> day
             of
-            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span> for
-            evaluation purposes only.
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+            <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
+            for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower }}</span>
+            purposes only.
           </div>
         </div>
       </div>
@@ -275,15 +367,32 @@
         <img src="{{ signature_path }}" alt="Signature"
           style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
         {% endif %}
-        <strong>{{ name_official }}</strong><br />
+        <strong class="name">{{ name_official }}</strong><br />
         {{ official_title }}
       </div>
 
-      <div class="footer-note">Not valid without university dry seal</div>
+      <div class="dst">
+        <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+
+        <div class="dst-row">
+          <div class="gor">(GOR SERIAL NUMBER)</div>
+          <div class="date">(DATE OF PAYMENT)</div>
+        </div>
+      </div>
+
+      <div class="qr-cell">
+        <img src="qr_bsu.png" class="qr">
+      </div>
+
+      <div class="footer-note">Not valid without the official university dry seal<br /> or if contains erasures or
+        alterations</div>
 
       <div>
         <p class="ref">{{ campus_certCode }}</p>
         <p class="ref">{{ or_number }}</p>
+      </div>
+      <div class="footer">
+        <p><i>Leading Innovations, Transforming Lives, Building the Nation</i></p>
       </div>
     </div>
     <script>

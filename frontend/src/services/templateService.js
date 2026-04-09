@@ -15,8 +15,16 @@ const templateService = {
     );
     return resp.data;
   },
-  updateTemplate: async (name, content) => {
-    const resp = await api.put(`/templates/${encodeURIComponent(name)}`, {
+  updateTemplate: async (name, content, options = {}) => {
+    const params = new URLSearchParams();
+    if (options.target) {
+      params.set("target", options.target);
+    }
+    const query = params.toString();
+    const url = query
+      ? `/templates/${encodeURIComponent(name)}?${query}`
+      : `/templates/${encodeURIComponent(name)}`;
+    const resp = await api.put(url, {
       content,
     });
     return resp.data;

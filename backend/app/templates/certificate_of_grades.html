@@ -2,9 +2,8 @@
 <title>Certificate of Grades</title>
 <style>
   @page {
-    size: 8.5in 13in;
+    size: 8.5in 11in;
     margin: 0.4in 0.5in;
-    /* Defined margins for the physical page */
   }
 
   body {
@@ -19,29 +18,51 @@
     width: 100%;
     border-collapse: collapse;
     background: #fff;
+    table-layout: fixed;
+    /* Ensures consistent layout across pages */
   }
 
-  /* THE MAGIC: This forces the content inside <thead> to repeat on every page */
   thead {
     display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
   }
 
   /* HEADER STYLES */
   .header-wrapper {
     position: relative;
     text-align: center;
-    padding-top: 10px;
+    padding-top: 0;
+    /* Removed padding to let doc-meta sit at top */
+  }
+
+  .doc-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: "Times New Roman", serif;
+    font-size: 9pt;
+    margin-bottom: 15px;
+    margin-top: 0;
+    /* Fixed: Prevents cropping */
+  }
+
+  .doc-meta p {
+    margin: 0;
+    font-style: italic;
   }
 
   .logo-container {
     position: absolute;
     left: 0;
-    top: 5px;
+    top: 25px;
+    /* Adjusted to sit below doc-meta */
   }
 
   .logo {
-    width: 132.48px;
-    height: 124.8px;
+    width: 141.12px;
+    height: 123.84px;
   }
 
   .republic {
@@ -78,16 +99,17 @@
   }
 
   .header-divider {
-    border-top: 1.5pt solid #000;
-    margin: 2px 0 10px 0;
+    border-top: 1pt solid #000;
+    margin: 5px 0 5px 0;
     width: 100%;
   }
 
   .registrar-label {
-    font-size: 16pt;
+    font-size: 16px;
     font-weight: bold;
-    margin: 15px 0 25px 0;
+    margin: 15px 0 16px 0;
     display: block;
+    text-align: left;
   }
 
   /* CONTENT STYLES */
@@ -98,9 +120,9 @@
 
   .cert-title {
     text-align: center;
-    font-size: 18pt;
+    font-size: 17.33px;
     font-weight: bold;
-    margin-bottom: 25px;
+    margin-bottom: 21.33px;
   }
 
   .text-body {
@@ -113,7 +135,6 @@
 
   .paragraph {
     text-indent: 0.5in;
-    margin-bottom: 15px;
   }
 
   /* GRADES TABLE */
@@ -121,16 +142,13 @@
     width: 100%;
     margin: 20px 0;
     border-collapse: collapse;
+    border: 1px solid #000;
   }
 
-  .grade-table th {
-    text-align: left;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #000;
-  }
-
+  .grade-table th,
   .grade-table td {
-    padding: 5px 0;
+    padding: 5px;
+    border: 1px solid #000;
   }
 
   /* SIGNATURE & FOOTER */
@@ -145,17 +163,87 @@
     text-align: center;
   }
 
-  .footer-seal {
-    margin-top: 80px;
-    font-size: 11pt;
-    margin-left: 0.4in;
+  /* FOOTER ELEMENTS */
+  .footer-container {
+    position: relative;
+    padding-top: 20px;
+  }
+
+  .dst {
+    border: 2px solid #000;
+    font-family: "Bahnschrift Condensed", sans-serif;
+    padding: 4px;
+    width: 188.98px;
+    height: 75.59px;
+    box-sizing: border-box;
+    margin-left: 0.7in;
+  }
+
+  .dst-title {
+    text-align: center;
+    margin: 0;
+    font-size: 9.5pt;
+  }
+
+  .dst-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 35px;
+    gap: 12px;
+  }
+
+  .gor,
+  .date {
+    width: 45%;
+    text-align: center;
+    font-size: 6.5pt;
     font-style: italic;
   }
 
-  .ref-codes {
+  .gor::before,
+  .date::before {
+    content: "";
+    display: block;
+    border-top: 1px solid #000;
+    margin-bottom: 3px;
+  }
+
+  .qr-container {
+    position: absolute;
+    left: 0.4in;
+    bottom: 60px;
+    top: 1.15in;
+    /* Adjusted to align with text */
+  }
+
+  .footer-seal {
+    margin-left: 1.2in;
     margin-top: 10px;
-    margin-left: 0.4in;
-    font-size: 10pt;
+    font-size: 11pt;
+    font-style: italic;
+    text-align: left;
+  }
+
+  .ref-codes {
+    font-size: 11pt;
+    margin-left: 1.2in;
+    margin-top: 5px;
+    text-align: left;
+  }
+
+  .footer-tagline {
+    width: 100%;
+    padding-top: 15px;
+    text-align: center;
+    font-family: "Century Gothic", sans-serif;
+    font-size: 11pt;
+  }
+
+  .footer-tagline p {
+    margin: 0;
+    font-style: italic;
+    color: #d10000;
+    font-weight: bold;
   }
 
   @media print {
@@ -169,14 +257,22 @@
   }
 </style>
 
-
-
-
 <table class="paper-table">
   <thead>
     <tr>
       <td>
         <div class="header-wrapper">
+          <div class="doc-meta">
+            <div>
+              <p>BatStateU-CE-REG-04</p>
+            </div>
+            <div>
+              <p>Effectivity Date: February 23, 2026</p>
+            </div>
+            <div>
+              <p>Revision No. 03</p>
+            </div>
+          </div>
           <div class="logo-container">
             <img src="bsu.png" class="logo" alt="Logo">
           </div>
@@ -194,7 +290,7 @@
             </div>
           </div>
           <div class="header-divider"></div>
-          <span class="registrar-label">OFFICE OF THE REGISTRAR</span>
+          <span class="registrar-label">Registration Services Office</span>
         </div>
       </td>
     </tr>
@@ -204,32 +300,40 @@
     <tr>
       <td class="main-content">
         <div class="cert-title">CERTIFICATION OF GRADES</div>
-
         <div class="text-body">
           <div class="paragraph">
-            This is to certify that <strong>Mr./Ms. <span style="text-transform: uppercase;">{{ student_name
+            This is to certify that <strong>{{ student_honorific }} <span style="text-transform: uppercase;">{{
+                student_name
                 }}</span></strong>
-            has enrolled in the <strong>{{ course_name }}</strong> under the <strong>{{ college_name }}</strong>
-            of this institution, <strong>BATANGAS STATE UNIVERSITY</strong>, during the 1st Semester of Academic Year
-            <strong>{{ academic_year }}</strong> from {{ first_enrollment_semester }} Semester,
-            AY {{ first_enrollment_academic_year }} to {{ current_sem }} Semester, AY {{ academic_year }}.
+            has been enrolled in {{ course_name }} under the College of {{ college_name }} of
+            this institution, <strong>Batangas State
+              University, The National Engineering University</strong>, during <span
+              class="f f-short{% if not (enrollment_from_semester or current_sem) %} blank{% endif %}">{{
+              enrollment_from_semester or current_sem }}</span>
+            Semester of AY
+            <span class="f f-short{% if not (enrollment_from_academic_year or academic_year) %} blank{% endif %}">{{
+              enrollment_from_academic_year or academic_year }}</span>
+            to
+            <span class="f f-short{% if not (enrollment_to_semester or current_sem) %} blank{% endif %}">{{
+              enrollment_to_semester or current_sem }}</span>
+            Semester, AY
+            <span class="f f-short{% if not (enrollment_to_academic_year or academic_year) %} blank{% endif %}">{{
+              enrollment_to_academic_year or academic_year }}</span>.
           </div>
-
           <div class="paragraph">
-            This further certifies that he/she enrolled this/these course/s and obtained the following grade/s:
+            This further certifies that he/shehas completed the following course(s) with the corresponding unit(s) and
+            grade(s):
           </div>
-
 
           <table class="grade-table">
             <thead>
               <tr>
-                <th width="70%">Course Code / Title</th>
-                <th width="15%" style="text-align: center;">Unit/s</th>
-                <th width="15%" style="text-align: center;">Grade/s</th>
+                <th>Course Code / Title</th>
+                <th style="text-align: center;">Unit/s</th>
+                <th style="text-align: center;">Grade/s</th>
               </tr>
             </thead>
             <tbody>
-              {% if grades_detail %}
               {% for row in grades_detail %}
               <tr>
                 <td>{{ row.course_code }} - {{ row.course_title }}</td>
@@ -237,45 +341,67 @@
                 <td style="text-align: center;">{{ row.grade }}</td>
               </tr>
               {% endfor %}
-              {% else %}
-              <tr>
-                <td>{{ course_code }} - {{ course_title }}</td>
-                <td style="text-align: center;">{{ course_units }}</td>
-                <td style="text-align: center;">{{ course_grades }}</td>
-              </tr>
-              {% endif %}
             </tbody>
           </table>
 
           <div class="paragraph">
-            This certification is issued upon request of <strong>Mr./Ms. {{ requestor_name }}</strong>
-            this <span id="dateDay">{{ date_issued_day }}</span> day of {{ date_issued_month }}
-            for whatever legal purpose it may serve him/her.
+            This certification is issued upon request of <strong>{{ student_honorific }}</strong>
+            <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
+            this
+            <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+              }}</span>
+            day of
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+            <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
+            for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower }}</span>
+            purposes only.
           </div>
-        </div>
 
-        <div class="signature-section">
-          <div class="signature-box">
-            {% if signature_path %}
-            <img src="{{ signature_path }}"
-              style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -20px;">
-            {% endif %}
-            <div style="margin-top: 10px;">
-              <strong>{{ name_official }}</strong><br>
+          <div class="signature-section">
+            <div class="signature-box">
+              {% if signature_path %}
+              <img src="{{ signature_path }}" alt="Signature"
+                style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -20px;" />
+              {% endif %}
+              <strong style="text-transform: uppercase;" class="name">{{ name_official }}</strong><br />
               {{ official_title }}
             </div>
           </div>
         </div>
-
-        <div class="footer-seal">Not valid without university seal</div>
-
-        <div class="ref-codes">
-          <div>{{ campus_certCode }}</div>
-          <div>{{ or_number }}</div>
-        </div>
       </td>
     </tr>
   </tbody>
+
+  <tfoot>
+    <tr>
+      <td>
+        <div class="footer-container">
+          <div class="dst">
+            <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+            <div class="dst-row">
+              <div class="gor">(GOR SERIAL NUMBER)</div>
+              <div class="date">(DATE OF PAYMENT)</div>
+            </div>
+          </div>
+
+          <div class="qr-container">
+            <img src="qr_bsu.png" class="qr" alt="QR Code">
+          </div>
+
+          <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
+            alterations</div>
+
+          <div class="ref-codes">
+            <div>{{ campus_certCode }}</div>
+            <div>{{ or_number }}</div>
+          </div>
+          <div class="footer-tagline">
+            <p>Leading Innovations, Transforming Lives, Building the Nation</p>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tfoot>
 </table>
 
 <script>

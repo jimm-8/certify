@@ -89,7 +89,11 @@ def generate_certificate_pdf(
         if "," in name:
             return name.split(",", 1)[0].strip()
         tokens = [t for t in name.split() if t]
-        if len(tokens) >= 3 and tokens[-3].lower() == "de" and tokens[-2].lower() == "la":
+        if (
+            len(tokens) >= 3
+            and tokens[-3].lower() == "de"
+            and tokens[-2].lower() == "la"
+        ):
             return " ".join(tokens[-3:])
         if len(tokens) >= 2 and tokens[-2].lower() in {
             "de",
@@ -263,12 +267,27 @@ def generate_certificate_pdf(
         else None
     )
 
+    latin_honor = ""
+
+    if graduation_record:
+        latin_honor = getattr(graduation_record, "latin_honor", "") or ""
+
+    def _pronoun_for_gender(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in {"male", "m"}:
+            return "he"
+        if normalized in {"female", "f"}:
+            return "she"
+        return "he/she"
+
+    student_pronoun = _pronoun_for_gender(student_gender)
     data = {
         "student_name": student_name,
         "student_honorific": student_honorific,
         "student_surname": student_surname,
         "sr_code": student.sr_code if student else request.sr_code,
         "program": program_name,
+        "latin_honor": latin_honor,
         "program_name": program_name,
         "major": (student.major if student else None) or request.major,
         "year_graduated": request.year_graduated
@@ -286,6 +305,7 @@ def generate_certificate_pdf(
         "requestor_email": request.requestor_email,
         "certificate_type": resolved_key,
         "attendance_periods": "",
+        "student_pronoun": student_pronoun,
         "curriculum_acad_year": (
             getattr(curriculum, "academic_year", "") if curriculum else ""
         ),
@@ -430,9 +450,10 @@ def generate_certificate_pdf(
         ]
         data["course_descriptions"] = [
             {
-                "course": f"{row.get('course_code', '')} - {row.get('course_title', '')}",
+                "course_code": row.get("course_code", ""),
                 "course_credits": row.get("units", ""),
-                # "course_description": row.get("course_description", ""),
+                "course_title": row.get("course_title", ""),
+                "course_description": row.get("course_description", ""),
             }
             for row in student_courses
         ]

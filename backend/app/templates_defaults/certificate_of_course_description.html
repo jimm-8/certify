@@ -6,7 +6,7 @@
   <title>Certificate of Course Description</title>
   <style>
     @page {
-      size: 8.5in 13in;
+      size: 8.5in 11in;
       margin: 0.4in 0.5in;
     }
 
@@ -18,36 +18,62 @@
       background: #e5e5e5;
     }
 
-    /* Main Table Container to handle repeating headers */
     .paper-table {
       width: 100%;
       border-collapse: collapse;
       background: #fff;
-      margin-top: 0;
+      table-layout: fixed;
+      /* Ensures consistent layout across pages */
     }
 
-    /* FORCES HEADER TO REPEAT */
     thead {
       display: table-header-group;
     }
 
-    /* HEADER STYLING */
+    tfoot {
+      display: table-footer-group;
+    }
+
+    thead td {
+      vertical-align: top;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* HEADER STYLES */
     .header-wrapper {
       position: relative;
       text-align: center;
-      padding-top: 10px;
-      width: 100%;
+      padding-top: 0 !important;
+      margin-top: 0;
+      /* Removed padding to let doc-meta sit at top */
+    }
+
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Times New Roman", serif;
+      font-size: 9pt;
+      margin-bottom: 15px;
+      margin-top: 0;
+      /* Fixed: Prevents cropping */
+    }
+
+    .doc-meta p {
+      margin: 0;
+      font-style: italic;
     }
 
     .logo-container {
       position: absolute;
       left: 0;
-      top: 5px;
+      top: 25px;
+      /* Adjusted to sit below doc-meta */
     }
 
     .logo {
-      width: 132.48px;
-      height: 124.8px;
+      width: 141.12px;
+      height: 123.84px;
     }
 
     .republic {
@@ -84,30 +110,30 @@
     }
 
     .header-divider {
-      border-top: 1.5pt solid #000;
-      margin: 2px 0 10px 0;
+      border-top: 1pt solid #000;
+      margin: 5px 0 5px 0;
       width: 100%;
     }
 
     .registrar-label {
-      font-size: 16pt;
+      font-size: 16px;
       font-weight: bold;
-      margin: 15px 0 25px 0;
+      margin: 15px 0 16px 0;
       display: block;
-      text-align: center;
+      text-align: left;
     }
 
-    /* CONTENT STYLING */
-    .main-content-cell {
+    /* CONTENT STYLES */
+    .main-content {
       padding: 0;
       vertical-align: top;
     }
 
     .cert-title {
       text-align: center;
-      font-size: 18pt;
+      font-size: 17.33px;
       font-weight: bold;
-      margin-bottom: 25px;
+      margin-bottom: 21.33px;
     }
 
     .text-body {
@@ -120,7 +146,6 @@
 
     .paragraph {
       text-indent: 0.5in;
-      margin-bottom: 15px;
     }
 
     /* COURSE DESCRIPTION BLOCKS */
@@ -163,17 +188,87 @@
       text-align: center;
     }
 
-    .footer-seal {
-      margin-top: 80px;
-      font-size: 11pt;
-      margin-left: 0.4in;
+    /* FOOTER ELEMENTS */
+    .footer-container {
+      position: relative;
+      padding-top: 20px;
+    }
+
+    .dst {
+      border: 2px solid #000;
+      font-family: "Bahnschrift Condensed", sans-serif;
+      padding: 4px;
+      width: 188.98px;
+      height: 75.59px;
+      box-sizing: border-box;
+      margin-left: 0.7in;
+    }
+
+    .dst-title {
+      text-align: center;
+      margin: 0;
+      font-size: 9.5pt;
+    }
+
+    .dst-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 35px;
+      gap: 12px;
+    }
+
+    .gor,
+    .date {
+      width: 45%;
+      text-align: center;
+      font-size: 6.5pt;
       font-style: italic;
     }
 
-    .ref-codes {
+    .gor::before,
+    .date::before {
+      content: "";
+      display: block;
+      border-top: 1px solid #000;
+      margin-bottom: 3px;
+    }
+
+    .qr-container {
+      position: absolute;
+      left: 0.4in;
+      bottom: 60px;
+      top: 1.15in;
+      /* Adjusted to align with text */
+    }
+
+    .footer-seal {
+      margin-left: 1.2in;
       margin-top: 10px;
-      margin-left: 0.4in;
-      font-size: 10pt;
+      font-size: 11pt;
+      font-style: italic;
+      text-align: left;
+    }
+
+    .ref-codes {
+      font-size: 11pt;
+      margin-left: 1.2in;
+      margin-top: 5px;
+      text-align: left;
+    }
+
+    .footer-tagline {
+      width: 100%;
+      padding-top: 15px;
+      text-align: center;
+      font-family: "Century Gothic", sans-serif;
+      font-size: 11pt;
+    }
+
+    .footer-tagline p {
+      margin: 0;
+      font-style: italic;
+      color: #d10000;
+      font-weight: bold;
     }
 
     @media print {
@@ -195,6 +290,17 @@
       <tr>
         <td>
           <div class="header-wrapper">
+            <div class="doc-meta">
+              <div>
+                <p>BatStateU-CE-REG-04</p>
+              </div>
+              <div>
+                <p>Effectivity Date: February 23, 2026</p>
+              </div>
+              <div>
+                <p>Revision No. 03</p>
+              </div>
+            </div>
             <div class="logo-container">
               <img src="bsu.png" class="logo" alt="Logo">
             </div>
@@ -212,7 +318,7 @@
               </div>
             </div>
             <div class="header-divider"></div>
-            <span class="registrar-label">OFFICE OF THE REGISTRAR</span>
+            <span class="registrar-label">Registration Services Office</span>
           </div>
         </td>
       </tr>
@@ -221,22 +327,24 @@
     <tbody>
       <tr>
         <td class="main-content-cell">
-          <div class="cert-title">CERTIFICATE OF COURSE DESCRIPTION</div>
+          <div class="cert-title">CERTIFICATION OF COURSES AND DESCRIPTIONS</div>
 
           <div class="text-body">
             <div class="paragraph">
-              This is to certify that based on the records of this Office,
-              <strong>Mr./Ms. <span style="text-transform: uppercase;">{{ student_name }}</span></strong>
+              This is to certify that, based on the records of this Office,
+              <strong>{{ student_honorific }} <span style="text-transform: uppercase;">{{
+                  student_name
+                  }}</span></strong>
               has enrolled in this University under the
-              <strong>{{ course_name }}</strong> from
+              {{ college_name }} program from
               {{ first_enrollment_semester }} Semester, Academic Year {{ first_enrollment_academic_year }}
               to {{ enrollment_to_semester or current_sem }} Semester, Academic Year {{ enrollment_to_academic_year or
               academic_year }}.
             </div>
 
             <div class="paragraph">
-              This certifies further that the following is/are the description/s of the course/s taken under the
-              <strong>{{ course_name }}</strong> Curriculum, AY {{ curriculum_acad_year }}:
+              This certifies further that the following are the descriptions of the courses taken under the
+              {{ course_name }} Curriculum, AY {{ curriculum_acad_year }}:
             </div>
 
             {% for course in course_descriptions %}
@@ -248,49 +356,95 @@
                   <td style="font-weight: bold;">{{ course.course_code }}</td>
                 </tr>
                 <tr>
+                  <td class="label">Course Title</td>
+                  <td class="colon">:</td>
+                  <td style="font-weight: bold;">{{ course.course_title }}</td>
+                </tr>
+                <tr>
                   <td class="label">Credits</td>
                   <td class="colon">:</td>
                   <td>{{ course.course_credits }}</td>
                 </tr>
                 <tr>
-                  <td colspan="3" style="padding-top: 8px; text-align: justify;">
-                    {{ course.course_description }}
-                  </td>
+                  <td class="label">Course Description</td>
+                  <td class="colon">:</td>
+                  <td>{{ course.course_description }}</td>
                 </tr>
               </table>
             </div>
             {% endfor %}
 
-            <div class="paragraph" style="margin-top: 40px;">
-              This certification is issued upon request of
-              <strong>Mr./Ms. {{ requestor_name }}</strong> this
-              <span id="dateDay">{{ date_issued_day }}</span> day of {{ date_issued_month }}
-              for {{ request_purpose|default('whatever legal') }} purposes only.
+            <div class="paragraph">
+              Furthermore, the courses completed by <strong>{{ student_honorific }} <span
+                  style="text-transform: uppercase;">{{
+                  student_name
+                  }}</span></strong> adhere to the academic standards set by Batangas State University, The National
+              Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
+              Higher Education (CHED). These courses may be considered for equivalency, accreditation, or credit
+              transfer, to subject to the evaluation and approval of the receiving institution.
+            </div>
+
+            <div class="paragraph">
+              This certification is issued upon request of <strong>{{ student_honorific }}</strong>
+              <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
+              this
+              <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+                }}</span>
+              day of
+              <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+              <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
+              for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower
+                }}</span>
+              purposes only.
             </div>
           </div>
 
           <div class="signature-section">
             <div class="signature-box">
-              {% if signature_path %}
-              <img src="{{ signature_path }}"
-                style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -20px;" />
-              {% endif %}
-              <div style="margin-top: 10px;">
-                <strong>{{ name_official }}</strong><br />
+              <div class="signature-box">
+                {% if signature_path %}
+                <img src="{{ signature_path }}" alt="Signature"
+                  style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -20px;" />
+                {% endif %}
+                <strong style="text-transform: uppercase;" class="name">{{ name_official }}</strong><br />
                 {{ official_title }}
               </div>
             </div>
           </div>
-
-          <div class="footer-seal">Not valid without university seal</div>
-
-          <div class="ref-codes">
-            <div>{{ campus_certCode }}</div>
-            <div>{{ or_number }}</div>
           </div>
         </td>
       </tr>
     </tbody>
+    <tfoot>
+      <tr>
+        <td>
+          <div class="footer-container">
+            <div class="dst">
+              <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+              <div class="dst-row">
+                <div class="gor">(GOR SERIAL NUMBER)</div>
+                <div class="date">(DATE OF PAYMENT)</div>
+              </div>
+            </div>
+
+            <div class="qr-container">
+              <img src="qr_bsu.png" class="qr" alt="QR Code">
+            </div>
+
+            <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
+              alterations</div>
+
+            <div class="ref-codes">
+              <div>{{ campus_certCode }}</div>
+              <div>{{ or_number }}</div>
+            </div>
+            <div class="footer-tagline">
+              <p>Leading Innovations, Transforming Lives, Building the Nation</p>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
   </table>
 
   <script>

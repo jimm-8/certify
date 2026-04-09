@@ -133,6 +133,7 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
         "program",
         "requestor_name",
         "date_of_issuance",
+        "credits",
         "authorized_official_name",
     ],
     "certification_of_completed_academic_requirements": [
@@ -150,6 +151,7 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
         "address",
         "latin_honor",
         "program",
+        "college_name",
         "date_of_graduation",
         "board_resolution_number",
         "program",
@@ -385,6 +387,7 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-English-Medium-Earned.html": [
+        "credits",
         "campus_address",
         "program",
         "attendance_period",

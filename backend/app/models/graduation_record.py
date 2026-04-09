@@ -17,6 +17,7 @@ class GraduationRecordNew(Base):
     program = Column(String(255), nullable=True)
     date_of_graduation = Column(String(50), nullable=True)
     board_resolution_number = Column(String(50), nullable=True)
+    latin_honor = Column(String(50), nullable=True)
     semester = Column(String(50), nullable=True)
     academic_year = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

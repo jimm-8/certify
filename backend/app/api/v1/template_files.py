@@ -79,10 +79,16 @@ def get_template(
 def update_template(
     template_name: str,
     payload: TemplateUpdateRequest,
+    target: str | None = None,
     db: Session = Depends(get_db),
     _: dict = Depends(require_permissions("templates.manage")),
 ):
-    path = _safe_template_path(template_name)
+    if target == "defaults":
+        defaults_dir = _templates_defaults_dir()
+        defaults_dir.mkdir(parents=True, exist_ok=True)
+        path = _safe_template_path_in_dir(defaults_dir, template_name)
+    else:
+        path = _safe_template_path(template_name)
     if not path.exists() or path.suffix.lower() not in {".html", ".htm"}:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     path.write_text(payload.content, encoding="utf-8")

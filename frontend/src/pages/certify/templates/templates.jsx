@@ -42,6 +42,32 @@ const INJECTED_PAPER_STYLE = `
   </style>
 `;
 
+const DUMMY_FILL_STYLE = `
+  <style>
+    /* Remove underline borders used for fillable fields */
+    .blank,
+    .f.blank,
+    .fill-cert,
+    .line,
+    .underline,
+    [class*="line"],
+    [class*="underline"] {
+      border-bottom: none !important;
+      text-decoration: none !important;
+    }
+
+    /* Catch inline styles like style="border-bottom: 1px solid" */
+    *[style*="border-bottom"] {
+      border-bottom: none !important;
+    }
+
+    /* Optional: if using HR as lines */
+    hr {
+      border: none !important;
+    }
+  </style>
+`;
+
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState("");
@@ -50,9 +76,12 @@ const Templates = () => {
   const [viewMode, setViewMode] = useState("visual");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveTarget, setSaveTarget] = useState("template");
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [useDummyData, setUseDummyData] = useState(true);
   const iframeRef = useRef(null);
   const navigate = useNavigate();
   const initializedRef = useRef(false);
@@ -73,6 +102,51 @@ const Templates = () => {
     );
   };
 
+  const applyDummyTemplateData = (html) => {
+    if (!html) return html;
+    const placeholders = {
+      student_name: "JUAN DELA CRUZ",
+      student_honorific: "Mr.",
+      student_surname: "DELA CRUZ",
+      program: "BS Computer Engineering",
+      program_name: "BS Computer Engineering",
+      college_name: "College of Engineering",
+      campus_name: "Main",
+      campus_address: "Sample Address, Batangas City",
+      campus_telNo: "(043) 000-0000",
+      campus_email: "registrar@batstate-u.edu.ph",
+      date_issued: "January 1, 2026",
+      date_issued_day: "1",
+      date_issued_month: "January",
+      date_issued_year: "2026",
+      request_purpose: "employment",
+      academic_year: "2025-2026",
+      first_enrollment_semester: "1st",
+      first_enrollment_academic_year: "2022-2023",
+      enrollment_to_semester: "2nd",
+      enrollment_to_academic_year: "2024-2025",
+      course_name: "Sample Curriculum",
+      curriculum_acad_year: "2022-2023",
+      campus_certCode: "BSU-MAIN",
+      or_number: "OR-2026-00001",
+    };
+
+    const replaceVariable = (match, expr) => {
+      const key = String(expr || "")
+        .trim()
+        .split("|")[0]
+        .split(".")
+        .pop()
+        .trim();
+      return placeholders[key] || "Sample";
+    };
+
+    return html
+      .replace(/{%[\s\S]*?%}/g, "")
+      .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable)
+      .replace(/\b(blank|fill-cert|underline|line)\b/g, "");
+  };
+
   const needsPaperStyle = useMemo(() => {
     return [
       "certificate_of_course_description.html",
@@ -83,33 +157,45 @@ const Templates = () => {
   const editorHtml = useMemo(() => {
     if (!content) return "";
     let html = normalizeAssetLinks(content);
+    if (useDummyData) {
+      html = applyDummyTemplateData(html);
+    }
 
+    const dummyStyle = useDummyData ? DUMMY_FILL_STYLE : "";
     if (needsPaperStyle) {
       // Inject the style and wrap the content
-      html = `<!DOCTYPE html><html><head>${INJECTED_PAPER_STYLE}</head><body><div class="paper-shell">${html}</div></body></html>`;
+      html = `<!DOCTYPE html><html><head>${INJECTED_PAPER_STYLE}${dummyStyle}</head><body><div class="paper-shell">${html}</div></body></html>`;
     }
     return html;
-  }, [content, needsPaperStyle]);
+  }, [content, needsPaperStyle, useDummyData]);
 
   const previewHtml = useMemo(() => {
     if (!content) return "";
     const baseTag = `<base href="${assetsBase}">`;
     let html = content;
 
+    if (useDummyData) {
+      html = applyDummyTemplateData(html);
+    }
+
+    const dummyStyle = useDummyData ? DUMMY_FILL_STYLE : "";
     if (needsPaperStyle) {
-      html = `<div class="paper-shell">${content}</div>`;
-      const fullHtml = content.includes("<head>")
-        ? content.replace("<head>", `<head>${baseTag}${INJECTED_PAPER_STYLE}`)
-        : `<!DOCTYPE html><html><head>${baseTag}${INJECTED_PAPER_STYLE}</head><body>${html}</body></html>`;
+      html = `<div class="paper-shell">${html}</div>`;
+      const fullHtml = html.includes("<head>")
+        ? html.replace(
+            "<head>",
+            `<head>${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}`,
+          )
+        : `<!DOCTYPE html><html><head>${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}</head><body>${html}</body></html>`;
       return normalizeAssetLinks(fullHtml);
     }
 
     // Fallback for other templates
-    const withBase = content.includes("<head>")
-      ? content.replace("<head>", `<head>${baseTag}`)
-      : `<!doctype html><html><head>${baseTag}</head><body>${content}</body></html>`;
+    const withBase = html.includes("<head>")
+      ? html.replace("<head>", `<head>${baseTag}${dummyStyle}`)
+      : `<!doctype html><html><head>${baseTag}${dummyStyle}</head><body>${html}</body></html>`;
     return normalizeAssetLinks(withBase);
-  }, [content, assetsBase, needsPaperStyle]);
+  }, [content, assetsBase, needsPaperStyle, useDummyData]);
 
   // const editorHtml = useMemo(() => {
   //   if (!content) return "";
@@ -194,6 +280,9 @@ const Templates = () => {
 
       // Construct the reset HTML with the Paper Shell logic
       let resetHtml = normalizeAssetLinks(fileContent);
+      if (useDummyData) {
+        resetHtml = applyDummyTemplateData(resetHtml);
+      }
 
       if (needsPaperStyle) {
         resetHtml = `
@@ -225,6 +314,11 @@ const Templates = () => {
       let nextContent = content;
 
       if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+        if (useDummyData) {
+          setError("Disable dummy data before saving from Visual editor.");
+          setSaving(false);
+          return;
+        }
         const doc = iframeRef.current.contentDocument;
 
         if (needsPaperStyle) {
@@ -240,9 +334,13 @@ const Templates = () => {
         nextContent = nextContent.replaceAll(assetsBase, "");
       }
 
-      await templateService.updateTemplate(selected, nextContent);
+      await templateService.updateTemplate(selected, nextContent, {
+        target: saveTarget === "default" ? "defaults" : undefined,
+      });
       if (viewMode !== "visual") setContent(nextContent);
-      setSuccess("Template saved.");
+      setSuccess(
+        saveTarget === "default" ? "Default template saved." : "Template saved.",
+      );
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
       setError("Failed to save template.");
@@ -260,12 +358,23 @@ const Templates = () => {
   const handleIframeLoad = () => {
     setTimeout(() => {
       const doc = iframeRef.current?.contentDocument;
-      if (doc) doc.designMode = "on";
+      if (doc) doc.designMode = useDummyData ? "off" : "on";
     }, 50);
   };
 
+  useEffect(() => {
+    if (viewMode !== "visual") return;
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    doc.designMode = useDummyData ? "off" : "on";
+  }, [useDummyData, viewMode, selected]);
+
   const handleOpenPreview = () => {
-    if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+    if (
+      viewMode === "visual" &&
+      !useDummyData &&
+      iframeRef.current?.contentDocument
+    ) {
       const doc = iframeRef.current.contentDocument;
       let live = doc.documentElement.outerHTML;
       live = live.replace(`<base href="${assetsBase}">`, "");
@@ -321,6 +430,15 @@ const Templates = () => {
                 HTML
               </button>
             </div>
+            <label className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md gap-2 ">
+              <input
+                type="checkbox"
+                className="h-3 w-3"
+                checked={useDummyData}
+                onChange={(e) => setUseDummyData(e.target.checked)}
+              />
+              View with Sample Data
+            </label>
             <button
               onClick={handleResetToDefault}
               disabled={!originalContent || saving}
@@ -335,13 +453,41 @@ const Templates = () => {
             >
               Preview
             </button>
-            <button
-              onClick={handleSave}
-              disabled={!selected || saving}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Template"}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setSaveMenuOpen((open) => !open)}
+                disabled={!selected || saving}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              {saveMenuOpen && !saving && (
+                <div className="absolute right-0 mt-1 w-44 rounded-md border border-gray-200 bg-white shadow-lg z-10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveTarget("template");
+                      setSaveMenuOpen(false);
+                      handleSave();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    Save Template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveTarget("default");
+                      setSaveMenuOpen(false);
+                      handleSave();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    Save as New Default
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -470,6 +616,12 @@ const Templates = () => {
                 <p className="text-[11px] text-gray-400 mt-1">
                   Editing the real template file from the backend.
                 </p>
+                {useDummyData && (
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    Dummy data is on. Visual editing is disabled while
+                    previewing placeholders.
+                  </p>
+                )}
               </div>
             ) : (
               <div>

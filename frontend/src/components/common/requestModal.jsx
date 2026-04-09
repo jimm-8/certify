@@ -72,6 +72,8 @@ const RequestModal = ({
   const [selectedCourseCodes, setSelectedCourseCodes] = useState([]);
   const [savingSelection, setSavingSelection] = useState(false);
   const [selectionTouched, setSelectionTouched] = useState(false);
+  const [courseYearFilter, setCourseYearFilter] = useState("");
+  const [courseSemesterFilter, setCourseSemesterFilter] = useState("");
   const [gradeSearch, setGradeSearch] = useState("");
   const [selectedGradeKeys, setSelectedGradeKeys] = useState([]);
   const [gradeSelectionTouched, setGradeSelectionTouched] = useState(false);
@@ -103,6 +105,8 @@ const RequestModal = ({
       setCourseSearch("");
       setSelectedCourseCodes([]);
       setSelectionTouched(false);
+      setCourseYearFilter("");
+      setCourseSemesterFilter("");
       setGradeSearch("");
       setSelectedGradeKeys([]);
       setGradeSelectionTouched(false);
@@ -210,6 +214,29 @@ const RequestModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearFilter, semesterFilter]);
 
+  useEffect(() => {
+    if (readOnly || !isCourseDescription || !request) return;
+    const codes = courseDescriptionOptions
+      .filter((row) => {
+        if (
+          courseYearFilter &&
+          String(row.year_level) !== String(courseYearFilter)
+        ) {
+          return false;
+        }
+        if (
+          courseSemesterFilter &&
+          String(row.semester) !== String(courseSemesterFilter)
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .map((row) => row.course_code);
+    setSelectedCourseCodes(codes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseYearFilter, courseSemesterFilter]);
+
   if (!request) return null;
 
   const status = request.status?.toUpperCase() ?? "PENDING";
@@ -234,6 +261,18 @@ const RequestModal = ({
 
   const filteredCourses = courseDescriptionOptions.filter((row) => {
     const query = courseSearch.trim().toLowerCase();
+    if (
+      courseYearFilter &&
+      String(row.year_level) !== String(courseYearFilter)
+    ) {
+      return false;
+    }
+    if (
+      courseSemesterFilter &&
+      String(row.semester) !== String(courseSemesterFilter)
+    ) {
+      return false;
+    }
     if (!query) return true;
     const haystack = [
       row.course_code,
@@ -638,6 +677,34 @@ const RequestModal = ({
                       </>
                     )}
                   </div>
+                  {!readOnly && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <select
+                        value={courseYearFilter}
+                        onChange={(e) => setCourseYearFilter(e.target.value)}
+                        className="text-xs px-2 py-1.5 border border-blue-200 rounded-md bg-white"
+                      >
+                        <option value="">All Year Levels</option>
+                        {yearLevels.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            {formatYearLevel(lvl)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={courseSemesterFilter}
+                        onChange={(e) => setCourseSemesterFilter(e.target.value)}
+                        className="text-xs px-2 py-1.5 border border-blue-200 rounded-md bg-white"
+                      >
+                        <option value="">All Semesters</option>
+                        {semesters.map((sem) => (
+                          <option key={sem} value={sem}>
+                            {sem}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-blue-100 bg-white">
                     {filteredCourses.length === 0 ? (
