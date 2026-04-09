@@ -101,6 +101,7 @@ class CertificateDependencyEngine:
             "student",
             "program",
             "campus",
+            "college",
             "student_courses",
             "enrollment",
             "academic_summary",

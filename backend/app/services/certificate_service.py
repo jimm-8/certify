@@ -74,6 +74,37 @@ def generate_certificate_pdf(
             suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
         return f"{n}{suffix}"
 
+    def _honorific_for_gender(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in {"male", "m"}:
+            return "Mr."
+        if normalized in {"female", "f"}:
+            return "Ms."
+        return "Mr./Ms."
+
+    def _extract_surname(full_name: str) -> str:
+        name = str(full_name or "").strip()
+        if not name:
+            return ""
+        if "," in name:
+            return name.split(",", 1)[0].strip()
+        tokens = [t for t in name.split() if t]
+        if len(tokens) >= 3 and tokens[-3].lower() == "de" and tokens[-2].lower() == "la":
+            return " ".join(tokens[-3:])
+        if len(tokens) >= 2 and tokens[-2].lower() in {
+            "de",
+            "del",
+            "dela",
+            "da",
+            "dos",
+            "das",
+            "di",
+            "van",
+            "von",
+        }:
+            return " ".join(tokens[-2:])
+        return tokens[-1] if tokens else ""
+
     resolved_key, dependencies = CertificateDependencyEngine.resolve_with_type_key(
         db=db,
         certificate_type=request.certificate_type_name,
@@ -108,6 +139,13 @@ def generate_certificate_pdf(
     month_text = now.strftime("%B")
 
     student_name = _format_student_name(student) or request.student_name
+    student_gender = (getattr(student, "gender", None) if student else None) or ""
+    student_honorific = _honorific_for_gender(student_gender)
+    student_surname = (
+        (getattr(student, "last_name", None) if student else None)
+        or _extract_surname(student_name)
+        or ""
+    )
     program_name = (program.name if program else None) or request.program
     college_name = (college.name if college else None) or ""
     campus_name = (campus.name if campus else None) or ""
@@ -226,6 +264,8 @@ def generate_certificate_pdf(
 
     data = {
         "student_name": student_name,
+        "student_honorific": student_honorific,
+        "student_surname": student_surname,
         "sr_code": student.sr_code if student else request.sr_code,
         "program": program_name,
         "program_name": program_name,
