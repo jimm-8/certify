@@ -2,7 +2,17 @@ import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
-import { BsSearch, BsCalendar3, BsChevronDown } from "react-icons/bs";
+import {
+  BsSearch,
+  BsCalendar3,
+  BsChevronDown,
+  BsExclamationTriangleFill,
+  BsArrowUpRight,
+  BsCheckCircleFill,
+  BsArrowRepeat,
+  BsEnvelopeArrowUp,
+  BsEye,
+} from "react-icons/bs";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -69,22 +79,80 @@ const Checking = () => {
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkApproveLoading, setBulkApproveLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [validationMap, setValidationMap] = useState({});
+  const [validationLoading, setValidationLoading] = useState(false);
+  const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
+  const [emailLoading, setEmailLoading] = useState({});
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
 
   const isCourseDescriptionType = (name) =>
-    String(name || "").toLowerCase().includes("course description");
+    String(name || "")
+      .toLowerCase()
+      .includes("course description");
   const isGradesType = (name) =>
-    String(name || "").toLowerCase().includes("grades");
+    String(name || "")
+      .toLowerCase()
+      .includes("grades");
   const requiresCourseSelection = (name) =>
     isCourseDescriptionType(name) || isGradesType(name);
+
+  const getValidationFlags = (req) => {
+    const flags = [];
+    const backend = validationMap?.[req?.id] || {};
+    const merged = [].concat(backend.flags || []);
+
+    merged.filter(Boolean).forEach((f) => {
+      if (typeof f === "string") flags.push(f);
+    });
+
+    if (!req?.student_name) flags.push("Missing student name.");
+    if (!req?.program) flags.push("Missing program.");
+    if (!req?.certificate_type_name) flags.push("Missing certificate type.");
+    if (!req?.created_at) flags.push("Missing request date.");
+    if (!req?.requestor_name) flags.push("Missing requestor name.");
+
+    const email = req?.requestor_email || req?.email;
+    if (!email) {
+      flags.push("Missing requestor email.");
+    } else {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email));
+      if (!emailOk) flags.push("Invalid requestor email.");
+    }
+
+    return Array.from(new Set(flags));
+  };
 
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
       const all = Array.isArray(data) ? data : data.items || [];
-      setRequests(all.filter((r) => r.status === "APPROVED"));
+      const approved = all.filter((r) => r.status === "APPROVED");
+      setRequests(approved);
+      if (approved.length) {
+        setValidationLoading(true);
+        try {
+          const res = await requestService.validateRequests(
+            approved.map((r) => r.id),
+          );
+          const results = res?.results || [];
+          const map = results.reduce((acc, row) => {
+            acc[row.request_id] = {
+              exists: row.exists,
+              flags: row.flags || [],
+            };
+            return acc;
+          }, {});
+          setValidationMap(map);
+        } catch (error) {
+          console.error("Validation failed:", error);
+        } finally {
+          setValidationLoading(false);
+        }
+      } else {
+        setValidationMap({});
+      }
       setLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -139,7 +207,15 @@ const Checking = () => {
     const matchesProgram = selectedProgram
       ? r.program === selectedProgram
       : true;
-    return matchesSearch && matchesDate && matchesType && matchesProgram;
+    const flags = getValidationFlags(r);
+    const matchesFlagged = showOnlyFlagged ? flags.length > 0 : true;
+    return (
+      matchesSearch &&
+      matchesDate &&
+      matchesType &&
+      matchesProgram &&
+      matchesFlagged
+    );
   });
 
   const lastUpdatedLabel = lastUpdatedAt
@@ -195,6 +271,58 @@ const Checking = () => {
     }
   };
 
+  const handleModalDecline = async (req, notes) => {
+    if (!req) return;
+    setModalLoading(true);
+    try {
+      await requestService.updateStatus(
+        req.id,
+        "REJECTED",
+        notes || "Request rejected during validation.",
+      );
+      setSelectedRequest({ ...req, status: "REJECTED" });
+      fetchRequests();
+    } catch (error) {
+      console.error("Failed to reject request:", error);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleRejectAndSend = async (req, notes) => {
+    if (!req) return;
+    setModalLoading(true);
+    setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
+    try {
+      const finalNotes = notes || "Request rejected during validation.";
+      await requestService.updateStatus(req.id, "REJECTED", finalNotes);
+      await requestService.sendRejectionEmail(req.id, finalNotes);
+      setSelectedRequest({ ...req, status: "REJECTED" });
+      fetchRequests();
+      alert("Rejection email sent.");
+    } catch (error) {
+      console.error("Failed to reject request:", error);
+      alert("Failed to send rejection email.");
+    } finally {
+      setModalLoading(false);
+      setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
+    }
+  };
+
+  const handleSendRejectionEmail = async (req, notes) => {
+    if (!req) return;
+    setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
+    try {
+      await requestService.sendRejectionEmail(req.id, notes || "");
+      alert("Rejection email sent.");
+    } catch (error) {
+      console.error("Failed to send rejection email:", error);
+      alert("Failed to send rejection email.");
+    } finally {
+      setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
+    }
+  };
+
   const handleBulkApprove = async () => {
     if (
       filteredRequests.some((r) =>
@@ -224,7 +352,37 @@ const Checking = () => {
 
   const columns = [
     {
-      name: "SR Code",
+      name: "Validation",
+      selector: (row) => getValidationFlags(row).length,
+      sortable: true,
+      width: "170px",
+      cell: (row) => {
+        if (validationLoading && !validationMap?.[row.id]) {
+          return (
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+              <span>Checking...</span>
+            </div>
+          );
+        }
+        const flags = getValidationFlags(row);
+        const needsReview = flags.length > 0;
+        return needsReview ? (
+          <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold">
+            <BsExclamationTriangleFill size={12} />
+            <span>Needs Review</span>
+            <BsArrowUpRight size={12} />
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
+            <BsCheckCircleFill size={12} />
+            <span>Clear</span>
+          </div>
+        );
+      },
+    },
+    {
+      name: "Reference #",
       selector: (row) => row.reference_number || row.sr_code || "-",
       sortable: true,
       cell: (row) => row.reference_number || row.sr_code || "-",
@@ -260,19 +418,23 @@ const Checking = () => {
             disabled={actionLoading[`advance_${row.id}`]}
             className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors disabled:opacity-50"
           >
-            {actionLoading[`advance_${row.id}`] ? "..." : "Process"}
+            {actionLoading[`advance_${row.id}`] ? (
+              "..."
+            ) : (
+              <BsArrowRepeat size={18} />
+            )}
           </button>
           <button
             onClick={() => handleEmail(row)}
             className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
           >
-            Email
+            <BsEnvelopeArrowUp size={18} />
           </button>
           <button
             onClick={() => setSelectedRequest(row)}
             className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
           >
-            View
+            <BsEye size={18} />
           </button>
         </div>
       ),
@@ -301,18 +463,19 @@ const Checking = () => {
             )}
             Process All
           </button>
-          {filteredRequests.some((r) =>
-            requiresCourseSelection(r.certificate_type_name),
-          ) && (
-            <span className="text-[11px] text-gray-400">
-              Course Description and Certification of Grades require selecting
-              courses individually.
-            </span>
-          )}
         </div>
 
         {/* RIGHT — Filters */}
         <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-[11px] text-gray-600 border border-gray-300 rounded-md px-3 py-1.5 bg-white">
+            <input
+              type="checkbox"
+              className="h-3 w-3"
+              checked={showOnlyFlagged}
+              onChange={(e) => setShowOnlyFlagged(e.target.checked)}
+            />
+            Show only flagged
+          </label>
           <select
             value={selectedProgram}
             onChange={(e) => {
@@ -397,6 +560,22 @@ const Checking = () => {
         </div>
       </div>
 
+      {/* Validation Summary */}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[11px] text-gray-500">
+          Auto-validation flags missing or inconsistent data for registrar
+          review.
+        </div>
+        <div className="flex items-center gap-3 text-[11px]">
+          <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+            <BsCheckCircleFill size={11} /> Clear
+          </span>
+          <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
+            <BsExclamationTriangleFill size={11} /> Needs Review
+          </span>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
         <DataTable
@@ -424,7 +603,16 @@ const Checking = () => {
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
         onApprove={handleModalApprove}
+        onDecline={handleModalDecline}
+        onRejectAndSend={handleRejectAndSend}
+        onSendRejectionEmail={handleSendRejectionEmail}
         loading={modalLoading}
+        rejectionEmailLoading={
+          selectedRequest ? emailLoading[`reject_${selectedRequest.id}`] : false
+        }
+        validationFlags={
+          selectedRequest ? getValidationFlags(selectedRequest) : []
+        }
       />
     </div>
   );

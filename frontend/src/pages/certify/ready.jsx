@@ -303,6 +303,12 @@ const Ready = () => {
       sortable: true,
     },
     {
+      name: "OR #",
+      selector: (row) => row.or_number,
+      sortable: true,
+      cell: (row) => row.or_number || "—",
+    },
+    {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,

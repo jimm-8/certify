@@ -11,6 +11,8 @@ import {
   BsBookFill,
   BsClock,
   BsHash,
+  BsExclamationTriangleFill,
+  BsCheckCircleFill,
 } from "react-icons/bs";
 
 const statusConfig = {
@@ -35,6 +37,7 @@ const statusConfig = {
     ring: "ring-purple-200",
   },
   RELEASED: { bg: "bg-gray-100", text: "text-gray-600", ring: "ring-gray-200" },
+  REJECTED: { bg: "bg-red-50", text: "text-red-700", ring: "ring-red-200" },
 };
 
 const DetailRow = ({ icon: Icon, label, value }) => (
@@ -57,14 +60,18 @@ const RequestModal = ({
   request,
   onClose,
   onApprove,
-  onDecline,
+  onRejectAndSend,
   loading = false,
   readOnly = false,
+  validationFlags = [],
+  onSendRejectionEmail,
+  rejectionEmailLoading = false,
 }) => {
   const overlayRef = useRef(null);
   const [showDeclineInput, setShowDeclineInput] = useState(false);
   const [declineNotes, setDeclineNotes] = useState("");
   const [notes, setNotes] = useState([]);
+  const [rejectionEmailNotes, setRejectionEmailNotes] = useState("");
   const [courseOptions, setCourseOptions] = useState([]);
   const [courseLoading, setCourseLoading] = useState(false);
   const [courseError, setCourseError] = useState("");
@@ -100,6 +107,7 @@ const RequestModal = ({
       setShowDeclineInput(false);
       setDeclineNotes("");
       setNotes([]);
+      setRejectionEmailNotes("");
       setCourseOptions([]);
       setCourseError("");
       setCourseSearch("");
@@ -115,12 +123,20 @@ const RequestModal = ({
       return;
     }
     if (request.status === "REJECTED") {
+      setShowDeclineInput(false);
       requestService
         .getRequestNotes(request.id)
         .then(setNotes)
         .catch(() => setNotes([]));
     }
   }, [request]);
+
+  useEffect(() => {
+    if (!request) return;
+    if (request.status !== "REJECTED") return;
+    const latest = notes.length ? notes[0]?.note : "";
+    setRejectionEmailNotes(latest || "");
+  }, [request, notes]);
 
   useEffect(() => {
     if (!request || (!isCourseDescription && !isCertificationOfGrades)) return;
@@ -137,7 +153,9 @@ const RequestModal = ({
     };
 
     if (isCourseDescription) {
-      setSelectedCourseCodes(parseSelection(request.course_description_selection));
+      setSelectedCourseCodes(
+        parseSelection(request.course_description_selection),
+      );
       setSelectionTouched(false);
     }
     if (isCertificationOfGrades) {
@@ -165,10 +183,10 @@ const RequestModal = ({
 
   const handleDeclineClick = () => {
     if (!showDeclineInput) {
-      setShowDeclineInput(true); // first click: show input
-    } else {
-      onDecline?.(request, declineNotes); // second click: confirm
+      setShowDeclineInput(true);
+      return;
     }
+    setShowDeclineInput(false);
   };
 
   /* lock body scroll while open */
@@ -243,6 +261,90 @@ const RequestModal = ({
   const sc = statusConfig[status] ?? statusConfig.PENDING;
   const canAct =
     status === "PENDING" || status === "PROCESSING" || status === "APPROVED";
+  const isRejected = status === "REJECTED";
+  const normalizedValidation = Array.isArray(validationFlags)
+    ? validationFlags
+    : [];
+  const hasValidationFlags = normalizedValidation.length > 0;
+
+  const buildSuggestedNotes = (flags) => {
+    const suggestions = [];
+    const pushUnique = (text) => {
+      if (!text) return;
+      if (!suggestions.includes(text)) suggestions.push(text);
+    };
+
+    flags.forEach((flag) => {
+      const lower = String(flag).toLowerCase();
+      if (lower.includes("invalid input detected in")) {
+        const label = String(flag)
+          .replace(/invalid input detected in\s*/i, "")
+          .replace(/\.$/, "")
+          .trim()
+          .toLowerCase();
+        const pretty = label.length > 0 ? label : "the provided fields";
+        pushUnique(
+          `Please provide valid ${pretty} (avoid random characters or unsafe symbols).`,
+        );
+        return;
+      }
+      if (lower.includes("missing sr code")) {
+        pushUnique("SR code is missing. Please provide a valid SR code.");
+        return;
+      }
+      if (lower.includes("student record not found")) {
+        pushUnique(
+          "Student record not found in the registry. Please verify the SR code and student details.",
+        );
+        return;
+      }
+      if (lower.includes("student name does not match")) {
+        pushUnique(
+          "Student name does not match the registry. Please correct the student name.",
+        );
+        return;
+      }
+      if (lower.includes("program does not match")) {
+        pushUnique(
+          "Program does not match the registry. Please correct the program information.",
+        );
+        return;
+      }
+      if (lower.includes("campus could not be verified")) {
+        pushUnique(
+          "Campus could not be verified. Please confirm the campus details.",
+        );
+        return;
+      }
+      if (lower.includes("year graduated must be a 4-digit year")) {
+        pushUnique(
+          "Year graduated must be a 4-digit year (e.g., 2024). Please correct it.",
+        );
+        return;
+      }
+      if (lower.includes("graduation year is 2022 or below")) {
+        pushUnique(
+          "Graduation year is 2022 or below. Please verify the graduation year.",
+        );
+        return;
+      }
+      if (lower.includes("student is not yet graduated")) {
+        pushUnique(
+          "Student is not yet graduated. Request cannot be processed until graduation is confirmed.",
+        );
+        return;
+      }
+    });
+
+    if (!suggestions.length && flags.length) {
+      pushUnique(
+        "Please review the flagged details and resubmit with corrected information.",
+      );
+    }
+    return suggestions;
+  };
+
+  const suggestedNotes = buildSuggestedNotes(normalizedValidation);
 
   const handleOverlayClick = (e) => {
     if (e.target === overlayRef.current) onClose?.();
@@ -274,12 +376,7 @@ const RequestModal = ({
       return false;
     }
     if (!query) return true;
-    const haystack = [
-      row.course_code,
-      row.course_title,
-      row.grade,
-      row.units,
-    ]
+    const haystack = [row.course_code, row.course_title, row.grade, row.units]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -347,6 +444,17 @@ const RequestModal = ({
   const handleClearAllGrades = () => {
     setGradeSelectionTouched(true);
     setSelectedGradeKeys([]);
+  };
+
+  const appendDeclineNote = (text) => {
+    if (!text) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setDeclineNotes((prev) => {
+      if (!prev) return trimmed;
+      if (prev.includes(trimmed)) return prev;
+      return `${prev}\n${trimmed}`;
+    });
   };
 
   const handleSelectByFilter = () => {
@@ -464,7 +572,7 @@ const RequestModal = ({
     >
       {/* ── Panel ── */}
       <div
-        className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+        className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200 overflow-auto"
         style={{ animation: "slideUp 200ms ease" }}
       >
         {/* ── Header ── */}
@@ -498,6 +606,35 @@ const RequestModal = ({
 
         {/* ── Body ── */}
         <div className="px-6 py-2 max-h-[60vh] overflow-y-auto">
+        <div className="mt-2 rounded-md border border-amber-100 bg-amber-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] uppercase tracking-widest text-amber-500 font-semibold">
+              Validation Status
+            </p>
+            {hasValidationFlags ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700">
+                <BsExclamationTriangleFill size={11} /> Needs Review
+              </span>
+            ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                  <BsCheckCircleFill size={11} /> Clear
+                </span>
+              )}
+            </div>
+            <div className="mt-2 text-xs text-amber-700">
+              {hasValidationFlags ? (
+                <ul className="list-disc pl-4 space-y-1">
+                  {normalizedValidation.map((flag, idx) => (
+                    <li key={`${flag}-${idx}`}>{flag}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-emerald-700">
+                  No anomalies detected from the automatic checks.
+                </p>
+              )}
+            </div>
+          </div>
           <DetailRow
             icon={BsHash}
             label="Reference No."
@@ -594,6 +731,7 @@ const RequestModal = ({
               )
             }
           />
+
           {request.status === "REJECTED" && (
             <div className="mt-2 rounded-md border border-red-100 bg-red-50 px-4 py-3">
               <p className="text-[10px] uppercase tracking-widest text-red-400 font-semibold mb-2">
@@ -693,7 +831,9 @@ const RequestModal = ({
                       </select>
                       <select
                         value={courseSemesterFilter}
-                        onChange={(e) => setCourseSemesterFilter(e.target.value)}
+                        onChange={(e) =>
+                          setCourseSemesterFilter(e.target.value)
+                        }
                         className="text-xs px-2 py-1.5 border border-blue-200 rounded-md bg-white"
                       >
                         <option value="">All Semesters</option>
@@ -917,26 +1057,58 @@ const RequestModal = ({
               )}
             </div>
           )}
+
+          {showDeclineInput && (
+            <div className="mb-3 mt-3">
+              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1.5">
+                Reason for Rejection <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                {suggestedNotes.length > 0 && (
+                  <div className="absolute left-2 top-2 right-2 flex flex-wrap gap-2 max-h-16 overflow-y-auto pr-1 z-10 pointer-events-none">
+                    {suggestedNotes.map((note, idx) => (
+                      <button
+                        key={`${note}-${idx}`}
+                        type="button"
+                        onClick={() => appendDeclineNote(note)}
+                        className="pointer-events-auto text-[11px] px-2 py-1 rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                      >
+                        {note}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <textarea
+                  rows={5}
+                  value={declineNotes}
+                  onChange={(e) => setDeclineNotes(e.target.value)}
+                  placeholder="Enter the reason for rejecting this request. This will be included in the email sent to the student."
+                  className="w-full text-xs text-gray-700 border border-gray-300 rounded-md px-3 pt-12 pb-2 focus:outline-none focus:ring-1 focus:ring-red-300 focus:border-red-400 resize-none placeholder:text-gray-400 overflow-y-auto"
+                />
+              </div>
+            </div>
+          )}
+
+          {isRejected && !readOnly && (
+            <div className="mb-3">
+              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1.5">
+                Rejection Email Note
+              </label>
+              <textarea
+                rows={3}
+                value={rejectionEmailNotes}
+                onChange={(e) => setRejectionEmailNotes(e.target.value)}
+                placeholder="Optional message to include in the rejection email."
+                className="w-full text-xs text-gray-700 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-300 focus:border-red-400 resize-none placeholder:text-gray-400"
+              />
+            </div>
+          )}
         </div>
 
         {/* ── Footer ── */}
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
           {/* Decline notes input — shown after clicking Decline */}
-          {showDeclineInput && (
-            <div className="mb-3">
-              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1.5">
-                Reason for Rejection <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                value={declineNotes}
-                onChange={(e) => setDeclineNotes(e.target.value)}
-                placeholder="Enter the reason for rejecting this request. This will be included in the email sent to the student."
-                className="w-full text-xs text-gray-700 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-300 focus:border-red-400 resize-none placeholder:text-gray-400"
-              />
-            </div>
-          )}
 
           <div className="flex items-center justify-end gap-2">
             <button
@@ -951,20 +1123,42 @@ const RequestModal = ({
               Close
             </button>
 
+            {isRejected && !readOnly && (
+              <button
+                onClick={() =>
+                  onSendRejectionEmail?.(request, rejectionEmailNotes)
+                }
+                disabled={
+                  loading || rejectionEmailLoading || !request?.requestor_email
+                }
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {rejectionEmailLoading ? "..." : "Send Rejection Email"}
+              </button>
+            )}
+
             {canAct && !readOnly && (
               <>
                 <button
                   onClick={handleDeclineClick}
-                  disabled={
-                    loading || (showDeclineInput && !declineNotes.trim())
-                  }
+                  disabled={loading}
                   className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
                 >
                   <BsXCircle size={13} />
-                  {showDeclineInput ? "Confirm Rejection" : "Decline"}
+                  {showDeclineInput ? "Cancel" : "Decline"}
                 </button>
 
-                {!showDeclineInput && (
+                {showDeclineInput ? (
+                  <button
+                    onClick={() => onRejectAndSend?.(request, declineNotes)}
+                    disabled={
+                      loading || rejectionEmailLoading || !declineNotes.trim()
+                    }
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-red-600 border border-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {rejectionEmailLoading ? "..." : "Send Rejection Email"}
+                  </button>
+                ) : (
                   <button
                     onClick={handleApproveClick}
                     disabled={

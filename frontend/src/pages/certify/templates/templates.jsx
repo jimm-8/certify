@@ -339,7 +339,9 @@ const Templates = () => {
       });
       if (viewMode !== "visual") setContent(nextContent);
       setSuccess(
-        saveTarget === "default" ? "Default template saved." : "Template saved.",
+        saveTarget === "default"
+          ? "Default template saved."
+          : "Template saved.",
       );
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
@@ -613,15 +615,18 @@ const Templates = () => {
                   onLoad={handleIframeLoad}
                   className="w-full h-[720px] border border-gray-300 rounded-md mt-2 bg-white"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Editing the real template file from the backend.
-                </p>
-                {useDummyData && (
-                  <p className="text-[11px] text-amber-600 mt-1">
-                    Dummy data is on. Visual editing is disabled while
-                    previewing placeholders.
+                <div className="flex justify-between items-center">
+                  <p className="text-[11px] text-gray-400">
+                    Editing the real template file from the backend.
                   </p>
-                )}
+
+                  {useDummyData && (
+                    <p className="text-[11px] text-amber-600">
+                      Dummy data is on. Visual editing is disabled while
+                      previewing placeholders.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               <div>

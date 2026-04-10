@@ -8,6 +8,7 @@ class RequestStatusEnum(str, Enum):
     SUBMITTED = "SUBMITTED"
     PENDING = "PENDING"
     APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
     RELEASED = "RELEASED"
@@ -148,6 +149,24 @@ class CertificateRequestDetail(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class RequestsValidationRequest(BaseModel):
+    request_ids: list[int] = Field(default_factory=list)
+
+
+class RequestValidationResult(BaseModel):
+    request_id: int
+    exists: bool = False
+    flags: list[str] = Field(default_factory=list)
+
+
+class RequestsValidationResponse(BaseModel):
+    results: list[RequestValidationResult] = Field(default_factory=list)
+
+
+class RejectionEmailRequest(BaseModel):
+    notes: Optional[str] = None
 
 # Schema for updating request status
 class StatusUpdateRequest(BaseModel):

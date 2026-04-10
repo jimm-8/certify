@@ -30,10 +30,14 @@ from app.repositories import (
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
-    RequestStatus.SUBMITTED: [RequestStatus.APPROVED, RequestStatus.PENDING],
-    RequestStatus.PENDING: [RequestStatus.APPROVED],
-    RequestStatus.APPROVED: [RequestStatus.PROCESSING],
-    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING],
+    RequestStatus.SUBMITTED: [
+        RequestStatus.APPROVED,
+        RequestStatus.PENDING,
+        RequestStatus.REJECTED,
+    ],
+    RequestStatus.PENDING: [RequestStatus.APPROVED, RequestStatus.REJECTED],
+    RequestStatus.APPROVED: [RequestStatus.PROCESSING, RequestStatus.REJECTED],
+    RequestStatus.PROCESSING: [RequestStatus.FOR_RELEASING, RequestStatus.REJECTED],
     RequestStatus.FOR_RELEASING: [RequestStatus.RELEASED],
     RequestStatus.RELEASED: [],  # Final state
 }

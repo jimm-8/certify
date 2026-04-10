@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.services.email_service import EmailService
 from sqlalchemy.orm import Session
 from typing import Optional
+import re
 import random
 from datetime import datetime
 import base64
@@ -17,6 +18,7 @@ from app.repositories import (
     AuditLogRepository,
     CertificateRequestRepository,
     CertificateTypeRepository,
+    GraduationRecordRepository,
     ProgramRepository,
     StudentRepository,
 )
@@ -27,6 +29,9 @@ from app.schemas.certificate_request import (
     CertificateRequestDetail,
     CourseDescriptionSelectionUpdate,
     GradeSelectionUpdate,
+    RequestsValidationRequest,
+    RequestsValidationResponse,
+    RejectionEmailRequest,
 )
 
 from app.services.request_service import (
@@ -282,6 +287,156 @@ def get_all_requests(
 
     requests = query.order_by(CertificateRequest.created_at.desc()).offset(skip).limit(limit).all()
     return requests
+
+# Endpoint: Validate requests against registry
+@router.post("/validate", response_model=RequestsValidationResponse)
+def validate_requests(
+    payload: RequestsValidationRequest,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.read")),
+):
+    request_repo = CertificateRequestRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+    graduation_repo = GraduationRecordRepository(db)
+
+    def normalize_name(name: Optional[str]) -> str:
+        if not name:
+            return ""
+        cleaned = " ".join(str(name).replace(",", " ").split())
+        return cleaned.strip().lower()
+
+    def tokenize_name(name: Optional[str]) -> list[str]:
+        if not name:
+            return []
+        # Split into letter-only tokens, so "De la Cruz" -> ["de", "la", "cruz"]
+        return [tok.lower() for tok in re.findall(r"[A-Za-z]+", str(name))]
+
+    def is_invalid_text(value: Optional[str]) -> bool:
+        if value is None:
+            return False
+        text = str(value).strip()
+        if not text:
+            return False
+
+        # Disallow obviously unsafe/suspicious characters
+        if re.search(r"[<>`{}\[\]|\\]", text):
+            return True
+
+        # Allow common characters across fields; flag anything outside this set
+        if re.search(r"[^A-Za-z0-9 .,'\-/#@&()_+:?/]", text):
+            return True
+
+        # Flag gibberish like "sdgsdg" (long alpha-only with no vowels)
+        alpha_only = re.sub(r"[^A-Za-z]", "", text)
+        if len(alpha_only) >= 6:
+            vowel_count = sum(1 for c in alpha_only.lower() if c in "aeiou")
+            if vowel_count == 0:
+                return True
+
+        return False
+
+    def add_invalid_flags(request_obj: CertificateRequest, flags_list: list[str]) -> None:
+        fields = [
+            ("requestor_name", "Requestor name"),
+            ("requestor_address", "Requestor address"),
+            ("requestor_relationship", "Requestor relationship"),
+            ("requestor_contact", "Requestor contact"),
+            ("requestor_email", "Requestor email"),
+            ("purpose", "Purpose"),
+            ("sr_code", "SR code"),
+            ("student_name", "Student name"),
+            ("program", "Program"),
+            ("major", "Major"),
+            ("year_graduated", "Year graduated"),
+        ]
+        for attr, label in fields:
+            if is_invalid_text(getattr(request_obj, attr, None)):
+                flags_list.append(f"Invalid input detected in {label}.")
+
+    results = []
+    for request_id in payload.request_ids:
+        flags = []
+        request = request_repo.get_by_id(request_id)
+        if not request:
+            results.append(
+                {
+                    "request_id": request_id,
+                    "exists": False,
+                    "flags": ["Request not found."],
+                }
+            )
+            continue
+
+        add_invalid_flags(request, flags)
+
+        sr_code = (request.sr_code or "").strip()
+        if not sr_code:
+            flags.append("Missing SR code.")
+
+        student = student_repo.get_by_sr_code(sr_code) if sr_code else None
+        if not student:
+            flags.append("Student record not found in registry.")
+        else:
+            req_name = normalize_name(request.student_name)
+            student_name = normalize_name(
+                f"{student.first_name or ''} {student.middle_name or ''} {student.last_name or ''}"
+            )
+            if req_name and student_name:
+                req_tokens = set(tokenize_name(request.student_name))
+                student_tokens = (
+                    tokenize_name(student.first_name)
+                    + tokenize_name(student.middle_name)
+                    + tokenize_name(student.last_name)
+                )
+                matches = sum(1 for tok in set(student_tokens) if tok in req_tokens)
+                if matches < 2:
+                    flags.append("Student name does not match registry.")
+
+            if request.program and student.program and student.program.name:
+                if normalize_name(request.program) != normalize_name(
+                    student.program.name
+                ):
+                    flags.append("Program does not match registry.")
+
+        campus = None
+        if student is not None:
+            campus = student.campus or (student.program.campus if student.program else None)
+        if campus is None and request.program:
+            program = program_repo.get_by_name(request.program)
+            campus = program.campus if program else None
+
+        if campus is None:
+            flags.append("Campus could not be verified.")
+
+        # Graduation year validation
+        if request.year_graduated:
+            year_text = str(request.year_graduated).strip()
+            if not re.fullmatch(r"\d{4}", year_text):
+                flags.append("Year graduated must be a 4-digit year.")
+            else:
+                year_value = int(year_text)
+                if year_value <= 2022:
+                    flags.append("Graduation year is 2022 or below.")
+
+                grad_record = None
+                if sr_code:
+                    grad_record = graduation_repo.get_by_sr_code(sr_code)
+                if grad_record is None and request.student_name:
+                    grad_record = graduation_repo.get_by_student_name(
+                        request.student_name
+                    )
+                if grad_record is not None and not grad_record.is_graduated:
+                    flags.append("Student is not yet graduated.")
+
+        results.append(
+            {
+                "request_id": request.id,
+                "exists": student is not None,
+                "flags": flags,
+            }
+        )
+    return {"results": results}
 
 # Endpoint 4: Get single request details
 @router.get("/{request_id}", response_model=CertificateRequestDetail)
@@ -580,6 +735,53 @@ async def send_ready_email(
     db.commit()
     db.refresh(request)
     return {"message": "Ready-for-release email sent."}
+
+# Endpoint: Send rejection email manually
+@router.post("/{request_id}/send-rejection-email")
+async def send_rejection_email(
+    request_id: int,
+    payload: RejectionEmailRequest,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+
+    campus_email = None
+    campus_telNo = None
+    student = None
+    if request.sr_code:
+        student = student_repo.get_by_sr_code(request.sr_code)
+    campus = None
+    if student is not None:
+        campus = student.campus or (student.program.campus if student.program else None)
+    if campus is None and request.program:
+        program = program_repo.get_by_name(request.program)
+        campus = program.campus if program else None
+    if campus is not None:
+        campus_email = campus.campus_email
+        campus_telNo = campus.campus_telNo
+
+    email_service = EmailService()
+    await email_service.send_rejection_notice(
+        to_email=request.requestor_email,
+        reference_number=request.reference_number,
+        requestor_name=request.requestor_name,
+        student_name=request.student_name,
+        certificate_type=request.certificate_type_name,
+        notes=payload.notes,
+        campus_email=campus_email,
+        campus_telNo=campus_telNo,
+    )
+    return {"message": "Rejection email sent."}
 
 # Endpoint: Save course description selection for a request
 @router.patch("/{request_id}/course-description-selection", response_model=CertificateRequestDetail)

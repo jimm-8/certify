@@ -196,6 +196,32 @@ const requestService = {
       throw error;
     }
   },
+  // send rejection email
+  sendRejectionEmail: async (requestId, notes = "") => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-rejection-email`,
+        { notes },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending rejection email:", error);
+      throw error;
+    }
+  },
+
+  // validate requests against registry
+  validateRequests: async (requestIds = []) => {
+    try {
+      const response = await api.post(`/requests/validate`, {
+        request_ids: requestIds,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error validating requests:", error);
+      throw error;
+    }
+  },
 
   getPrograms: async (campus = null) => {
     try {
