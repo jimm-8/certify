@@ -11,6 +11,9 @@ from app.schemas.payment import (
     PaymentResponse,
     PaymentLookupResponse,
     PaymentByReferenceCreate,
+    PaymentReferencesRequest,
+    PaymentInfo,
+    PaymentInfoListResponse,
 )
 from app.services.request_service import generate_or_number, update_request_status
 from app.repositories import CertificateRequestRepository, PaymentRepository
@@ -70,6 +73,32 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
             "Auto-marked for releasing after payment",
         )
     return payment
+
+
+@router.get("/unpaid-requests")
+def list_unpaid_requests(
+    skip: int = 0,
+    limit: int = 200,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("payments.read")),
+):
+    request_repo = CertificateRequestRepository(db)
+    payment_repo = PaymentRepository(db)
+
+    requests = (
+        request_repo.query()
+        .order_by(CertificateRequest.created_at.desc())
+        .all()
+    )
+    unpaid = []
+    for req in requests:
+        if not req.reference_number:
+            continue
+        payment = payment_repo.get_by_reference(req.reference_number)
+        if not payment:
+            unpaid.append(req)
+
+    return unpaid[skip : skip + limit]
 
 
 @router.get("/lookup", response_model=PaymentLookupResponse)
@@ -152,3 +181,27 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
             "Auto-marked for releasing after payment",
         )
     return payment
+
+
+@router.post("/by-references", response_model=PaymentInfoListResponse)
+def list_payments_by_references(
+    payload: PaymentReferencesRequest,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("payments.read")),
+):
+    payment_repo = PaymentRepository(db)
+    items = []
+    for ref in payload.reference_numbers or []:
+        if not ref:
+            continue
+        payment = payment_repo.get_by_reference(ref)
+        if payment:
+            items.append(
+                PaymentInfo(
+                    reference_number=ref,
+                    amount=float(payment.amount) if payment.amount is not None else None,
+                    payment_status=payment.payment_status,
+                    paid_at=payment.paid_at,
+                )
+            )
+    return PaymentInfoListResponse(items=items)

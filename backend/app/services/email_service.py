@@ -149,7 +149,7 @@ class EmailService:
 
             <div class="content">
             <p>Dear {requestor_name},</p>
-            <p>Your certificate request for {student_name} has been successfully submitted. Please review your request
+            <p>Your certificate request for {student_name} has been successfully transfered to Certify and is now being processed. Please review your request
                 details below and follow the instructions to complete your payment.</p>
 
             <div class="request-card">
@@ -165,11 +165,20 @@ class EmailService:
             <div class="request-card">
                 <div class="card-header">Payment Instructions</div>
                 <div class="card-content">
-                <p style="text-align: center;">You will pay a total of <strong>Php {payment_amount}</strong>.</p>
-                <p>Step 1: Proceed to the Cashier's Office and state your purpose.</p>
-                <p>Step 2: Provide your <strong>Reference Number</strong> to the cashier so it can be recorded as the purpose
-                    of payment.</p>
-                <p>Step 3: Wait for an email confirmation notifying you that your certificate is ready for pickup.</p>
+                    <p style="text-align: center;">
+                        The total amount is computed as follows:
+                        <br>
+                        <strong>₱30.00 per page + ₱30.00 Documentary Stamp Tax (DST) per page</strong>
+                    </p>
+
+                    <p style="text-align: center;">
+                        You will pay a total of <strong>Php {payment_amount}</strong>.
+                    </p>
+
+                    <p>Step 1: Proceed to the Cashier's Office and inform the cashier that your payment is for <strong>“Certify Request”</strong>.</p>
+                    <p>Step 2: Provide your <strong>Reference Number</strong> so the cashier can locate your request in the Certify system.</p>
+                    <p>Step 3: Once payment is confirmed, your request will be automatically processed and queued for printing.</p>
+                    <p>Step 4: Wait for an email confirmation notifying you that your certificate is ready for pickup.<p>
                 </div>
             </div>
 
@@ -197,7 +206,7 @@ class EmailService:
 
             <div class="footer">
             <p>This is an automated email. Please do not reply.<br>
-                © 2024 Certify System. All rights reserved.</p>
+                © 2026 Certify System. All rights reserved.</p>
             </div>
         </div>
 
@@ -330,6 +339,115 @@ class EmailService:
             return True
         except Exception as e:
             print(f"❌ Failed to send email: {e}")
+            return False
+
+    async def send_rejection_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        notes: str | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+    ):
+        subject = f"Certificate Request Rejected - {reference_number}"
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        note_block = notes or "No additional details provided."
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7f9; margin: 0; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #DE1B1B; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }}
+                .header {{ background-color: #DE1B1B; color: white; padding: 10px; text-align: center; font-size: 14pt; }}
+                .content {{ padding: 10px 30px; font-size: 10pt; text-align: justify; }}
+                .request-card {{ width: 100%; border: 1px solid #373737; border-radius: 8px; overflow: hidden; margin: 20px 0; }}
+                .card-header {{ background-color: #373737; padding: 5px 16px; font-weight: bold; border-bottom: 1px solid #373737; color: #fff; }}
+                .card-content {{ padding: 5px 16px; background-color: #ffffff; }}
+                .card-content p {{ margin: 5px 0; font-size: 10pt; }}
+                .footer {{ text-align: center; font-size: 0.8rem; color: #777; padding: 10px; border-top: 1px solid #eee; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header"><strong>Request Rejected</strong></div>
+                <div class="content">
+                    <p>Dear {safe_requestor_name},</p>
+                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below.</p>
+
+                    <div class="request-card">
+                        <div class="card-header">Request Details</div>
+                        <div class="card-content">
+                            <p><strong>Student Name:</strong> {student_name}</p>
+                            <p><strong>Certificate Type:</strong> {certificate_type}</p>
+                            <p><strong>Reference Number:</strong> {reference_number}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">Reason</div>
+                        <div class="card-content">
+                            <p>{note_block}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">Need Help?</div>
+                        <div class="card-content">
+                            <p><strong>Email:</strong> {contact_email}</p>
+                            <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>This is an automated email. Please do not reply.<br>
+                © 2026 Certify System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        Request Rejected
+
+        Dear {safe_requestor_name},
+        Your certificate request was rejected by the registrar.
+
+        Student: {student_name}
+        Certificate Type: {certificate_type}
+        Reference Number: {reference_number}
+        Reason: {note_block}
+
+        For assistance, contact {contact_email} or {contact_phone}.
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"? Rejection email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"? Failed to send rejection email: {e}")
             return False
 
     # ✅ Properly defined as its own method — not nested inside send_status_update
@@ -489,7 +607,7 @@ class EmailService:
 
             <div class="footer">
             <p>This is an automated email. Please do not reply.<br>
-                © 2024 Certify System. All rights reserved.</p>
+                © 2026 Certify System. All rights reserved.</p>
             </div>
         </div>
 
@@ -704,7 +822,7 @@ class EmailService:
 
             <div class="footer">
             <p>This is an automated email. Please do not reply.<br>
-                © 2024 Certify System. All rights reserved.</p>
+                © 2026 Certify System. All rights reserved.</p>
             </div>
         </div>
 

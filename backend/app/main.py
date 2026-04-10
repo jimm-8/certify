@@ -11,8 +11,9 @@ import app.models.enrollment
 import app.models.grade
 import app.models.nstp_record
 import app.models.payment
+import app.models.app_setting
 
-from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users, payments, rbac, template_files, reports, campuses
+from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users, payments, rbac, template_files, reports, campuses, settings
 from app.services.rbac_service import ensure_rbac_setup
 from app.services.audit_service import log_api_request
 
@@ -30,6 +31,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
     ],
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,6 +71,7 @@ app.include_router(payments.router, prefix="/api/v1")
 app.include_router(rbac.router, prefix="/api/v1")
 app.include_router(template_files.router, prefix="/api/v1")
 app.include_router(campuses.router, prefix="/api/v1")
+app.include_router(settings.router, prefix="/api/v1")
 
 
 @app.on_event("startup")

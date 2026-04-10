@@ -95,6 +95,64 @@ const requestService = {
       throw error;
     }
   },
+  // get student courses (taken with grades) for a request
+  getRequestTakenCourses: async (requestId) => {
+    try {
+      const response = await api.get(`/requests/${requestId}/taken-courses`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching taken courses:", error);
+      throw error;
+    }
+  },
+  // update course description selection
+  updateCourseDescriptionSelection: async (
+    requestId,
+    courseCodes = [],
+    notes = "",
+    userName = "",
+  ) => {
+    try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
+      const response = await api.patch(
+        `/requests/${requestId}/course-description-selection`,
+        {
+          course_codes: courseCodes,
+          notes,
+          user_name: resolvedUser,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course description selection:", error);
+      throw error;
+    }
+  },
+  // update certification of grades selection
+  updateGradeSelection: async (
+    requestId,
+    selectionKeys = [],
+    notes = "",
+    userName = "",
+  ) => {
+    try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
+      const response = await api.patch(
+        `/requests/${requestId}/grade-selection`,
+        {
+          selection_keys: selectionKeys,
+          notes,
+          user_name: resolvedUser,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating grade selection:", error);
+      throw error;
+    }
+  },
   // get all audit logs
   getAllAuditLogs: async ({ page = 1, limit = 50 } = {}) => {
     try {
@@ -129,10 +187,38 @@ const requestService = {
   // send ready email
   sendReadyEmail: async (requestId) => {
     try {
-      const response = await api.post(`/requests/${requestId}/notify`);
+      const response = await api.post(
+        `/requests/${requestId}/send-ready-email`,
+      );
       return response.data;
     } catch (error) {
       console.error("Error sending email:", error);
+      throw error;
+    }
+  },
+  // send rejection email
+  sendRejectionEmail: async (requestId, notes = "") => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-rejection-email`,
+        { notes },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending rejection email:", error);
+      throw error;
+    }
+  },
+
+  // validate requests against registry
+  validateRequests: async (requestIds = []) => {
+    try {
+      const response = await api.post(`/requests/validate`, {
+        request_ids: requestIds,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error validating requests:", error);
       throw error;
     }
   },

@@ -42,6 +42,37 @@ const paymentService = {
       throw error;
     }
   },
+  getPaymentsByReferences: async (referenceNumbers = []) => {
+    try {
+      const response = await api.post("/payments/by-references", {
+        reference_numbers: referenceNumbers,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching payments by references:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
+  },
+  getUnpaidRequests: async ({ page = 1, limit = 200 } = {}) => {
+    try {
+      const skip = (page - 1) * limit;
+      const response = await api.get("/payments/unpaid-requests", {
+        params: { skip, limit },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching unpaid requests:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
+  },
 };
 
 export default paymentService;

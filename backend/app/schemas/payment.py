@@ -21,6 +21,26 @@ class PaymentByReferenceCreate(BaseModel):
     or_number: Optional[str] = Field(None, description="Official receipt number")
 
 
+class PaymentReferencesRequest(BaseModel):
+    reference_numbers: list[str] = Field(
+        default_factory=list, description="List of request reference numbers"
+    )
+
+
+class PaymentInfo(BaseModel):
+    reference_number: str
+    amount: Optional[float] = None
+    payment_status: Optional[str] = None
+    paid_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PaymentInfoListResponse(BaseModel):
+    items: list[PaymentInfo]
+
+
 class PaymentResponse(BaseModel):
     id: int
     sr_code: Optional[str] = None

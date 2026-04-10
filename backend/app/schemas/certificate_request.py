@@ -8,6 +8,7 @@ class RequestStatusEnum(str, Enum):
     SUBMITTED = "SUBMITTED"
     PENDING = "PENDING"
     APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
     RELEASED = "RELEASED"
@@ -134,6 +135,9 @@ class CertificateRequestDetail(BaseModel):
     major: Optional[str]
     year_graduated: Optional[str]
     request_cost: Optional[float] = None
+    course_description_selection: Optional[str] = None
+    grade_selection: Optional[str] = None
+    ready_email_sent_at: Optional[datetime] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -145,6 +149,24 @@ class CertificateRequestDetail(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class RequestsValidationRequest(BaseModel):
+    request_ids: list[int] = Field(default_factory=list)
+
+
+class RequestValidationResult(BaseModel):
+    request_id: int
+    exists: bool = False
+    flags: list[str] = Field(default_factory=list)
+
+
+class RequestsValidationResponse(BaseModel):
+    results: list[RequestValidationResult] = Field(default_factory=list)
+
+
+class RejectionEmailRequest(BaseModel):
+    notes: Optional[str] = None
 
 # Schema for updating request status
 class StatusUpdateRequest(BaseModel):
@@ -168,6 +190,18 @@ class StudentDataUpdate(BaseModel):
     program: Optional[str] = None
     major: Optional[str] = None
     year_graduated: Optional[str] = None
+    notes: Optional[str] = None
+    user_name: Optional[str] = "Registrar"
+
+
+class CourseDescriptionSelectionUpdate(BaseModel):
+    course_codes: list[str] = Field(default_factory=list)
+    notes: Optional[str] = None
+    user_name: Optional[str] = "Registrar"
+
+
+class GradeSelectionUpdate(BaseModel):
+    selection_keys: list[str] = Field(default_factory=list)
     notes: Optional[str] = None
     user_name: Optional[str] = "Registrar"
 

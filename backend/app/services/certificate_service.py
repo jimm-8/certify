@@ -6,6 +6,7 @@ from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.models.authorized_official import AuthorizedOfficial
 import os
 from datetime import datetime
+import json
 
 from app.engine.certificate_engine import CertificateEngine
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
@@ -17,6 +18,7 @@ from app.repositories import (
     StudentAddressRepository,
     StudentRepository,
 )
+from app.services.settings_service import get_bool_setting
 
 
 def generate_certificate_pdf(
@@ -72,6 +74,41 @@ def generate_certificate_pdf(
             suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
         return f"{n}{suffix}"
 
+    def _honorific_for_gender(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in {"male", "m"}:
+            return "Mr."
+        if normalized in {"female", "f"}:
+            return "Ms."
+        return "Mr./Ms."
+
+    def _extract_surname(full_name: str) -> str:
+        name = str(full_name or "").strip()
+        if not name:
+            return ""
+        if "," in name:
+            return name.split(",", 1)[0].strip()
+        tokens = [t for t in name.split() if t]
+        if (
+            len(tokens) >= 3
+            and tokens[-3].lower() == "de"
+            and tokens[-2].lower() == "la"
+        ):
+            return " ".join(tokens[-3:])
+        if len(tokens) >= 2 and tokens[-2].lower() in {
+            "de",
+            "del",
+            "dela",
+            "da",
+            "dos",
+            "das",
+            "di",
+            "van",
+            "von",
+        }:
+            return " ".join(tokens[-2:])
+        return tokens[-1] if tokens else ""
+
     resolved_key, dependencies = CertificateDependencyEngine.resolve_with_type_key(
         db=db,
         certificate_type=request.certificate_type_name,
@@ -90,6 +127,7 @@ def generate_certificate_pdf(
     nstp_record = dependencies.get("nstp_record")
     student_id_record = dependencies.get("student_id_record")
 
+    use_wet_signature = get_bool_setting(db, "use_wet_signature", False)
     try:
         default_signature = signature_repo.latest_active()
     except Exception:
@@ -103,8 +141,16 @@ def generate_certificate_pdf(
     now = datetime.now()
     day_text = str(now.day)
     month_text = now.strftime("%B")
+    year_text = str(now.year)
 
     student_name = _format_student_name(student) or request.student_name
+    student_gender = (getattr(student, "gender", None) if student else None) or ""
+    student_honorific = _honorific_for_gender(student_gender)
+    student_surname = (
+        (getattr(student, "last_name", None) if student else None)
+        or _extract_surname(student_name)
+        or ""
+    )
     program_name = (program.name if program else None) or request.program
     college_name = (college.name if college else None) or ""
     campus_name = (campus.name if campus else None) or ""
@@ -221,10 +267,27 @@ def generate_certificate_pdf(
         else None
     )
 
+    latin_honor = ""
+
+    if graduation_record:
+        latin_honor = getattr(graduation_record, "latin_honor", "") or ""
+
+    def _pronoun_for_gender(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in {"male", "m"}:
+            return "he"
+        if normalized in {"female", "f"}:
+            return "she"
+        return "he/she"
+
+    student_pronoun = _pronoun_for_gender(student_gender)
     data = {
         "student_name": student_name,
+        "student_honorific": student_honorific,
+        "student_surname": student_surname,
         "sr_code": student.sr_code if student else request.sr_code,
         "program": program_name,
+        "latin_honor": latin_honor,
         "program_name": program_name,
         "major": (student.major if student else None) or request.major,
         "year_graduated": request.year_graduated
@@ -242,12 +305,17 @@ def generate_certificate_pdf(
         "requestor_email": request.requestor_email,
         "certificate_type": resolved_key,
         "attendance_periods": "",
+        "student_pronoun": student_pronoun,
         "curriculum_acad_year": (
             getattr(curriculum, "academic_year", "") if curriculum else ""
         ),
         "name_official": default_signature.name if default_signature else "",
         "official_title": default_signature.title if default_signature else "",
-        "signature_path": default_signature.signature_path if default_signature else "",
+        "signature_path": (
+            ""
+            if use_wet_signature
+            else (default_signature.signature_path if default_signature else "")
+        ),
         "campus_name": campus_name,
         "campus_address": campus_address,
         "campus_telNo": campus_telNo,
@@ -289,6 +357,7 @@ def generate_certificate_pdf(
         "date_issued": now.strftime("%B %d, %Y"),
         "date_issued_day": day_text,
         "date_issued_month": month_text,
+        "date_issued_year": year_text,
         "request_purpose": request.purpose,
         "request_amount": getattr(request, "request_cost", "") or "",
         "cav_no": request.reference_number,
@@ -332,6 +401,43 @@ def generate_certificate_pdf(
 
     # Grades + course descriptions
     student_courses = dependencies.get("student_courses") or []
+    selected_codes = []
+    if getattr(request, "course_description_selection", None):
+        try:
+            selected_codes = json.loads(request.course_description_selection) or []
+        except Exception:
+            selected_codes = []
+    if selected_codes:
+        code_set = {str(c).strip() for c in selected_codes if str(c).strip()}
+        filtered = [
+            row for row in student_courses if row.get("course_code") in code_set
+        ]
+        if filtered:
+            by_code = {row.get("course_code"): row for row in filtered}
+            ordered = [by_code[c] for c in selected_codes if c in by_code]
+            student_courses = ordered or filtered
+    if "grade" in str(request.certificate_type_name or "").lower() and getattr(
+        request, "grade_selection", None
+    ):
+        try:
+            selected_keys = json.loads(request.grade_selection) or []
+        except Exception:
+            selected_keys = []
+        if selected_keys:
+            key_set = {str(k).strip() for k in selected_keys if str(k).strip()}
+
+            def _row_key(row):
+                return (
+                    f"{row.get('course_code','')}||"
+                    f"{row.get('academic_year','')}||"
+                    f"{row.get('semester','')}"
+                )
+
+            filtered = [row for row in student_courses if _row_key(row) in key_set]
+            if filtered:
+                by_key = {_row_key(r): r for r in filtered}
+                ordered = [by_key[k] for k in selected_keys if k in by_key]
+                student_courses = ordered or filtered
     if student_courses:
         data["grades_detail"] = [
             {
@@ -346,7 +452,8 @@ def generate_certificate_pdf(
             {
                 "course_code": row.get("course_code", ""),
                 "course_credits": row.get("units", ""),
-                "course_description": row.get("course_title", ""),
+                "course_title": row.get("course_title", ""),
+                "course_description": row.get("course_description", ""),
             }
             for row in student_courses
         ]

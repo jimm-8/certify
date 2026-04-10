@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
+import settingsService from "../../services/settingsService";
 import {
   BsSearch,
   BsCalendar3,
@@ -10,6 +11,7 @@ import {
   BsCheckLg,
   BsDownload,
   BsX,
+  BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
 
@@ -77,6 +79,8 @@ const Ready = () => {
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState({});
+  const [wetSignature, setWetSignature] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
 
@@ -122,6 +126,23 @@ const Ready = () => {
       .getCertificateTypes()
       .then(setCertificateTypes)
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadSetting = async () => {
+      try {
+        const data = await settingsService.getWetSignature();
+        if (!mounted) return;
+        setWetSignature(Boolean(data?.use_wet_signature));
+      } catch (err) {
+        // ignore; default false
+      }
+    };
+    loadSetting();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -178,23 +199,6 @@ const Ready = () => {
     setPdfUrl(null);
   };
 
-  const handlePrint = async (row) => {
-    try {
-      const blob = await requestService.downloadCertificate(row.id);
-      const url = window.URL.createObjectURL(
-        new Blob([blob], { type: "application/pdf" }),
-      );
-      const win = window.open(url);
-      win?.addEventListener("load", () => {
-        win.print();
-        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-      });
-    } catch (error) {
-      console.error("Failed to download certificate:", error);
-      alert("Failed to download certificate. Please try again.");
-    }
-  };
-
   const handleComplete = async (row) => {
     try {
       await requestService.updateStatus(row.id, "RELEASED");
@@ -202,6 +206,20 @@ const Ready = () => {
     } catch (error) {
       console.error("Failed to mark as released:", error);
       alert("Failed to update status. Please try again.");
+    }
+  };
+
+  const handleSendReadyEmail = async (row) => {
+    setEmailLoading((prev) => ({ ...prev, [row.id]: true }));
+    try {
+      await requestService.sendReadyEmail(row.id);
+      fetchRequests();
+      alert("Ready-for-pickup email sent.");
+    } catch (error) {
+      console.error("Failed to send ready email:", error);
+      alert("Failed to send email. Please try again.");
+    } finally {
+      setEmailLoading((prev) => ({ ...prev, [row.id]: false }));
     }
   };
 
@@ -285,6 +303,12 @@ const Ready = () => {
       sortable: true,
     },
     {
+      name: "OR #",
+      selector: (row) => row.or_number,
+      sortable: true,
+      cell: (row) => row.or_number || "—",
+    },
+    {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
@@ -325,7 +349,7 @@ const Ready = () => {
     {
       name: "Action",
       ignoreRowClick: true,
-      minWidth: "180px",
+      minWidth: "220px",
       cell: (row) => (
         <div className="flex items-center gap-1.5">
           <button
@@ -336,21 +360,26 @@ const Ready = () => {
             <BsEye size={13} />
           </button>
 
-          <button
-            onClick={() => handlePrint(row)}
-            title="Download Certificate"
-            className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
-          >
-            <BsPrinter size={13} />
-          </button>
+          {wetSignature && (
+            <button
+              onClick={() => handleSendReadyEmail(row)}
+              title="Send Ready Email"
+              disabled={emailLoading[row.id]}
+              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50"
+            >
+              {emailLoading[row.id] ? "..." : <BsEnvelopeArrowUp size={13} />}
+            </button>
+          )}
 
-          <button
-            onClick={() => handleComplete(row)}
-            title="Mark as Released"
-            className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
-          >
-            <BsCheckLg size={13} />
-          </button>
+          {row.ready_email_sent_at && (
+            <button
+              onClick={() => handleComplete(row)}
+              title="Mark as Released"
+              className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
+            >
+              <BsCheckLg size={13} />
+            </button>
+          )}
         </div>
       ),
     },

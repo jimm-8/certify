@@ -101,6 +101,7 @@ class CertificateDependencyEngine:
             "student",
             "program",
             "campus",
+            "college",
             "student_courses",
             "enrollment",
             "academic_summary",
@@ -114,6 +115,7 @@ class CertificateDependencyEngine:
             "certificate_request",
             "enrollment",
             "enrollments",
+            "academic_summary",
         ],
         "CERTIFICATE_OF_ENGLISH_MEDIUM_V2": [
             "student",
@@ -135,6 +137,7 @@ class CertificateDependencyEngine:
             "student",
             "program",
             "campus",
+            "college",
             "graduation_record",
             "enrollment",
             "certificate_request",
@@ -525,6 +528,11 @@ class CertificateDependencyEngine:
     ) -> list[dict[str, str]]:
         if not sr_code:
             return []
+        semester_order = case(
+            (Enrollment.semester == "1st", 1),
+            (Enrollment.semester == "2nd", 2),
+            else_=9,
+        )
         rows = (
             CourseRepository(db)
             .query_with(
@@ -535,13 +543,34 @@ class CertificateDependencyEngine:
                 Grade.grade,
                 Enrollment.academic_year,
                 Enrollment.semester,
+                Enrollment.year_level,
             )
             .join(Grade, Grade.course_id == Course.id)
             .join(Enrollment, Enrollment.id == Grade.enrollment_id)
             .filter(Grade.student_id == sr_code)
-            .order_by(Course.course_code.asc())
+            .order_by(
+                Enrollment.academic_year.desc(),
+                semester_order.desc(),
+                Enrollment.year_level.desc(),
+                Course.course_code.asc(),
+            )
             .all()
         )
+
+        def _year_level_label(value: str | int | None) -> str:
+            try:
+                level = int(str(value or "").strip())
+            except Exception:
+                return str(value or "")
+            labels = {
+                1: "First Year",
+                2: "Second Year",
+                3: "Third Year",
+                4: "Fourth Year",
+                5: "Fifth Year",
+            }
+            return labels.get(level, f"{level}th Year")
+
         return [
             {
                 "course_code": str(code or ""),
@@ -551,8 +580,10 @@ class CertificateDependencyEngine:
                 "grade": str(grade or ""),
                 "academic_year": str(academic_year or ""),
                 "semester": str(semester or ""),
+                "year_level": str(year_level or ""),
+                "year_level_label": _year_level_label(year_level),
             }
-            for code, title, units, description, grade, academic_year, semester in rows
+            for code, title, units, description, grade, academic_year, semester, year_level in rows
         ]
 
     @staticmethod

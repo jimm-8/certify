@@ -8,10 +8,13 @@ from app.repositories import AuditLogRepository, UserRepository
 from app.services.auth_service import decode_access_token
 
 
-def _resolve_user_from_auth_header(db, auth_header: Optional[str]) -> Tuple[Optional[int], Optional[str]]:
+def _resolve_user_from_auth_header(
+    db, auth_header: Optional[str]
+) -> Tuple[Optional[int], Optional[str]]:
     if not auth_header:
         return None, None
     if not auth_header.lower().startswith("bearer "):
+
         return None, None
     token = auth_header.split(" ", 1)[1].strip()
     if not token:
@@ -81,7 +84,9 @@ def log_action(
     return audit_log
 
 
-def log_api_request(method: str, path: str, status_code: int, auth_header: Optional[str]) -> None:
+def log_api_request(
+    method: str, path: str, status_code: int, auth_header: Optional[str]
+) -> None:
     # Fire-and-forget logging with its own session to avoid interfering with request lifecycle.
     db = SessionLocal()
     try:

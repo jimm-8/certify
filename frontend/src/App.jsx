@@ -9,7 +9,7 @@ import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
 import OdrPayment from "./pages/odr/odr_payment";
 import CertifyIndex from "./pages/certify/index";
-import CertifyDashboard from './pages/certify/dashboard';
+import CertifyDashboard from "./pages/certify/dashboard";
 import TemplatePreview from "./pages/templates/TemplatePreview";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -25,6 +25,7 @@ import SignatureManager from "./pages/certify/settings/signatures";
 import Templates from "./pages/certify/templates/templates";
 import Reports from "./pages/certify/reports";
 import Activity from "./pages/certify/activity";
+import Payment from "./pages/certify/cashier/payment";
 
 function App() {
   return (
@@ -188,6 +189,17 @@ function AppContent() {
           <RequireAuth>
             <MainLayout>
               <Activity />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/payment-tagging"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <Payment />
             </MainLayout>
           </RequireAuth>
         }

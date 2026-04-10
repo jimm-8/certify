@@ -110,6 +110,7 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
         "student_name",
         "credits",
         "program",
+        "college_name",
         "semester",
         "academic_year",
         "requestor_name",
@@ -132,6 +133,7 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
         "program",
         "requestor_name",
         "date_of_issuance",
+        "credits",
         "authorized_official_name",
     ],
     "certification_of_completed_academic_requirements": [
@@ -149,6 +151,7 @@ CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
         "address",
         "latin_honor",
         "program",
+        "college_name",
         "date_of_graduation",
         "board_resolution_number",
         "program",
@@ -366,7 +369,7 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
     "Cert-of-Earned-Units.html": [
         "credits",
         "program",
-        "semester",
+        "college_name" "semester",
         "academic_year_start",
         "academic_year_end",
         "requestor_name",
@@ -384,6 +387,7 @@ TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
         "issuance_month",
     ],
     "Cert-of-English-Medium-Earned.html": [
+        "credits",
         "campus_address",
         "program",
         "attendance_period",
@@ -468,7 +472,9 @@ def normalize_certificate_name(value: str) -> str:
 
 
 def resolve_certificate_variants(certificate_type_name: str) -> list[str]:
-    return CERTIFICATE_TYPE_VARIANTS.get(normalize_certificate_name(certificate_type_name), [])
+    return CERTIFICATE_TYPE_VARIANTS.get(
+        normalize_certificate_name(certificate_type_name), []
+    )
 
 
 def dependency_variants_payload(certificate_type_name: str) -> list[dict[str, Any]]:
@@ -480,7 +486,10 @@ def dependency_variants_payload(certificate_type_name: str) -> list[dict[str, An
                 "key": variant_key,
                 "label": variant_key.replace("_", " ").title(),
                 "fields": [
-                    {"key": field_key, "label": DEPENDENCY_FIELD_LABELS.get(field_key, field_key)}
+                    {
+                        "key": field_key,
+                        "label": DEPENDENCY_FIELD_LABELS.get(field_key, field_key),
+                    }
                     for field_key in field_keys
                 ],
             }
