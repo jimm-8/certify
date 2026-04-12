@@ -178,10 +178,10 @@ export default function CertifyDashboard() {
   };
 
   const statusPillClass = {
-    processing: "bg-blue-50 text-blue-600",
-    review: "bg-orange-50 text-orange-500",
-    releasing: "bg-purple-50 text-purple-600",
-    released: "bg-emerald-50 text-emerald-600",
+    processing: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+    review: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+    releasing: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100",
+    released: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
   };
 
   const recentRows = (dashboardData?.recent_requests || []).map((r) => ({
@@ -246,7 +246,7 @@ export default function CertifyDashboard() {
           {stats.map((s, i) => (
             <div
               key={i}
-              className="bg-white border border-gray-200 rounded p-3 shadow-sm flex items-start gap-3"
+              className="bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-[0_8px_22px_rgba(15,23,42,0.05)] flex items-start gap-3"
             >
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${s.iconBg}`}
@@ -254,12 +254,14 @@ export default function CertifyDashboard() {
                 {s.icon}
               </div>
               <div>
-                <div className="text-xl font-medium leading-none">{s.num}</div>
-                <div className="text-xs text-[#8892A4] mt-1">
+                <div className="text-xl font-semibold leading-none text-[#0B1B3A]">
+                  {s.num}
+                </div>
+                <div className="text-xs text-[#6B778C] mt-1">
                   {s.label}
                   {s.badge && (
                     <span
-                      className={`text-xs font-semibold ml-1 ${s.badgeDown ? "text-[#F74242]" : "text-[#2DC78D]"}`}
+                      className={`text-xs font-semibold ml-1 ${s.badgeDown ? "text-[#B42318]" : "text-[#0F9D58]"}`}
                     >
                       {s.badge}
                     </span>
@@ -298,17 +300,17 @@ export default function CertifyDashboard() {
           style={{ gridTemplateColumns: "1.5fr 1fr 0.7fr" }}
         >
           {/* TABLE CARD */}
-          <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden">
             <div className="p-[18px_18px_12px]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-1">
                   <span className="text-sm font-semibold">
                     Monthly Overview
                   </span>
-                  <span className="text-[11px] font-semibold text-[#2DC78D] ml-2">
+                  <span className="text-[11px] font-semibold text-[#0F9D58] ml-2">
                     ▲0.04▲
                   </span>
-                  <span className="text-[11px] text-[#8892A4] ml-1">
+                  <span className="text-[11px] text-[#7B8596] ml-1">
                     | Last year · past month ›
                   </span>
                 </div>
@@ -320,7 +322,7 @@ export default function CertifyDashboard() {
                       (h) => (
                         <th
                           key={h}
-                          className="text-left text-[11px] font-semibold text-[#8892A4] px-2 py-1.5 border-b border-gray-200"
+                          className="text-left text-[11px] font-semibold text-[#7B8596] px-2 py-1.5 border-b border-[#E6EAF0] uppercase tracking-[0.12em]"
                         >
                           {h}
                         </th>
@@ -332,18 +334,18 @@ export default function CertifyDashboard() {
                   {tableRows.map((r, i) => (
                     <tr key={i}>
                       <td
-                        className="px-2 py-2 text-[11px] text-[#8892A4] border-b border-gray-50"
+                        className="px-2 py-2 text-[11px] text-[#7B8596] border-b border-[#F2F4F8]"
                         style={{ fontFamily: "'DM Mono', monospace" }}
                       >
                         {r.code}
                       </td>
-                      <td className="px-2 py-2 text-xs border-b border-gray-50">
+                      <td className="px-2 py-2 text-xs border-b border-[#F2F4F8] text-[#1F2A44]">
                         {r.name}
                       </td>
-                      <td className="px-2 py-2 text-xs border-b border-gray-50">
+                      <td className="px-2 py-2 text-xs border-b border-[#F2F4F8] text-[#1F2A44]">
                         {r.cert}
                       </td>
-                      <td className="px-2 py-2 text-xs border-b border-gray-50">
+                      <td className="px-2 py-2 text-xs border-b border-[#F2F4F8]">
                         {r.status && (
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusPillClass[r.status]}`}
@@ -357,7 +359,7 @@ export default function CertifyDashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="bg-amber-50 border-t border-yellow-300 px-[18px] py-2.5 flex items-center justify-between text-xs font-semibold text-amber-700">
+            <div className="bg-[#FFF7E8] border-t border-[#F3D6A4] px-[18px] py-2.5 flex items-center justify-between text-xs font-semibold text-[#A66B11]">
               <div className="flex items-center gap-1.5">
                 <FaTriangleExclamation className="text-[#F4A837]" size={13} />
                 {dashboardData?.alerts?.pending_over_5_days || 0} requests
@@ -367,19 +369,21 @@ export default function CertifyDashboard() {
           </div>
 
           {/* RECENT REQUESTS */}
-          <div className="bg-white border border-gray-200 rounded shadow-sm overflow-hidden flex flex-col">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden flex flex-col">
             <div className="p-4">
               <div className="flex items-center justify-between mb-2.5">
-                <span className="text-sm font-semibold">Recent Requests</span>
+                <span className="text-sm font-semibold text-[#0B1B3A]">
+                  Recent Requests
+                </span>
                 <button
-                  className="text-[11px] text-[#F72D6B] font-semibold cursor-pointer bg-none border-none"
+                  className="text-[11px] text-[#0B1B3A] font-semibold cursor-pointer bg-none border-none hover:text-[#C7A352]"
                   onClick={() => navigate("/dashboard/requests")}
                 >
                   View All ›
                 </button>
               </div>
               <div
-                className="grid text-[11px] font-semibold text-[#8892A4] pb-1.5 border-b border-gray-200 mb-1"
+                className="grid text-[11px] font-semibold text-[#7B8596] pb-1.5 border-b border-[#E6EAF0] mb-1 uppercase tracking-[0.12em]"
                 style={{ gridTemplateColumns: "90px 1fr 90px" }}
               >
                 <span>SR Code</span>
@@ -389,17 +393,17 @@ export default function CertifyDashboard() {
               {recentRows.map((r, i) => (
                 <div
                   key={i}
-                  className="grid items-center py-2 border-b border-gray-50 text-xs last:border-0"
+                  className="grid items-center py-2 border-b border-[#F2F4F8] text-xs last:border-0"
                   style={{ gridTemplateColumns: "90px 1fr 90px" }}
                 >
                   <span
-                    className="text-[11px] text-[#8892A4]"
+                    className="text-[11px] text-[#7B8596]"
                     style={{ fontFamily: "'DM Mono', monospace" }}
                   >
                     {r.code}
                   </span>
-                  <span>{r.name}</span>
-                  <span className="text-[10px] font-semibold text-[#1A1D2E]">
+                  <span className="text-[#1F2A44]">{r.name}</span>
+                  <span className="text-[10px] font-semibold text-[#1F2A44]">
                     {r.val}
                   </span>
                 </div>
