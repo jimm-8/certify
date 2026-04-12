@@ -1,0 +1,38 @@
+[Test for Processing Request - Bulk Approve]
+PASS: approved requests move to PROCESSING
+
+[Test for Processing Request - Single Update]
+PASS: APPROVED to PROCESSING action works
+
+[Test for Certificate Preview / Creation]
+PASS: downloadCertificate is triggered
+
+[Test for Ready Email - Wet Signature Enabled]
+PASS: sendReadyEmail called
+
+[Test for Release Completion]
+PASS: status updates to RELEASED
+
+[Test for Checking - Empty State]
+PASS: shows no requests
+
+[Test for Tracker - Empty State]
+PASS: shows no requests
+
+[Test for Ready - Empty State]
+PASS: shows no requests ready for releasing
+
+[Test for Payment - Empty State]
+PASS: shows no requests
+
+[Test for Request Modal - Null Render]
+PASS: modal renders null with no request
+
+[Test for Request Modal - Suggested Decline Note]
+PASS: suggested note inserted
+
+[Test for Request Modal - Course Selection Required]
+PASS: approve disabled until selection
+
+[Test for Request Modal - Rejection Email]
+PASS: rejection email action fires

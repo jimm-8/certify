@@ -9,8 +9,6 @@ import {
   BsEye,
   BsPrinter,
   BsCheckLg,
-  BsDownload,
-  BsX,
   BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
@@ -76,10 +74,14 @@ const Ready = () => {
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
-  const [bulkDownloading, setBulkDownloading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState({});
+  const [bulkEmailing, setBulkEmailing] = useState(false);
+  const [bulkEmailProgress, setBulkEmailProgress] = useState({
+    sent: 0,
+    total: 0,
+  });
   const [wetSignature, setWetSignature] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
@@ -223,43 +225,39 @@ const Ready = () => {
     }
   };
 
-  const handleBulkDownload = async () => {
-    setBulkDownloading(true);
-    try {
-      const JSZip = (await import("jszip")).default;
-      const zip = new JSZip();
+  const handleBulkSendReadyEmails = async () => {
+    const targets = filteredRequests.filter((r) => !r.ready_email_sent_at);
+    if (targets.length === 0) {
+      alert("All ready emails have already been sent.");
+      return;
+    }
 
-      await Promise.all(
-        filteredRequests.map(async (r) => {
-          try {
-            const blob = await requestService.downloadCertificate(r.id);
-            zip.file(
-              `Certificate_${r.student_name}_${r.reference_number}.pdf`,
-              blob,
-            );
-          } catch (err) {
-            console.error(
-              `Failed to fetch certificate for ${r.reference_number}:`,
-              err,
-            );
-          }
-        }),
-      );
+    setBulkEmailing(true);
+    setBulkEmailProgress({ sent: 0, total: targets.length });
+    const failed = [];
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Certificates_${new Date().toISOString().split("T")[0]}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(url), 3000);
-    } catch (error) {
-      console.error("Bulk download failed:", error);
-      alert("Failed to download certificates. Please try again.");
-    } finally {
-      setBulkDownloading(false);
+    for (let i = 0; i < targets.length; i += 1) {
+      const row = targets[i];
+      try {
+        await requestService.sendReadyEmail(row.id);
+      } catch (error) {
+        console.error("Failed to send ready email:", error);
+        failed.push(row.reference_number || row.id);
+      } finally {
+        setBulkEmailProgress((prev) => ({
+          sent: Math.min(prev.sent + 1, prev.total),
+          total: prev.total,
+        }));
+      }
+    }
+
+    fetchRequests();
+    setBulkEmailing(false);
+
+    if (failed.length > 0) {
+      alert(`Failed to send ${failed.length} email(s). Please retry.`);
+    } else {
+      alert("All ready-for-pickup emails sent.");
     }
   };
 
@@ -389,19 +387,19 @@ const Ready = () => {
     <div className="bg-white w-full rounded-md border border-gray-200 shadow-sm -mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        {/* LEFT — Bulk Download */}
+        {/* LEFT — Bulk Send Email */}
         <div className="flex items-center gap-2">
           <button
-            onClick={handleBulkDownload}
-            disabled={bulkDownloading || filteredRequests.length === 0}
+            onClick={handleBulkSendReadyEmails}
+            disabled={bulkEmailing || filteredRequests.length === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
           >
-            {bulkDownloading ? (
+            {bulkEmailing ? (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <BsDownload size={13} />
+              <BsEnvelopeArrowUp size={13} />
             )}
-            {bulkDownloading ? "Preparing ZIP..." : "Download All"}
+            {bulkEmailing ? "Sending Emails..." : "Send All Emails"}
           </button>
 
           <button
@@ -413,6 +411,24 @@ const Ready = () => {
             Print All
           </button>
         </div>
+
+        {bulkEmailing && bulkEmailProgress.total > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-40 rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full bg-[#ee1133] transition-all"
+                style={{
+                  width: `${Math.round(
+                    (bulkEmailProgress.sent / bulkEmailProgress.total) * 100,
+                  )}%`,
+                }}
+              />
+            </div>
+            <span className="text-[11px] text-gray-500">
+              {bulkEmailProgress.sent}/{bulkEmailProgress.total}
+            </span>
+          </div>
+        )}
 
         {/* RIGHT — Filters */}
         <div className="flex items-center gap-2">
