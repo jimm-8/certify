@@ -282,6 +282,7 @@ async def update_request_status(
 
     if new_status == RequestStatus.FOR_RELEASING:
         try:
+            request.auto_print_requested_at = datetime.now()
             # When wet signature is enabled, ready email is sent manually
             skip_ready_email = get_bool_setting(db, "use_wet_signature", False)
             if not skip_ready_email:

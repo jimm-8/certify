@@ -60,6 +60,8 @@ class CertificateRequest(Base):
     pdf_path = Column(String(500), nullable=True)
     request_cost = Column(Numeric(10, 2), nullable=True)
     ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    auto_print_requested_at = Column(DateTime(timezone=True), nullable=True)
+    auto_printed_at = Column(DateTime(timezone=True), nullable=True)
     
     status = Column(Enum(RequestStatus), default=RequestStatus.SUBMITTED, nullable=False)
     

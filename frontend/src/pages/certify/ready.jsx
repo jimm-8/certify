@@ -9,6 +9,7 @@ import {
   BsEye,
   BsPrinter,
   BsCheckLg,
+  BsCheckCircle,
   BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
@@ -64,6 +65,71 @@ const LoadingState = () => (
   </div>
 );
 
+const BulkProgressOverlay = ({
+  show,
+  label,
+  done,
+  titleActive,
+  titleDone,
+  statusActive,
+  statusDone,
+  doneCount,
+  totalCount,
+}) => {
+  if (!show || totalCount <= 0) return null;
+  const pct = Math.min(
+    Math.round((doneCount / totalCount) * 100),
+    100,
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-gray-200">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[11px] font-medium tracking-widest uppercase text-gray-400">
+            {label}
+          </span>
+          <BsCheckCircle
+            size={14}
+            className={done ? "text-green-600" : "text-[#ee1133]"}
+          />
+        </div>
+        <div className="text-sm font-semibold text-gray-800">
+          {done ? titleDone : titleActive}
+        </div>
+        <div className="mt-1 text-xs text-gray-500">
+          {done ? statusDone : statusActive}
+        </div>
+        <div className="mt-4 h-1 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${
+              done ? "bg-green-500" : "bg-[#ee1133]"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[11px] text-gray-400">
+            {doneCount} of {totalCount} {done ? "completed" : "processed"}
+          </span>
+          <span
+            className={`text-[11px] font-medium ${
+              done ? "text-green-700" : "text-gray-500"
+            }`}
+          >
+            {pct}%
+          </span>
+        </div>
+        {done && (
+          <div className="mt-4 text-xs text-green-600 font-medium">
+            ✓ Completed successfully
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Ready = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +153,13 @@ const Ready = () => {
   const [nowTick, setNowTick] = useState(Date.now());
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [bulkEmailDone, setBulkEmailDone] = useState(false);
+  const [bulkReleasing, setBulkReleasing] = useState(false);
+  const [bulkReleaseProgress, setBulkReleaseProgress] = useState({
+    done: 0,
+    total: 0,
+  });
+  const [bulkReleaseDone, setBulkReleaseDone] = useState(false);
 
   const lastSnapshotRef = useRef("");
 
@@ -124,6 +197,10 @@ const Ready = () => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    console.log("READY requests:", requests);
+  }, [requests]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);
@@ -183,6 +260,10 @@ const Ready = () => {
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
 
+  const releasableRequests = filteredRequests.filter(
+    (r) => r.ready_email_sent_at,
+  );
+
   const lastUpdatedLabel = lastUpdatedAt
     ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
     : "—";
@@ -234,6 +315,7 @@ const Ready = () => {
 
   const handleBulkSendReadyEmails = async () => {
     const targets = filteredRequests.filter((r) => !r.ready_email_sent_at);
+
     if (targets.length === 0) {
       alert("All ready emails have already been sent.");
       return;
@@ -241,30 +323,86 @@ const Ready = () => {
 
     setBulkEmailing(true);
     setBulkEmailProgress({ sent: 0, total: targets.length });
+
+    const failed = [];
+
+    for (let i = 0; i < targets.length; i++) {
+      const row = targets[i];
+
+      try {
+        await requestService.sendReadyEmail(row.id);
+      } catch (error) {
+        console.error(error);
+        failed.push(row.reference_number || row.id);
+      }
+
+      // ✅ deterministic update (no prev dependency)
+      setBulkEmailProgress({
+        sent: i + 1,
+        total: targets.length,
+      });
+    }
+
+    // ✅ FORCE final state (important)
+    setBulkEmailProgress({
+      sent: targets.length,
+      total: targets.length,
+    });
+
+    setBulkEmailDone(true);
+
+    fetchRequests();
+
+    // ✅ delay closing so UI can render 3/3
+    setTimeout(() => {
+      setBulkEmailing(false);
+      setBulkEmailDone(false);
+    }, 1500);
+  };
+
+  const handleBulkMarkReleased = async () => {
+    const targets = releasableRequests;
+
+    if (targets.length === 0) {
+      alert("No requests are eligible to be marked as released.");
+      return;
+    }
+
+    setBulkReleasing(true);
+    setBulkReleaseProgress({ done: 0, total: targets.length });
+
     const failed = [];
 
     for (let i = 0; i < targets.length; i += 1) {
       const row = targets[i];
       try {
-        await requestService.sendReadyEmail(row.id);
+        await requestService.updateStatus(row.id, "RELEASED");
       } catch (error) {
-        console.error("Failed to send ready email:", error);
+        console.error(error);
         failed.push(row.reference_number || row.id);
-      } finally {
-        setBulkEmailProgress((prev) => ({
-          sent: Math.min(prev.sent + 1, prev.total),
-          total: prev.total,
-        }));
       }
+
+      setBulkReleaseProgress({
+        done: i + 1,
+        total: targets.length,
+      });
     }
 
+    setBulkReleaseProgress({
+      done: targets.length,
+      total: targets.length,
+    });
+
+    setBulkReleaseDone(true);
     fetchRequests();
-    setBulkEmailing(false);
+
+    setTimeout(() => {
+      setBulkReleasing(false);
+      setBulkReleaseDone(false);
+    }, 1500);
 
     if (failed.length > 0) {
-      alert(`Failed to send ${failed.length} email(s). Please retry.`);
-    } else {
-      alert("All ready-for-pickup emails sent.");
+      alert(`Failed to release ${failed.length} request(s). Please retry.`);
     }
   };
 
@@ -383,6 +521,13 @@ const Ready = () => {
       width: "150px",
     },
     {
+      name: "Is Printed",
+      selector: (row) => (row.auto_printed_at ? "Yes" : "No"),
+      cell: (row) => (row.auto_printed_at ? "Yes" : "No"),
+      sortable: true,
+      width: "110px",
+    },
+    {
       name: "Action",
       ignoreRowClick: true,
       minWidth: "150px",
@@ -424,6 +569,30 @@ const Ready = () => {
 
   return (
     <div className="bg-white w-full rounded-md border border-gray-200 shadow-sm -mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
+      {/* Display for bulk processing */}
+      <BulkProgressOverlay
+        show={bulkEmailing}
+        label="Bulk send"
+        done={bulkEmailDone}
+        titleActive="Sending emails"
+        titleDone="All done"
+        statusActive={`${bulkEmailProgress.sent} of ${bulkEmailProgress.total} sent`}
+        statusDone={`${bulkEmailProgress.total} emails delivered`}
+        doneCount={bulkEmailProgress.sent}
+        totalCount={bulkEmailProgress.total}
+      />
+      <BulkProgressOverlay
+        show={bulkReleasing}
+        label="Bulk release"
+        done={bulkReleaseDone}
+        titleActive="Marking as released"
+        titleDone="All done"
+        statusActive={`${bulkReleaseProgress.done} of ${bulkReleaseProgress.total} done`}
+        statusDone={`${bulkReleaseProgress.total} requests released`}
+        doneCount={bulkReleaseProgress.done}
+        totalCount={bulkReleaseProgress.total}
+      />
+
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 mb-2">
         {/* LEFT — Bulk Send Email */}
@@ -449,25 +618,16 @@ const Ready = () => {
             <BsPrinter size={13} />
             Print All
           </button>
-        </div>
 
-        {bulkEmailing && bulkEmailProgress.total > 0 && (
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-40 rounded-full bg-gray-200 overflow-hidden">
-              <div
-                className="h-full bg-[#ee1133] transition-all"
-                style={{
-                  width: `${Math.round(
-                    (bulkEmailProgress.sent / bulkEmailProgress.total) * 100,
-                  )}%`,
-                }}
-              />
-            </div>
-            <span className="text-[11px] text-gray-500">
-              {bulkEmailProgress.sent}/{bulkEmailProgress.total}
-            </span>
-          </div>
-        )}
+          <button
+            onClick={handleBulkMarkReleased}
+            disabled={bulkReleasing || releasableRequests.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <BsCheckLg size={13} />
+            Mark All Released
+          </button>
+        </div>
 
         {/* RIGHT — Filters */}
         <div className="flex items-center gap-2">

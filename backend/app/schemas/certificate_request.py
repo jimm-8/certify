@@ -138,6 +138,8 @@ class CertificateRequestDetail(BaseModel):
     course_description_selection: Optional[str] = None
     grade_selection: Optional[str] = None
     ready_email_sent_at: Optional[datetime] = None
+    auto_print_requested_at: Optional[datetime] = None
+    auto_printed_at: Optional[datetime] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None

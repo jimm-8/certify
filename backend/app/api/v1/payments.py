@@ -72,6 +72,14 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
             "System",
             "Auto-marked for releasing after payment",
         )
+        db.refresh(request)
+        if (
+            request.status == RequestStatus.FOR_RELEASING
+            and request.auto_print_requested_at is None
+        ):
+            request.auto_print_requested_at = datetime.now()
+            db.commit()
+            db.refresh(request)
     return payment
 
 
@@ -180,6 +188,14 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
             "System",
             "Auto-marked for releasing after payment",
         )
+        db.refresh(request)
+        if (
+            request.status == RequestStatus.FOR_RELEASING
+            and request.auto_print_requested_at is None
+        ):
+            request.auto_print_requested_at = datetime.now()
+            db.commit()
+            db.refresh(request)
     return payment
 
 

@@ -736,6 +736,22 @@ async def send_ready_email(
     db.refresh(request)
     return {"message": "Ready-for-release email sent."}
 
+# Endpoint: Mark auto print completed
+@router.post("/{request_id}/mark-printed")
+def mark_printed(
+    request_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    request.auto_printed_at = datetime.now()
+    db.commit()
+    db.refresh(request)
+    return {"message": "Marked as printed.", "auto_printed_at": request.auto_printed_at}
+
 # Endpoint: Send rejection email manually
 @router.post("/{request_id}/send-rejection-email")
 async def send_rejection_email(
