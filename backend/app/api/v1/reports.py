@@ -64,7 +64,7 @@ def _apply_period(requests, period: Optional[str], today):
 
 def _format_duration(seconds: float | None) -> str:
     if seconds is None:
-        return "â€”"
+        return "0"
     total_minutes = int(round(seconds / 60))
     if total_minutes <= 0:
         return "0m"
@@ -101,7 +101,9 @@ def _linear_forecast(counts: list[int], horizon: int) -> list[int]:
     return preds
 
 
-def _moving_average_forecast(counts: list[int], horizon: int, window: int = 7) -> list[int]:
+def _moving_average_forecast(
+    counts: list[int], horizon: int, window: int = 7
+) -> list[int]:
     if not counts:
         return [0 for _ in range(horizon)]
     window = min(window, len(counts))
@@ -109,7 +111,9 @@ def _moving_average_forecast(counts: list[int], horizon: int, window: int = 7) -
     return [max(0, int(round(avg))) for _ in range(horizon)]
 
 
-def _exp_smoothing_forecast(counts: list[int], horizon: int, alpha: float = 0.3) -> list[int]:
+def _exp_smoothing_forecast(
+    counts: list[int], horizon: int, alpha: float = 0.3
+) -> list[int]:
     if not counts:
         return [0 for _ in range(horizon)]
     level = counts[0]
@@ -132,9 +136,29 @@ def get_reports_summary(
     filtered = _apply_period(requests, period, today)
 
     total_requests = len(filtered)
-    released_requests = [
-        r for r in filtered if r.status == RequestStatus.RELEASED
-    ]
+    released_requests = [r for r in filtered if r.status == RequestStatus.RELEASED]
+    rejected_requests = [r for r in filtered if r.status == RequestStatus.REJECTED]
+
+    pending_count = sum(
+        1 for r in filtered if r.status in {RequestStatus.SUBMITTED, RequestStatus.PENDING}
+    )
+    processing_count = sum(
+        1 for r in filtered if r.status == RequestStatus.PROCESSING
+    )
+    requests_today = sum(
+        1 for r in filtered if _safe_date(r.created_at) == today
+    )
+
+    release_rate = (
+        round((len(released_requests) / total_requests) * 100)
+        if total_requests
+        else 0
+    )
+    rejection_rate = (
+        round((len(rejected_requests) / total_requests) * 100)
+        if total_requests
+        else 0
+    )
 
     status_counts = Counter(
         r.status.value if hasattr(r.status, "value") else str(r.status)
@@ -173,9 +197,7 @@ def get_reports_summary(
     ]
 
     avg_daily_requests = (
-        round(sum(daily_counts.values()) / len(daily_counts), 2)
-        if daily_counts
-        else 0
+        round(sum(daily_counts.values()) / len(daily_counts), 2) if daily_counts else 0
     )
 
     # Diagnostic analytics
@@ -207,7 +229,9 @@ def get_reports_summary(
             aging_buckets["11+_days"] += 1
 
         if age_days >= 5:
-            status_label = r.status.value if hasattr(r.status, "value") else str(r.status)
+            status_label = (
+                r.status.value if hasattr(r.status, "value") else str(r.status)
+            )
             bottleneck_by_status[status_label] += 1
             if r.certificate_type_name:
                 bottleneck_by_certificate[r.certificate_type_name].append(age_days)
@@ -218,12 +242,16 @@ def get_reports_summary(
                 {
                     "reference_number": r.reference_number,
                     "student_name": r.student_name,
-                    "status": r.status.value if hasattr(r.status, "value") else str(r.status),
+                    "status": (
+                        r.status.value if hasattr(r.status, "value") else str(r.status)
+                    ),
                     "age_days": age_days,
                 }
             )
 
-    stalled_requests = sorted(stalled_requests, key=lambda x: x["age_days"], reverse=True)[:8]
+    stalled_requests = sorted(
+        stalled_requests, key=lambda x: x["age_days"], reverse=True
+    )[:8]
 
     bottleneck_cert_list = [
         {
@@ -233,7 +261,9 @@ def get_reports_summary(
         }
         for name, ages in bottleneck_by_certificate.items()
     ]
-    bottleneck_cert_list.sort(key=lambda x: (x["avg_age_days"], x["count"]), reverse=True)
+    bottleneck_cert_list.sort(
+        key=lambda x: (x["avg_age_days"], x["count"]), reverse=True
+    )
 
     bottleneck_program_list = [
         {
@@ -243,7 +273,9 @@ def get_reports_summary(
         }
         for name, ages in bottleneck_by_program.items()
     ]
-    bottleneck_program_list.sort(key=lambda x: (x["avg_age_days"], x["count"]), reverse=True)
+    bottleneck_program_list.sort(
+        key=lambda x: (x["avg_age_days"], x["count"]), reverse=True
+    )
 
     # Predictive analytics
     counts_for_forecast = [d["count"] for d in daily_series]
@@ -252,7 +284,9 @@ def get_reports_summary(
     avg_pred = _moving_average_forecast(counts_for_forecast, forecast_horizon, window=7)
     exp_pred = _exp_smoothing_forecast(counts_for_forecast, forecast_horizon, alpha=0.3)
 
-    forecast_days = _last_n_days(forecast_horizon, today + timedelta(days=forecast_horizon))
+    forecast_days = _last_n_days(
+        forecast_horizon, today + timedelta(days=forecast_horizon)
+    )
     forecast = []
     for i in range(forecast_horizon):
         forecast.append(
@@ -271,9 +305,16 @@ def get_reports_summary(
         "descriptive": {
             "total_requests": total_requests,
             "released_total": len(released_requests),
+            "rejected_total": len(rejected_requests),
+            "release_rate": release_rate,
+            "rejection_rate": rejection_rate,
             "avg_processing_time_label": _format_duration(avg_processing_seconds),
             "avg_daily_requests_last_30_days": avg_daily_requests,
             "status_breakdown": status_counts,
+            "pending": pending_count,
+            "processing": processing_count,
+            "requests_today": requests_today,
+            "sla_days": 2,
             "certificate_types": [
                 {"name": name, "count": count}
                 for name, count in certificate_counter.most_common(8)

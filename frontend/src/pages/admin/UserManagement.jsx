@@ -294,6 +294,7 @@ export default function UserManagement() {
                 <option value="superadmin">Superadmin</option>
                 <option value="registrar_head">Registrar Head</option>
                 <option value="registrar_staff">Registrar Staff</option>
+                <option value="cashier">Cashier</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">

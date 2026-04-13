@@ -605,23 +605,23 @@ const RequestModal = ({
         </div>
 
         {/* ── Body ── */}
-        <div className="px-6 py-2 max-h-[60vh] overflow-y-auto">
-        <div className="mt-2 rounded-md border border-amber-100 bg-amber-50 px-4 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10px] uppercase tracking-widest text-amber-500 font-semibold">
-              Validation Status
-            </p>
-            {hasValidationFlags ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700">
-                <BsExclamationTriangleFill size={11} /> Needs Review
-              </span>
-            ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+        <div className="px-7 py-2 max-h-[60vh] overflow-y-auto">
+          <div className="rounded-md border !border-amber-500 bg-amber-50 px-2 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">
+                Validation Status
+              </p>
+              {hasValidationFlags ? (
+                <span className="inline-flex items-center ml-2 gap-1 text-xs font-semibold text-amber-700">
+                  <BsExclamationTriangleFill size={11} /> Needs Review
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
                   <BsCheckCircleFill size={11} /> Clear
                 </span>
               )}
             </div>
-            <div className="mt-2 text-xs text-amber-700">
+            <div className=" ml-2 text-xs text-amber-700">
               {hasValidationFlags ? (
                 <ul className="list-disc pl-4 space-y-1">
                   {normalizedValidation.map((flag, idx) => (
@@ -629,7 +629,7 @@ const RequestModal = ({
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-emerald-700">
+                <p className="text-[11px] ml-2 text-emerald-700">
                   No anomalies detected from the automatic checks.
                 </p>
               )}
@@ -1118,7 +1118,7 @@ const RequestModal = ({
                 onClose();
               }}
               disabled={loading}
-              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md !hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               Close
             </button>
@@ -1145,7 +1145,7 @@ const RequestModal = ({
                   className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
                 >
                   <BsXCircle size={13} />
-                  {showDeclineInput ? "Cancel" : "Decline"}
+                  {showDeclineInput ? "Cancel" : "Reject"}
                 </button>
 
                 {showDeclineInput ? (

@@ -49,7 +49,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
       {sections.map((section, sIndex) => (
         <div key={section.key || sIndex}>
           {section.title && (
-            <div className="px-4 pt-3 pb-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+            <div className="px-3 pt-3 pb-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
               {section.title}
             </div>
           )}
@@ -60,7 +60,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
                 onClose();
                 item.onClick?.();
               }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100"
+              className="w-full text-left px-4 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-100"
             >
               {item.label}
             </button>

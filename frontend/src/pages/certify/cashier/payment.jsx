@@ -329,6 +329,13 @@ export default function PaymentTagging() {
     },
   ];
 
+  const LoadingState = () => (
+    <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+      Loading requests...
+    </div>
+  );
+
   return (
     <div className="bg-white rounded-md border border-gray-200 shadow-sm mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
       <div className="flex items-center justify-between gap-2 mb-2">
@@ -403,7 +410,7 @@ export default function PaymentTagging() {
         <DataTable
           columns={columns}
           data={filtered}
-          progressPending={loading}
+          progressComponent={<LoadingState />}
           pagination
           customStyles={customStyles}
           highlightOnHover

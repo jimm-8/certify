@@ -32,7 +32,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -40,7 +40,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
     },
@@ -102,6 +102,13 @@ const Tracker = () => {
   const [nowTick, setNowTick] = useState(Date.now());
 
   const lastSnapshotRef = useRef("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram],
+  );
 
   const fetchRequests = async (opts = { silent: false }) => {
     try {
@@ -176,6 +183,7 @@ const Tracker = () => {
       matchesType &&
       matchesProgram &&
       r.status !== "PENDING" &&
+      r.status !== "REJECTED" &&
       r.status !== "FOR_RELEASING" &&
       r.status !== "RELEASED"
     );
@@ -256,31 +264,61 @@ const Tracker = () => {
 
   const columns = [
     {
-      name: "Reference No.",
+      name: "Reference #",
       selector: (row) => row.reference_number,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
+      width: "250px",
     },
     {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
+      width: "200px",
     },
-    { name: "Program", selector: (row) => row.program, sortable: true },
-    { name: "Purpose", selector: (row) => row.purpose, sortable: true },
+    {
+      name: "Program",
+      selector: (row) => {
+        let program = row.program;
+
+        program = program
+          .replace(/Bachelor of Science/gi, "BS")
+          .replace(/Bachelor of Arts/gi, "BA")
+          .replace(/Bachelor of/gi, ""); // remove completely
+
+        // Clean formatting
+        program = program
+          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return program;
+      },
+      sortable: true,
+      width: "230px",
+    },
+    {
+      name: "Purpose",
+      selector: (row) => row.purpose,
+      sortable: true,
+      width: "220px",
+    },
     {
       name: "Date Requested",
       selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Status",
       selector: (row) => row.status,
       sortable: true,
+      width: "120px",
       cell: (row) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[row.status] || "bg-gray-100 text-gray-600"}`}
@@ -299,7 +337,7 @@ const Tracker = () => {
             title="View Details"
             className="flex items-center px-3 py-1.5 text-xs font-medium text-[#ee1133] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
           >
-            <BsEye size={13} />
+            <BsEye size={18} />
           </button>
           {(row.status === "APPROVED" || row.status === "PROCESSING") && (
             <button
@@ -313,9 +351,9 @@ const Tracker = () => {
               className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {statusLoadingId === row.id ? (
-                <span className="w-3 h-3 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
+                <span className="w-5 h-5 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <BsArrowRepeat size={13} />
+                <BsArrowRepeat size={18} />
               )}
             </button>
           )}
@@ -421,21 +459,70 @@ const Tracker = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          progressComponent={<LoadingState />}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No requests found.
+        <div className="overflow-auto">
+          <DataTable
+            columns={columns}
+            data={filteredRequests.slice(
+              (currentPage - 1) * rowsPerPage,
+              currentPage * rowsPerPage,
+            )}
+            progressPending={loading}
+            progressComponent={<LoadingState />}
+            pagination={false}
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+            noDataComponent={
+              <div className="py-10 text-xs text-gray-400">
+                No requests found.
+              </div>
+            }
+          />
+        </div>
+
+        {/* Pagination */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
       <span className="text-[11px] text-gray-400">
         Last updated: {lastUpdatedLabel}

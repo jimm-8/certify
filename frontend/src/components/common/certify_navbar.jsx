@@ -51,6 +51,7 @@ const CertifyNavbar = () => {
   const roleLabel = payload?.role
     ? payload.role.replace("_", " ").toUpperCase()
     : "USER";
+  const isCashier = payload?.role === "cashier";
   const initials = username
     .split(/[\s._-]+/)
     .filter(Boolean)
@@ -109,7 +110,7 @@ const CertifyNavbar = () => {
 
           {open && (
             <div className="absolute right-0 top-12 w-56 bg-white text-gray-700 rounded-xl shadow-xl border border-gray-100 py-2 z-50">
-              <div className="px-4 py-3 border-b border-gray-100">
+              <div className="px-4 py-2 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-[#ee1133] text-white flex items-center justify-center text-sm font-semibold">
                     {initials || "U"}
@@ -123,40 +124,44 @@ const CertifyNavbar = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  navigate("/settings");
-                }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
-              >
-                <Settings className="w-4 h-4" />
-                Settings
-              </button>
+              {!isCashier && (
+                <>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      navigate("/settings");
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-1 hover:bg-gray-100 text-sm text-left"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
 
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  navigate("/activity");
-                }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
-              >
-                <Activity className="w-4 h-4" />
-                Activity
-              </button>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      navigate("/activity");
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-1 hover:bg-gray-100 text-sm text-left"
+                  >
+                    <Activity className="w-4 h-4" />
+                    Activity
+                  </button>
 
-              <button
-                onClick={() => {
-                  setHelpOpen(true);
-                  setOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-100 text-sm text-left"
-              >
-                <HelpCircle className="w-4 h-4" />
-                Get Help
-              </button>
+                  <button
+                    onClick={() => {
+                      setHelpOpen(true);
+                      setOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-1 hover:bg-gray-100 text-sm text-left"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    Get Help
+                  </button>
 
-              <div className="border-t my-2"></div>
+                  <div className="border-t my-2"></div>
+                </>
+              )}
 
               <button
                 onClick={() => {
@@ -164,7 +169,7 @@ const CertifyNavbar = () => {
                   setOpen(false);
                   navigate("/login");
                 }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-red-50 text-red-600 text-sm text-left"
+                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-red-50 text-red-600 text-sm text-left"
               >
                 <LogOut className="w-4 h-4" />
                 Sign-out

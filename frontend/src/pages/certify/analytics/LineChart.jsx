@@ -31,6 +31,19 @@ function LineChart({ trend = [] }) {
             data: trend.length
               ? trend.map((d) => d.for_review)
               : [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            borderColor: "#F4A837",
+            backgroundColor: "rgba(244,168,55,0.06)",
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: "#F4A837",
+            borderWidth: 2,
+          },
+          {
+            label: "For Releasing",
+            data: trend.length
+              ? trend.map((d) => d.for_releasing)
+              : [0, 0, 0, 0, 0, 0, 0, 0, 0],
             borderColor: "#4899F7",
             backgroundColor: "rgba(72,153,247,0.06)",
             tension: 0.4,
@@ -40,29 +53,16 @@ function LineChart({ trend = [] }) {
             borderWidth: 2,
           },
           {
-            label: "For Releasing",
-            data: trend.length
-              ? trend.map((d) => d.for_releasing)
-              : [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            borderColor: "#2DC78D",
-            backgroundColor: "rgba(45,199,141,0.06)",
-            tension: 0.4,
-            fill: true,
-            pointRadius: 4,
-            pointBackgroundColor: "#2DC78D",
-            borderWidth: 2,
-          },
-          {
             label: "Released",
             data: trend.length
               ? trend.map((d) => d.released)
               : [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            borderColor: "#F4A837",
-            backgroundColor: "rgba(244,168,55,0.06)",
+            borderColor: "#2DC78D",
+            backgroundColor: "rgba(45,199,141,0.06)",
             tension: 0.4,
             fill: false,
             pointRadius: 4,
-            pointBackgroundColor: "#F4A837",
+            pointBackgroundColor: "#2DC78D",
             borderWidth: 2,
           },
         ],

@@ -35,7 +35,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -43,7 +43,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
     },
@@ -85,6 +85,13 @@ const Checking = () => {
   const [emailLoading, setEmailLoading] = useState({});
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram, showOnlyFlagged],
+  );
 
   const isCourseDescriptionType = (name) =>
     String(name || "")
@@ -355,8 +362,11 @@ const Checking = () => {
       name: "Validation",
       selector: (row) => getValidationFlags(row).length,
       sortable: true,
-      width: "170px",
+      width: "160px",
       cell: (row) => {
+        const flags = getValidationFlags(row);
+        const needsReview = flags.length > 0;
+
         if (validationLoading && !validationMap?.[row.id]) {
           return (
             <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
@@ -365,16 +375,21 @@ const Checking = () => {
             </div>
           );
         }
-        const flags = getValidationFlags(row);
-        const needsReview = flags.length > 0;
+
         return needsReview ? (
-          <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold">
+          <div
+            onClick={() => setSelectedRequest(row)}
+            className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold cursor-pointer"
+          >
             <BsExclamationTriangleFill size={12} />
             <span>Needs Review</span>
             <BsArrowUpRight size={12} />
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
+          <div
+            onClick={() => setSelectedRequest(row)}
+            className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold cursor-pointer"
+          >
             <BsCheckCircleFill size={12} />
             <span>Clear</span>
           </div>
@@ -386,27 +401,31 @@ const Checking = () => {
       selector: (row) => row.reference_number || row.sr_code || "-",
       sortable: true,
       cell: (row) => row.reference_number || row.sr_code || "-",
-      width: "180px",
+      width: "150px",
     },
     {
       name: "Requester Name",
       selector: (row) => row.student_name || row.requester_name || "-",
       sortable: true,
+      width: "270px",
     },
     {
       name: "Campus",
       selector: (row) => row.campus || "Alangilan",
       sortable: true,
+      width: "100px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name || "-",
       sortable: true,
+      width: "450px",
     },
     {
       name: "Date Requested",
       selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Action",
@@ -561,7 +580,7 @@ const Checking = () => {
       </div>
 
       {/* Validation Summary */}
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2 -mt-2 flex items-center justify-between gap-2">
         <div className="text-[11px] text-gray-500">
           Auto-validation flags missing or inconsistent data for registrar
           review.
@@ -578,22 +597,71 @@ const Checking = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          progressComponent={<LoadingState />}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          onRowClicked={(row) => setSelectedRequest(row)}
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No requests found.
+        <div className="overflow-auto">
+          <DataTable
+            columns={columns}
+            data={filteredRequests.slice(
+              (currentPage - 1) * rowsPerPage,
+              currentPage * rowsPerPage,
+            )}
+            progressPending={loading}
+            progressComponent={<LoadingState />}
+            pagination={false}
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+            onRowClicked={(row) => setSelectedRequest(row)}
+            noDataComponent={
+              <div className="py-10 text-xs text-gray-400">
+                No requests found.
+              </div>
+            }
+          />
+        </div>
+
+        {/* Pagination */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
       <span className="text-[11px] text-gray-400">
         Last updated: {lastUpdatedLabel}

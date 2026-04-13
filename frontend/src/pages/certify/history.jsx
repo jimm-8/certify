@@ -31,7 +31,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -39,7 +39,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
     },
@@ -74,6 +74,13 @@ const History = () => {
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram],
+  );
 
   const fetchRequests = async () => {
     try {
@@ -176,29 +183,66 @@ const History = () => {
       name: "Reference No.",
       selector: (row) => row.reference_number,
       sortable: true,
+      width: "150px",
+    },
+    {
+      name: "OR #",
+      selector: (row) => row.or_number,
+      sortable: true,
+      cell: (row) => row.or_number || "—",
+      width: "130px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
+      width: "370px",
     },
     {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
+      width: "230px",
     },
-    { name: "Program", selector: (row) => row.program, sortable: true },
-    { name: "Purpose", selector: (row) => row.purpose, sortable: true },
+    {
+      name: "Program",
+      selector: (row) => {
+        let program = row.program;
+
+        program = program
+          .replace(/Bachelor of Science/gi, "BS")
+          .replace(/Bachelor of Arts/gi, "BA")
+          .replace(/Bachelor of/gi, ""); // remove completely
+
+        // Clean formatting
+        program = program
+          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return program;
+      },
+      sortable: true,
+      width: "200px",
+    },
+    {
+      name: "Purpose",
+      selector: (row) => row.purpose,
+      sortable: true,
+      width: "220px",
+    },
     {
       name: "Date Requested",
       selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
+      width: "150px",
     },
     {
       name: "Date Released",
       selector: (row) =>
         row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "—",
       sortable: true,
+      width: "150px",
     },
     {
       name: "Action",
@@ -313,21 +357,99 @@ const History = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          progressComponent={<LoadingState />}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No released requests found.
+        <div className="overflow-auto">
+          <div style={{ minWidth: "1690px" }}>
+            <DataTable
+              columns={columns}
+              data={filteredRequests.slice(
+                (currentPage - 1) * rowsPerPage,
+                currentPage * rowsPerPage,
+              )}
+              progressPending={loading}
+              progressComponent={<LoadingState />}
+              pagination={false}
+              customStyles={{
+                ...customStyles,
+                headCells: {
+                  style: {
+                    "&:last-child": {
+                      position: "sticky",
+                      right: 0,
+                      backgroundColor: "#f9fafb",
+                      zIndex: 1,
+                      borderLeft: "1px solid #e5e7eb",
+                      boxShadow: "-4px 0 8px rgba(0,0,0,0.06)",
+                    },
+                  },
+                },
+                cells: {
+                  style: {
+                    "&:last-child": {
+                      position: "sticky",
+                      right: 0,
+                      backgroundColor: "#ffffff",
+                      zIndex: 1,
+                      borderLeft: "1px solid #e5e7eb",
+                      boxShadow: "-4px 0 8px rgba(0,0,0,0.06)",
+                    },
+                  },
+                },
+              }}
+              highlightOnHover
+              responsive={false}
+              fixedHeader
+              noDataComponent={
+                <div className="py-10 text-xs text-gray-400">
+                  No requests ready for releasing.
+                </div>
+              }
+            />
+          </div>
+        </div>
+
+        {/* Pagination outside scroll */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
 
       {/* PDF Viewer Modal */}
