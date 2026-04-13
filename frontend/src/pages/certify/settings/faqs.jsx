@@ -50,7 +50,7 @@ const Faqs = () => {
   ];
 
   return (
-    <div className="m-4 space-y-4">
+    <div className="mt-4 space-y-4">
       <div className="bg-white rounded-md border border-gray-200 shadow-sm px-2 py-2">
         <button
           onClick={() => navigate("/dashboard")}
@@ -61,12 +61,12 @@ const Faqs = () => {
           <span>Frequently Asked Questions</span>
         </button>
         <p className="text-xs text-gray-500 ml-5">
-          Descriptive, diagnostic, and predictive insights for certificate
-          requests.
+          Find answers to common questions about certificate requests and system
+          usage.
         </p>
       </div>
 
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm mb-4">
         {faqs.map((item, index) => {
           const isOpen = openIndex === index;
           return (

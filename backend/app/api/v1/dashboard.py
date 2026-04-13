@@ -82,6 +82,79 @@ def _apply_period(requests, period: Optional[str], today):
     return requests
 
 
+def _period_ranges(period: Optional[str], today):
+    if not period or period == "all":
+        return None
+    if period == "today":
+        current_start = today
+        current_end = today
+        prev_start = today - timedelta(days=1)
+        prev_end = prev_start
+        return current_start, current_end, prev_start, prev_end, "Today", "Yesterday"
+    if period == "last_7_days":
+        current_start = today - timedelta(days=6)
+        current_end = today
+        prev_end = current_start - timedelta(days=1)
+        prev_start = prev_end - timedelta(days=6)
+        return (
+            current_start,
+            current_end,
+            prev_start,
+            prev_end,
+            "Last 7 days",
+            "Previous 7 days",
+        )
+    if period == "last_30_days":
+        current_start = today - timedelta(days=29)
+        current_end = today
+        prev_end = current_start - timedelta(days=1)
+        prev_start = prev_end - timedelta(days=29)
+        return (
+            current_start,
+            current_end,
+            prev_start,
+            prev_end,
+            "Last 30 days",
+            "Previous 30 days",
+        )
+    if period == "this_month":
+        current_start = today.replace(day=1)
+        current_end = today
+        prev_end = current_start - timedelta(days=1)
+        prev_start = prev_end.replace(day=1)
+        return (
+            current_start,
+            current_end,
+            prev_start,
+            prev_end,
+            "This month",
+            "Last month",
+        )
+    if period == "this_year":
+        current_start = today.replace(month=1, day=1)
+        current_end = today
+        prev_start = current_start.replace(year=current_start.year - 1)
+        prev_end = prev_start.replace(month=12, day=31)
+        return (
+            current_start,
+            current_end,
+            prev_start,
+            prev_end,
+            "This year",
+            "Last year",
+        )
+    return None
+
+
+def _count_in_range(requests, start, end):
+    return sum(
+        1
+        for r in requests
+        if _safe_date(r.created_at)
+        and start <= _safe_date(r.created_at) <= end
+    )
+
+
 @router.get("/summary")
 def get_dashboard_summary(
     period: Optional[str] = None,
@@ -89,10 +162,10 @@ def get_dashboard_summary(
     _: dict = Depends(require_permissions("dashboard.read")),
 ):
     request_repo = CertificateRequestRepository(db)
-    requests = request_repo.query().all()
+    requests_all = request_repo.query().all()
     now = datetime.now()
     today = now.date()
-    requests = _apply_period(requests, period, today)
+    requests = _apply_period(requests_all, period, today)
     month_start = today.replace(day=1)
     yesterday = today - timedelta(days=1)
     last_month_end = month_start - timedelta(days=1)
@@ -254,6 +327,28 @@ def get_dashboard_summary(
         for d in last_days
     ]
 
+    overview_meta = None
+    period_range = _period_ranges(period, today)
+    if period_range:
+        (
+            current_start,
+            current_end,
+            prev_start,
+            prev_end,
+            label_current,
+            label_previous,
+        ) = period_range
+        current_count = _count_in_range(requests_all, current_start, current_end)
+        previous_count = _count_in_range(requests_all, prev_start, prev_end)
+        overview_meta = {
+            "period": period,
+            "current_count": current_count,
+            "previous_count": previous_count,
+            "change": _pct_change(current_count, previous_count),
+            "label_current": label_current,
+            "label_previous": label_previous,
+        }
+
     return {
         "generated_at": now.isoformat(),
         "totals": {
@@ -274,6 +369,7 @@ def get_dashboard_summary(
         "status_breakdown": status_breakdown,
         "requests_over_time": requests_over_time,
         "monthly_overview": monthly_overview,
+        "overview_meta": overview_meta,
         "performance_leaderboard": performance_leaderboard,
         "recent_requests": recent_requests,
         "certificate_history": certificate_history,

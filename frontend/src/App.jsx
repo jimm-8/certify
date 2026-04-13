@@ -3,11 +3,11 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { useEffect } from "react";
 import MainLayout from "./layout/main";
 import OdrRequests from "./pages/odr/odr_requests";
-import OdrPayment from "./pages/odr/odr_payment";
 import CertifyIndex from "./pages/certify/index";
 import CertifyDashboard from "./pages/certify/dashboard";
 import TemplatePreview from "./pages/templates/TemplatePreview";
@@ -26,6 +26,7 @@ import Templates from "./pages/certify/templates/templates";
 import Reports from "./pages/certify/reports";
 import Activity from "./pages/certify/activity";
 import Payment from "./pages/certify/cashier/payment";
+import { getTokenPayload } from "./utils/auth";
 
 function App() {
   return (
@@ -37,12 +38,46 @@ function App() {
 
 function AppContent() {
   const location = useLocation();
+  const role = getTokenPayload()?.role;
 
   useEffect(() => {
     if (location.pathname === "/odr") {
       document.title = "Online Document Request";
     }
   }, [location.pathname]);
+
+  if (role === "cashier") {
+    return (
+      <Routes>
+        <Route
+          path="/payment-tagging"
+          element={
+            <RequireRole
+              roles={[
+                "superadmin",
+                "registrar_head",
+                "registrar_staff",
+                "cashier",
+              ]}
+            >
+              <MainLayout>
+                <Payment />
+              </MainLayout>
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/login"
+          element={<Navigate to="/payment-tagging" replace />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<Navigate to="/payment-tagging" replace />}
+        />
+        <Route path="*" element={<Navigate to="/payment-tagging" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
@@ -60,8 +95,6 @@ function AppContent() {
 
       {/* Without Navbar */}
       <Route path="/odr" element={<OdrRequests />} />
-      <Route path="/odr-payment" element={<OdrPayment />} />
-      <Route path="/odr-payments" element={<OdrPayment />} />
 
       {/* Dashboard */}
       <Route
@@ -197,11 +230,18 @@ function AppContent() {
       <Route
         path="/payment-tagging"
         element={
-          <RequireAuth>
+          <RequireRole
+            roles={[
+              "superadmin",
+              "registrar_head",
+              "registrar_staff",
+              "cashier",
+            ]}
+          >
             <MainLayout>
               <Payment />
             </MainLayout>
-          </RequireAuth>
+          </RequireRole>
         }
       />
     </Routes>

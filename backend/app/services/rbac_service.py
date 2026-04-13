@@ -59,6 +59,11 @@ ROLE_PERMISSIONS = {
         "dashboard.read",
         "reports.read",
     ],
+    "cashier": [
+        "requests.read",
+        "payments.read",
+        "payments.create",
+    ],
 }
 
 

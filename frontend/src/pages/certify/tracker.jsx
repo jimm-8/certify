@@ -102,6 +102,13 @@ const Tracker = () => {
   const [nowTick, setNowTick] = useState(Date.now());
 
   const lastSnapshotRef = useRef("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram],
+  );
 
   const fetchRequests = async (opts = { silent: false }) => {
     try {
@@ -452,21 +459,70 @@ const Tracker = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          progressComponent={<LoadingState />}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No requests found.
+        <div className="overflow-auto">
+          <DataTable
+            columns={columns}
+            data={filteredRequests.slice(
+              (currentPage - 1) * rowsPerPage,
+              currentPage * rowsPerPage,
+            )}
+            progressPending={loading}
+            progressComponent={<LoadingState />}
+            pagination={false}
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+            noDataComponent={
+              <div className="py-10 text-xs text-gray-400">
+                No requests found.
+              </div>
+            }
+          />
+        </div>
+
+        {/* Pagination */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
       <span className="text-[11px] text-gray-400">
         Last updated: {lastUpdatedLabel}

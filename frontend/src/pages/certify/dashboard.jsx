@@ -27,6 +27,9 @@ export default function CertifyDashboard() {
   const [statusPeriod, setStatusPeriod] = useState("all");
   const [trendPeriod, setTrendPeriod] = useState("last_7_days");
   const [historyPeriod, setHistoryPeriod] = useState("all");
+  const [monthlyMenuOpen, setMonthlyMenuOpen] = useState(false);
+  const [monthlyPeriod, setMonthlyPeriod] = useState("this_month");
+  const [monthlySummary, setMonthlySummary] = useState(null);
 
   const periodOptions = [
     { value: "today", label: "Today" },
@@ -83,16 +86,28 @@ export default function CertifyDashboard() {
       .catch(() => {});
   }, [historyPeriod]);
 
+  useEffect(() => {
+    dashboardService
+      .getSummary(monthlyPeriod)
+      .then(setMonthlySummary)
+      .catch(() => {});
+  }, [monthlyPeriod]);
+
   const totals = dashboardData?.totals || {};
   const changes = dashboardData?.changes || {};
   const breakdown =
     statusSummary?.status_breakdown || dashboardData?.status_breakdown || {};
   const trend =
     trendSummary?.requests_over_time || dashboardData?.requests_over_time || [];
+  const monthlyOverview =
+    monthlySummary?.monthly_overview || dashboardData?.monthly_overview || [];
+  const monthlyMeta =
+    monthlySummary?.overview_meta || dashboardData?.overview_meta || null;
+  const monthlyBadgeDown = monthlyMeta?.change?.direction === "down";
 
   const formatChangeBadge = (change) => {
     if (!change || change.direction === "flat") return "";
-    return `${change.direction === "up" ? "▲" : "▼"} ${change.percent}%`;
+    return `${change.direction === "up" ? "+" : "-"}${change.percent}%`;
   };
 
   const stats = [
@@ -154,7 +169,7 @@ export default function CertifyDashboard() {
     { color: "#2DC78D", label: "Released" },
   ];
 
-  const tableRows = (dashboardData?.monthly_overview || []).map((r) => ({
+  const tableRows = monthlyOverview.map((r) => ({
     code: r.sr_code || "-",
     name: r.student_name,
     cert: r.certificate_type,
@@ -307,12 +322,46 @@ export default function CertifyDashboard() {
                   <span className="text-sm font-semibold">
                     Monthly Overview
                   </span>
-                  <span className="text-[11px] font-semibold text-[#0F9D58] ml-2">
-                    ▲0.04▲
-                  </span>
+                  {monthlyMeta?.change && (
+                    <span
+                      className={`text-[11px] font-semibold ml-2 ${monthlyBadgeDown ? "text-[#B42318]" : "text-[#0F9D58]"}`}
+                    >
+                      {formatChangeBadge(monthlyMeta.change)}
+                    </span>
+                  )}
                   <span className="text-[11px] text-[#7B8596] ml-1">
-                    | Last year · past month ›
+                    {monthlyMeta?.label_current || "All time"}
+                    {monthlyMeta?.label_previous
+                      ? ` | vs ${monthlyMeta.label_previous}`
+                      : ""}
                   </span>
+                </div>
+                <div className="relative">
+                  <button
+                    className="text-[#7B8596] text-lg tracking-widest cursor-pointer hover:text-[#0B1B3A]"
+                    onClick={() => setMonthlyMenuOpen((v) => !v)}
+                  >
+                    ...
+                  </button>
+                  {monthlyMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-44 bg-white border border-[#E6EAF0] rounded-md shadow-lg z-10 overflow-hidden">
+                      <div className="px-3 py-1.5 text-[10px] text-[#7B8596] uppercase tracking-[0.2em] border-b border-[#EEF1F5]">
+                        Time Range
+                      </div>
+                      {periodOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setMonthlyPeriod(opt.value);
+                            setMonthlyMenuOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs text-[#24324A] hover:bg-[#F6F1E5] font-semibold"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <table className="w-full border-collapse">
@@ -363,7 +412,7 @@ export default function CertifyDashboard() {
               <div className="flex items-center gap-1.5">
                 <FaTriangleExclamation className="text-[#F4A837]" size={13} />
                 {dashboardData?.alerts?.pending_over_5_days || 0} requests
-                pending for over 5 days
+                unresolved for over 5 days
               </div>
             </div>
           </div>

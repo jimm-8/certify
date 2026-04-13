@@ -26,16 +26,14 @@ const INJECTED_PAPER_STYLE = `
     }
     .paper-shell {
       background-color: white !important;
-      /* Long Paper Dimensions (8.5 x 13 inches) */
       width: 216mm; 
       min-height: 330mm; 
       padding: 10mm;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       box-sizing: border-box;
       margin-top: -30px;
-      margin-bottom: 40px; /* Space at the bottom */
+      margin-bottom: 40px;
     }
-    /* Ensure content doesn't break weirdly when editing */
     .paper-shell:focus {
       outline: none;
     }
@@ -64,6 +62,33 @@ const DUMMY_FILL_STYLE = `
     /* Optional: if using HR as lines */
     hr {
       border: none !important;
+    }
+  </style>
+`;
+
+const DUMMY_SIGNATURE_STYLE = `
+  <style>
+    .signature-block,
+    .signature,
+    [class*="signature"] {
+      display: block;
+      width: 100%;
+      text-align: right;
+    }
+    .signature-img, [class*="sig-img"], img.signature {
+      content: url('');
+      display: inline-block;
+      width: 120px;
+      height: 48px;
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(30,80,200,0.15) 4px,
+        rgba(30,80,200,0.15) 5px
+      );
+      border-bottom: 2px solid #1e40af;
+      border-radius: 2px;
     }
   </style>
 `;
@@ -129,6 +154,8 @@ const Templates = () => {
       curriculum_acad_year: "2022-2023",
       campus_certCode: "BSU-MAIN",
       or_number: "OR-2026-00001",
+      name_official: "MARIA SANTOS",
+      official_title: "Head, Registration Services",
     };
 
     const replaceVariable = (match, expr) => {
@@ -141,10 +168,34 @@ const Templates = () => {
       return placeholders[key] || "Sample";
     };
 
-    return html
+    let result = html
       .replace(/{%[\s\S]*?%}/g, "")
       .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable)
       .replace(/\b(blank|fill-cert|underline|line)\b/g, "");
+
+    // Replace signature images via DOM parsing
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(result, "text/html");
+    const dummySigSrc = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='50'%3E%3Cpath d='M10 35 C30 10, 50 40, 70 20 C90 5, 110 38, 150 25' stroke='%231e3a8a' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E`;
+
+    doc.querySelectorAll("img").forEach((img) => {
+      const src = img.getAttribute("src") || "";
+      const cls = img.getAttribute("class") || "";
+      const alt = img.getAttribute("alt") || "";
+      if (
+        src.includes("sign") ||
+        cls.toLowerCase().includes("sign") ||
+        alt.toLowerCase().includes("sign") ||
+        !src ||
+        src === "#"
+      ) {
+        img.setAttribute("src", dummySigSrc);
+        img.style.width = "160px";
+        img.style.height = "50px";
+      }
+    });
+
+    return doc.body.innerHTML;
   };
 
   const needsPaperStyle = useMemo(() => {
@@ -161,7 +212,9 @@ const Templates = () => {
       html = applyDummyTemplateData(html);
     }
 
-    const dummyStyle = useDummyData ? DUMMY_FILL_STYLE : "";
+    const dummyStyle = useDummyData
+      ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
+      : "";
     if (needsPaperStyle) {
       // Inject the style and wrap the content
       html = `<!DOCTYPE html><html><head>${INJECTED_PAPER_STYLE}${dummyStyle}</head><body><div class="paper-shell">${html}</div></body></html>`;
@@ -178,7 +231,9 @@ const Templates = () => {
       html = applyDummyTemplateData(html);
     }
 
-    const dummyStyle = useDummyData ? DUMMY_FILL_STYLE : "";
+    const dummyStyle = useDummyData
+      ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
+      : "";
     if (needsPaperStyle) {
       html = `<div class="paper-shell">${html}</div>`;
       const fullHtml = html.includes("<head>")
@@ -504,7 +559,7 @@ const Templates = () => {
           {/* Editor */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block -mt-3 text-xs font-medium text-gray-600 mb-1">
                 Template File
               </label>
               <select
