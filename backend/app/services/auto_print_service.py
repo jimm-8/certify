@@ -6,6 +6,7 @@ import requests
 
 from app.database import SessionLocal
 from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.services.audit_service import log_print_completed
 from app.services.certificate_service import generate_certificate_pdf
 
 
@@ -86,6 +87,7 @@ class AutoPrintWorker:
             request.auto_printed_at = datetime.now()
             db.commit()
             db.refresh(request)
+            log_print_completed(db, request, user_name="AutoPrint")
             print(f"[AutoPrint] Printed {request.reference_number}")
         except Exception as exc:
             db.rollback()

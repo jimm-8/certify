@@ -7,6 +7,23 @@ import requestService from "../../services/requestService";
 
 const NOTIFICATION_STORAGE_KEY = "certify.notifications.lastSeenId";
 const DISMISSED_NOTIFICATION_STORAGE_KEY = "certify.notifications.dismissedIds";
+const NOTIFICATION_ACTIONS = ["REQUEST_REVIEW_REQUIRED", "REQUEST_PRINTED"];
+
+const getNotificationMeta = (item) => {
+  if (item.action === "REQUEST_PRINTED") {
+    return {
+      title: "Document Printed",
+      badge: item.old_value || "Certificate request",
+      message: item.notes,
+    };
+  }
+
+  return {
+    title: "Historical Record Review Needed",
+    badge: item.old_value || "Certificate request",
+    message: item.notes,
+  };
+};
 
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -86,7 +103,7 @@ const CertifyNavbar = () => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
         const items = all
-          .filter((log) => log.action === "REQUEST_REVIEW_REQUIRED")
+          .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setNotifications(items);
       } catch (error) {
@@ -244,31 +261,41 @@ const CertifyNavbar = () => {
                         No notifications right now.
                       </div>
                     ) : (
-                      visibleNotifications.slice(0, 8).map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            dismissNotification(item.id);
-                            setNotificationsOpen(false);
-                            navigate("/notifications");
-                          }}
-                          className="w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50"
-                        >
-                          <div className="text-sm font-semibold text-gray-800">
-                            Historical Record Review Needed
-                          </div>
-                          <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-amber-700">
-                            {item.old_value || "Certificate request"}
-                          </div>
-                          <div className="mt-1 text-xs leading-5 text-gray-600">
-                            {item.notes}
-                          </div>
-                          <div className="mt-2 text-[11px] text-gray-400">
-                            {new Date(item.created_at).toLocaleString()}
-                          </div>
-                        </button>
-                      ))
+                      visibleNotifications.slice(0, 8).map((item) => {
+                        const meta = getNotificationMeta(item);
+                        const badgeClass =
+                          item.action === "REQUEST_PRINTED"
+                            ? "text-emerald-700"
+                            : "text-amber-700";
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              dismissNotification(item.id);
+                              setNotificationsOpen(false);
+                              navigate("/notifications");
+                            }}
+                            className="w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                          >
+                            <div className="text-sm font-semibold text-gray-800">
+                              {meta.title}
+                            </div>
+                            <div
+                              className={`mt-1 text-[11px] font-medium uppercase tracking-wide ${badgeClass}`}
+                            >
+                              {meta.badge}
+                            </div>
+                            <div className="mt-1 text-xs leading-5 text-gray-600">
+                              {meta.message}
+                            </div>
+                            <div className="mt-2 text-[11px] text-gray-400">
+                              {new Date(item.created_at).toLocaleString()}
+                            </div>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </div>

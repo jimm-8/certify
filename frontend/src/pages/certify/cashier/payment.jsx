@@ -201,8 +201,9 @@ export default function PaymentTagging() {
       showFeedback("OR Number Required", "Please enter OR Number.", "warning");
       return;
     }
-    await handleRecordPayment(selectedRow);
+    const rowToRecord = selectedRow;
     closeOrModal();
+    await handleRecordPayment(rowToRecord);
   };
 
   const filtered = requests

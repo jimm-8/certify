@@ -500,6 +500,11 @@ const Ready = () => {
             minute: "2-digit",
           }),
         });
+        Promise.allSettled(
+          filteredRequests.map((row) => requestService.markPrinted(row.id)),
+        ).then(() => {
+          fetchRequests({ silent: true });
+        });
         setTimeout(() => window.URL.revokeObjectURL(url), 5000);
       };
 

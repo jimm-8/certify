@@ -56,7 +56,7 @@ from app.services.fee_service import compute_request_cost, is_certification_of_g
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
-from app.services.audit_service import log_action
+from app.services.audit_service import log_action, log_print_completed
 
 # Create router
 router = APIRouter(prefix="/requests", tags=["Certificate Requests"])
@@ -812,9 +812,15 @@ def mark_printed(
     request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
+    if request.auto_printed_at:
+        return {
+            "message": "Request already marked as printed.",
+            "auto_printed_at": request.auto_printed_at,
+        }
     request.auto_printed_at = datetime.now()
     db.commit()
     db.refresh(request)
+    log_print_completed(db, request)
     return {"message": "Marked as printed.", "auto_printed_at": request.auto_printed_at}
 
 # Endpoint: Send rejection email manually

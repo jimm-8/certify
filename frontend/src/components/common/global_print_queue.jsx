@@ -42,8 +42,14 @@ const clampPosition = (position, element) => {
 
   const width = element?.offsetWidth ?? 0;
   const height = element?.offsetHeight ?? 0;
-  const maxX = Math.max(SCREEN_PADDING, window.innerWidth - width - SCREEN_PADDING);
-  const maxY = Math.max(SCREEN_PADDING, window.innerHeight - height - SCREEN_PADDING);
+  const maxX = Math.max(
+    SCREEN_PADDING,
+    window.innerWidth - width - SCREEN_PADDING,
+  );
+  const maxY = Math.max(
+    SCREEN_PADDING,
+    window.innerHeight - height - SCREEN_PADDING,
+  );
 
   return {
     x: Math.min(Math.max(position.x, SCREEN_PADDING), maxX),
@@ -139,13 +145,18 @@ const GlobalPrintQueue = () => {
 
     const fetchQueueStats = async () => {
       try {
-        const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+        const data = await requestService.getAllRequests({
+          page: 1,
+          limit: 100,
+        });
         if (!mounted) return;
 
         const all = filterCertifyEligibleRequests(
           Array.isArray(data) ? data : data.items || [],
         );
-        const releasable = all.filter((request) => request.status === "FOR_RELEASING");
+        const releasable = all.filter(
+          (request) => request.status === "FOR_RELEASING",
+        );
         const printedCount = releasable.filter(
           (request) => request.auto_printed_at,
         ).length;
@@ -169,7 +180,8 @@ const GlobalPrintQueue = () => {
     };
   }, []);
 
-  const { active, status, processed, total, failed, lastPrintedAt } = printQueue;
+  const { active, status, processed, total, failed, lastPrintedAt } =
+    printQueue;
   const isDone = status === "done";
   const isError = status === "error";
   const isQueueClear =
@@ -182,7 +194,9 @@ const GlobalPrintQueue = () => {
     }
 
     if (queueStats.totalVisible === 0) return 100;
-    return Math.round((queueStats.printedCount / queueStats.totalVisible) * 100);
+    return Math.round(
+      (queueStats.printedCount / queueStats.totalVisible) * 100,
+    );
   }, [
     active,
     isDone,
@@ -226,7 +240,8 @@ const GlobalPrintQueue = () => {
   let badgeValue = `${queueStats.queuedCount}`;
 
   if (active) {
-    title = status === "printing" ? "Print dialog open" : "Preparing print batch";
+    title =
+      status === "printing" ? "Print dialog open" : "Preparing print batch";
     detail =
       status === "printing"
         ? "Waiting for the browser print flow to finish."
@@ -305,7 +320,9 @@ const GlobalPrintQueue = () => {
             </span>
             <button
               type="button"
-              aria-label={minimized ? "Expand printing queue" : "Minimize printing queue"}
+              aria-label={
+                minimized ? "Expand printing queue" : "Minimize printing queue"
+              }
               onClick={() => setMinimized((prev) => !prev)}
               className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             >
@@ -353,9 +370,7 @@ const GlobalPrintQueue = () => {
 
             <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
               <span>
-                {failed > 0
-                  ? `${failed} failed in latest batch`
-                  : "Available across Certify pages"}
+                {failed > 0 ? `${failed} failed in latest batch` : ""}
               </span>
               <span>
                 {lastPrintedAt ? `Updated ${lastPrintedAt}` : statusCaption}

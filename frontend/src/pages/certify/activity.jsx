@@ -18,6 +18,9 @@ const Activity = () => {
     if (action === "REQUEST_REVIEW_REQUIRED") {
       return "Historical record review required";
     }
+    if (action === "REQUEST_PRINTED") {
+      return "Document printed";
+    }
     if (action === "API_PATCH") {
       const source = String(log.new_value || log.notes || "");
       const match = source.match(/\/requests\/(\d+)\/status/);
@@ -74,7 +77,8 @@ const Activity = () => {
         const filtered = all.filter(
           (log) =>
             log.user_name === username ||
-            log.action === "REQUEST_REVIEW_REQUIRED",
+            log.action === "REQUEST_REVIEW_REQUIRED" ||
+            log.action === "REQUEST_PRINTED",
         );
         setLogs(filtered);
       })
@@ -139,6 +143,11 @@ const Activity = () => {
                 </div>
                 {log.action === "REQUEST_REVIEW_REQUIRED" && (
                   <div className="text-[11px] font-medium uppercase tracking-wide text-amber-700">
+                    {log.old_value || "Certificate request"}
+                  </div>
+                )}
+                {log.action === "REQUEST_PRINTED" && (
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
                     {log.old_value || "Certificate request"}
                   </div>
                 )}

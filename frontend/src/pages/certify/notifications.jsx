@@ -3,6 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
 import requestService from "../../services/requestService";
 
+const NOTIFICATION_ACTIONS = ["REQUEST_REVIEW_REQUIRED", "REQUEST_PRINTED"];
+
+const getNotificationMeta = (log) => {
+  if (log.action === "REQUEST_PRINTED") {
+    return {
+      title: "Document Printed",
+      badge: log.old_value || "Certificate request",
+      message: log.notes,
+      tone: "border-emerald-200 bg-emerald-50/40",
+      badgeTone: "text-emerald-700",
+    };
+  }
+
+  return {
+    title: "Historical Record Review Needed",
+    badge: log.old_value || "Certificate request",
+    message: log.notes,
+    tone: "border-amber-200 bg-amber-50/40",
+    badgeTone: "text-amber-700",
+  };
+};
+
 const Notifications = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
@@ -16,8 +38,8 @@ const Notifications = () => {
       .then((data) => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
-        const filtered = all.filter(
-          (log) => log.action === "REQUEST_REVIEW_REQUIRED",
+        const filtered = all.filter((log) =>
+          NOTIFICATION_ACTIONS.includes(log.action),
         );
         setLogs(filtered);
       })
@@ -69,29 +91,40 @@ const Notifications = () => {
 
       {!loading && notifications.length > 0 && (
         <div className="space-y-2">
-          {notifications.map((log) => (
-            <div
-              key={log.id}
-              className="border border-amber-200 bg-amber-50/40 rounded-md px-2 py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-            >
-              <div>
-                <div className="text-sm font-semibold text-gray-800">
-                  Historical Record Review Needed
+          {notifications.map((log) => {
+            const meta = getNotificationMeta(log);
+
+            return (
+              <div
+                key={log.id}
+                className={`${meta.tone} rounded-md border px-2 py-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between`}
+              >
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">
+                    {meta.title}
+                  </div>
+                  <div
+                    className={`mt-1 text-[11px] font-medium uppercase tracking-wide ${meta.badgeTone}`}
+                  >
+                    {meta.badge}
+                  </div>
+                  {meta.message && (
+                    <div className="mt-1 text-xs text-gray-700">
+                      {meta.message}
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500">
+                    {log.entity_id
+                      ? `Request #${log.entity_id}`
+                      : "Certificate request"}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {log.entity_id
-                    ? `Request #${log.entity_id}`
-                    : "Certificate request"}
+                <div className="text-xs text-gray-500 whitespace-nowrap">
+                  {new Date(log.created_at).toLocaleString()}
                 </div>
-                {log.notes && (
-                  <div className="text-xs text-gray-700 mt-1">{log.notes}</div>
-                )}
               </div>
-              <div className="text-xs text-gray-500 whitespace-nowrap">
-                {new Date(log.created_at).toLocaleString()}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
