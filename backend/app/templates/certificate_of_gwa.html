@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html>
 
 <head>
@@ -231,7 +231,7 @@
     .dst-row {
       display: flex;
       justify-content: center;
-      margin-top: 35px;
+      margin-top: 25px;
       gap: 12px;
       /* space BETWEEN the two fields */
     }
@@ -245,13 +245,18 @@
       font-style: italic;
     }
 
-    /* The LINE above each */
-    .gor::before,
-    .date::before {
-      content: "";
+    /* Value (number/date) */
+    .gor div:first-child,
+    .date div:first-child {
+      margin-bottom: 2px;
+    }
+
+    /* Label with line ABOVE it */
+    .gor-label,
+    .date-label {
       display: block;
       border-top: 1px solid #000;
-      margin-bottom: 3px;
+      padding-top: 2px;
     }
 
     .qr {
@@ -275,6 +280,7 @@
       margin-top: 0;
       margin-bottom: 0;
       text-align: left;
+      font-weight: bold;
     }
 
     .footer {
@@ -380,8 +386,14 @@
         <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
 
         <div class="dst-row">
-          <div class="gor">(GOR SERIAL NUMBER)</div>
-          <div class="date">(DATE OF PAYMENT)</div>
+          <div class="gor">
+            <span class="value">{{ or_number }}</span>
+            <span class="gor-label">(GOR SERIAL NUMBER)</span>
+          </div>
+          <div class="date">
+            <span class="value">{{ date_of_payment }}</span>
+            <span class="date-label">(DATE OF PAYMENT)</span>
+          </div>
         </div>
       </div>
 
@@ -394,7 +406,7 @@
 
       <div>
         <p class="ref">{{ campus_certCode }}</p>
-        <p class="ref">{{ or_number }}</p>
+        <p class="ref">{{ control_num }}</p>
       </div>
       <div class="footer">
         <p><i>Leading Innovations, Transforming Lives, Building the Nation</i></p>
