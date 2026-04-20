@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -12,6 +12,11 @@ class RequestStatusEnum(str, Enum):
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
     RELEASED = "RELEASED"
+
+
+class RequestTypeEnum(str, Enum):
+    CERTIFICATE = "certificate"
+    DOCUMENT = "document"
 
 # Schema for certificate type (what we send back)
 class CertificateDependencyField(BaseModel):
@@ -39,8 +44,16 @@ class CertificateTypeResponse(BaseModel):
 
 # Schema for creating a certificate request (what user sends us)
 class CertificateRequestCreate(BaseModel):
-    # Certificate info
-    certificate_type_id: int = Field(..., description="ID of certificate type")
+    request_type: RequestTypeEnum = Field(
+        RequestTypeEnum.CERTIFICATE,
+        description="Kind of request being submitted",
+    )
+    requested_document_name: Optional[str] = Field(
+        None, description="Requested non-certificate document name"
+    )
+    certificate_type_id: Optional[int] = Field(
+        None, description="ID of certificate type"
+    )
     
     # Requesting individual's information
     requestor_name: str = Field(..., min_length=2, max_length=255, description="Full name of requestor")
@@ -62,11 +75,30 @@ class CertificateRequestCreate(BaseModel):
     
     # Signature (base64 encoded image data)
     signature_data: Optional[str] = Field(None, description="Base64 encoded signature image")
+
+    @model_validator(mode="after")
+    def validate_request_kind(self):
+        requested_document_name = (self.requested_document_name or "").strip()
+
+        if self.request_type == RequestTypeEnum.CERTIFICATE:
+            if not self.certificate_type_id:
+                raise ValueError(
+                    "certificate_type_id is required for certificate requests"
+                )
+        elif self.request_type == RequestTypeEnum.DOCUMENT:
+            if not requested_document_name:
+                raise ValueError(
+                    "requested_document_name is required for document requests"
+                )
+            self.requested_document_name = requested_document_name
+
+        return self
     
     class Config:
         json_schema_extra = {
             "example": {
                 "certificate_type_id": 1,
+                "request_type": "certificate",
                 "requestor_name": "Juan Dela Cruz",
                 "requestor_address": "123 Main St, Manila, Philippines",
                 "requestor_relationship": "Self",
@@ -104,7 +136,10 @@ class CertificateRequestResponse(BaseModel):
 class CertificateRequestTrackResponse(BaseModel):
     reference_number: str
     status: RequestStatusEnum
-    certificate_type: str
+    request_type: RequestTypeEnum
+    requested_document_name: Optional[str] = None
+    certificate_type: Optional[str] = None
+    request_label: str
     student_name: str
     submitted_date: datetime
     updated_date: Optional[datetime] = None
@@ -116,8 +151,11 @@ class CertificateRequestTrackResponse(BaseModel):
 class CertificateRequestDetail(BaseModel):
     id: int
     reference_number: str
+    request_type: RequestTypeEnum
+    requested_document_name: Optional[str] = None
+    request_label: Optional[str] = None
     status: RequestStatusEnum
-    certificate_type_name: str
+    certificate_type_name: Optional[str] = None
     or_number: Optional[str] = None
     
     # Requestor info

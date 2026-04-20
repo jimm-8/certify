@@ -11,7 +11,12 @@ import glob
 import json
 
 from app.database import get_db
-from app.models.certificate_request import CertificateRequest, CertificateType, RequestStatus
+from app.models.certificate_request import (
+    CertificateRequest,
+    CertificateType,
+    RequestStatus,
+    RequestType,
+)
 from app.models.student import Student
 from app.models.program import Program
 from app.repositories import (
@@ -51,9 +56,17 @@ from app.services.fee_service import compute_request_cost, is_certification_of_g
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
+from app.services.audit_service import log_action
 
 # Create router
 router = APIRouter(prefix="/requests", tags=["Certificate Requests"])
+
+SUPPORTED_RECORDS_START_YEAR = 2018
+OUT_OF_RANGE_YEAR_NOTIFICATION = (
+    "A new certificate request was submitted with a graduation year outside "
+    "the supported data range. Records prior to 2018 are not available in "
+    "the system. Please review the request via the ODR portal."
+)
 
 # Helper function to generate reference number
 def generate_reference_number(db: Session) -> str:
@@ -117,15 +130,36 @@ async def create_certificate_request(
     Submit a new certificate request with signature
     """
     
-    # Verify certificate type exists
-    cert_type_repo = CertificateTypeRepository(db)
-    cert_type = cert_type_repo.get_active_by_id(request_data.certificate_type_id)
-    
-    if not cert_type:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Certificate type not found or inactive"
-        )
+    cert_type = None
+    request_type = RequestType(request_data.request_type.value)
+    requested_document_name = (
+        request_data.requested_document_name.strip()
+        if request_data.requested_document_name
+        else None
+    )
+
+    graduation_year = None
+    if request_data.year_graduated:
+        try:
+            graduation_year = int(str(request_data.year_graduated).strip())
+        except (TypeError, ValueError):
+            graduation_year = None
+
+    needs_historical_review = (
+        request_type == RequestType.CERTIFICATE
+        and graduation_year is not None
+        and graduation_year < SUPPORTED_RECORDS_START_YEAR
+    )
+
+    if request_type == RequestType.CERTIFICATE:
+        cert_type_repo = CertificateTypeRepository(db)
+        cert_type = cert_type_repo.get_active_by_id(request_data.certificate_type_id)
+
+        if not cert_type:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Certificate type not found or inactive"
+            )
     
     # Generate reference number and PIN
     reference_number = generate_reference_number(db)
@@ -138,22 +172,25 @@ async def create_certificate_request(
     
     # Compute request cost on the server (pricing rules)
     computed_cost = None
-    if request_data.sr_code and (
-        is_course_description(cert_type.name) or is_certification_of_grades(cert_type.name)
-    ):
-        student_courses = CertificateDependencyEngine._get_student_courses(
-            db, request_data.sr_code
-        )
-        computed_cost = compute_request_cost(cert_type.name, row_count=len(student_courses))
-    else:
-        computed_cost = compute_request_cost(cert_type.name)
+    if cert_type is not None:
+        if request_data.sr_code and (
+            is_course_description(cert_type.name) or is_certification_of_grades(cert_type.name)
+        ):
+            student_courses = CertificateDependencyEngine._get_student_courses(
+                db, request_data.sr_code
+            )
+            computed_cost = compute_request_cost(cert_type.name, row_count=len(student_courses))
+        else:
+            computed_cost = compute_request_cost(cert_type.name)
 
     # Create new request
     new_request = CertificateRequest(
         reference_number=reference_number,
         pin=pin,
-        certificate_type_id=cert_type.id,
-        certificate_type_name=cert_type.name,
+        request_type=request_type.value,
+        requested_document_name=requested_document_name,
+        certificate_type_id=cert_type.id if cert_type else None,
+        certificate_type_name=cert_type.name if cert_type else None,
         requestor_name=request_data.requestor_name,
         requestor_address=request_data.requestor_address,
         requestor_relationship=request_data.requestor_relationship,
@@ -167,8 +204,14 @@ async def create_certificate_request(
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
         request_cost=computed_cost if computed_cost is not None else request_data.request_cost,
-        verification_token=generate_verification_token(),
+        verification_token=generate_verification_token()
+        if request_type == RequestType.CERTIFICATE and not needs_historical_review
+        else None,
         status=RequestStatus.APPROVED
+        if request_type == RequestType.CERTIFICATE and not needs_historical_review
+        else RequestStatus.PENDING
+        if needs_historical_review
+        else RequestStatus.SUBMITTED,
     )
     
     # Save to database
@@ -176,6 +219,19 @@ async def create_certificate_request(
     request_repo.add(new_request)
     db.commit()
     db.refresh(new_request)
+
+    if needs_historical_review:
+        log_action(
+            db,
+            action="REQUEST_REVIEW_REQUIRED",
+            entity_type="certificate_request",
+            entity_id=new_request.id,
+            field_name="year_graduated",
+            new_value=str(graduation_year),
+            user_name="System",
+            old_value=new_request.request_label,
+            notes=OUT_OF_RANGE_YEAR_NOTIFICATION,
+        )
     
     # Send confirmation email (optional; can be deferred to processing step)
     try:
@@ -213,7 +269,7 @@ async def create_certificate_request(
                 pin=pin,
                 requestor_name=request_data.requestor_name,
                 student_name=request_data.student_name,
-                certificate_type=cert_type.name,
+                certificate_type=new_request.request_label,
                 submitted_date=new_request.created_at,
                 request_cost=new_request.request_cost,
                 campus_email=campus_email,
@@ -227,7 +283,13 @@ async def create_certificate_request(
     return CertificateRequestResponse(
         reference_number=reference_number,
         pin=pin,
-        message="Certificate request submitted successfully! Check your email for tracking details.",
+        message=(
+            "Certificate request submitted successfully! Check your email for tracking details."
+            if request_type == RequestType.CERTIFICATE and not needs_historical_review
+            else "Certificate request submitted and flagged for manual review. Check your email for tracking details."
+            if request_type == RequestType.CERTIFICATE
+            else "Document request submitted successfully! Check your email for tracking details."
+        ),
         submitted_date=new_request.created_at
     )
 
@@ -257,7 +319,10 @@ def track_certificate_request(
     return CertificateRequestTrackResponse(
         reference_number=request.reference_number,
         status=request.status,
+        request_type=request.request_type,
+        requested_document_name=request.requested_document_name,
         certificate_type=request.certificate_type_name,
+        request_label=request.request_label,
         student_name=request.student_name,
         submitted_date=request.created_at,
         updated_date=request.updated_at

@@ -3,6 +3,7 @@ import DataTable from "react-data-table-component";
 import requestService from "../../../services/requestService";
 import paymentService from "../../../services/paymentService";
 import { BsCalendar3, BsChevronDown, BsSearch } from "react-icons/bs";
+import { filterCertifyEligibleRequests } from "../../../utils/certifyRequestGuard";
 
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
@@ -95,9 +96,9 @@ export default function PaymentTagging() {
         requestService.getAllRequests({ page: 1, limit: 200 }),
         paymentService.getUnpaidRequests({ page: 1, limit: 500 }),
       ]);
-      const allRequests = Array.isArray(allData)
-        ? allData
-        : allData.items || [];
+      const allRequests = filterCertifyEligibleRequests(
+        Array.isArray(allData) ? allData : allData.items || [],
+      );
       const unpaidList = Array.isArray(unpaidData)
         ? unpaidData
         : unpaidData.items || [];

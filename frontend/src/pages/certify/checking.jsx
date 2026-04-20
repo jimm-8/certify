@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsSearch,
   BsCalendar3,
@@ -134,7 +135,9 @@ const Checking = () => {
     try {
       if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const all = Array.isArray(data) ? data : data.items || [];
+      const all = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
       const approved = all.filter((r) => r.status === "APPROVED");
       setRequests(approved);
       if (approved.length) {

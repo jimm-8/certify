@@ -3,6 +3,12 @@ from sqlalchemy.sql import func
 from app.database import Base
 import enum
 
+
+class RequestType(str, enum.Enum):
+    CERTIFICATE = "certificate"
+    DOCUMENT = "document"
+
+
 # Request statuses
 class RequestStatus(str, enum.Enum):
     SUBMITTED = "SUBMITTED"
@@ -33,8 +39,17 @@ class CertificateRequest(Base):
     pin = Column(String(4), nullable=False)
     or_number = Column(String(20), nullable=True, index=True)
     
-    certificate_type_id = Column(Integer, ForeignKey("certificate_types.id"), nullable=False)
-    certificate_type_name = Column(String(255), nullable=False)
+    request_type = Column(
+        String(50),
+        nullable=False,
+        default=RequestType.CERTIFICATE.value,
+        server_default=RequestType.CERTIFICATE.value,
+        index=True,
+    )
+    requested_document_name = Column(String(255), nullable=True)
+
+    certificate_type_id = Column(Integer, ForeignKey("certificate_types.id"), nullable=True)
+    certificate_type_name = Column(String(255), nullable=True)
     
     requestor_name = Column(String(255), nullable=False)
     requestor_address = Column(Text, nullable=False)
@@ -67,4 +82,12 @@ class CertificateRequest(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    @property
+    def request_label(self):
+        return self.certificate_type_name or self.requested_document_name or "Request"
+
+    @property
+    def is_certificate_request(self):
+        return self.request_type == RequestType.CERTIFICATE.value
 

@@ -13,7 +13,11 @@ from app.services.fee_service import (
 )
 from pypdf import PdfReader
 
-from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.models.certificate_request import (
+    CertificateRequest,
+    RequestStatus,
+    RequestType,
+)
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
 from app.models.payment import Payment
@@ -42,13 +46,23 @@ VALID_TRANSITIONS = {
     RequestStatus.RELEASED: [],  # Final state
 }
 
+CERTIFY_ONLY_STATUSES = {
+    RequestStatus.APPROVED,
+    RequestStatus.PROCESSING,
+    RequestStatus.FOR_RELEASING,
+    RequestStatus.RELEASED,
+}
+
+
 def can_transition_to(current_status: RequestStatus, new_status: RequestStatus) -> bool:
     """Check if status transition is valid"""
     return new_status in VALID_TRANSITIONS.get(current_status, [])
 
+
 def generate_verification_token() -> str:
     """Generate unique verification token for QR code"""
     return secrets.token_urlsafe(32)
+
 
 def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
     """Generate OR number in format: YY-MM-#### (monthly sequence)."""
@@ -58,12 +72,15 @@ def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
     prefix = f"{year}-{month}-"
 
     request_repo = CertificateRequestRepository(db)
-    count = request_repo.query().filter(
-        CertificateRequest.or_number.like(f"{prefix}%")
-    ).count()
+    count = (
+        request_repo.query()
+        .filter(CertificateRequest.or_number.like(f"{prefix}%"))
+        .count()
+    )
 
     next_num = count + 1
     return f"{prefix}{next_num:04d}"
+
 
 async def update_request_status(
     db: Session,
@@ -85,22 +102,30 @@ async def update_request_status(
     request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Request not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
         )
-    
+
     # Check if already in final state
     if request.status in [RequestStatus.RELEASED]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot change status of {request.status.value} request"
+            detail=f"Cannot change status of {request.status.value} request",
         )
-    
+
     # Validate transition
     if not can_transition_to(request.status, new_status):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot transition from {request.status.value} to {new_status.value}"
+            detail=f"Cannot transition from {request.status.value} to {new_status.value}",
+        )
+
+    if (
+        request.request_type != RequestType.CERTIFICATE.value
+        and new_status in CERTIFY_ONLY_STATUSES
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only certificate requests can enter the Certify workflow.",
         )
 
     # Require payment before releasing
@@ -113,12 +138,12 @@ async def update_request_status(
                 campus_email = None
                 student = None
                 if request.sr_code:
-                    student = (
-                        student_repo.get_by_sr_code(request.sr_code)
-                    )
+                    student = student_repo.get_by_sr_code(request.sr_code)
                 campus = None
                 if student is not None:
-                    campus = student.campus or (student.program.campus if student.program else None)
+                    campus = student.campus or (
+                        student.program.campus if student.program else None
+                    )
                 if campus is None and request.program:
                     program = program_repo.get_by_name(request.program)
                     campus = program.campus if program else None
@@ -141,9 +166,9 @@ async def update_request_status(
                 print(f"⚠️ Payment-missing email failed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot mark as FOR_RELEASING. No payment found for this reference number."
+                detail="Cannot change status. No payment found for this reference number.",
             )
-    
+
     # Store old status for audit
     old_status = request.status
 
@@ -153,7 +178,7 @@ async def update_request_status(
     # Generate verification token when moving to APPROVED
     if new_status == RequestStatus.APPROVED and not request.verification_token:
         request.verification_token = generate_verification_token()
-    
+
     # Create audit log
     audit_log = AuditLog(
         action="STATUS_CHANGED",
@@ -163,15 +188,16 @@ async def update_request_status(
         old_value=old_status.value,
         new_value=new_status.value,
         user_name=user_name,
-        notes=notes
+        notes=notes,
     )
     audit_repo.add(audit_log)
-    
+
     if new_status == RequestStatus.PROCESSING:
         if not request.or_number:
             request.or_number = generate_or_number(db)
         try:
             from app.services.certificate_service import generate_certificate_pdf
+
             pdf_path = generate_certificate_pdf(db, request_id, user_name)
 
             # Save PDF path to request
@@ -242,7 +268,7 @@ async def update_request_status(
                     file_path=request.pdf_path,
                 )
             )
-    
+
     db.commit()
     db.refresh(request)
 
@@ -255,7 +281,9 @@ async def update_request_status(
                 student = student_repo.get_by_sr_code(request.sr_code)
             campus = None
             if student is not None:
-                campus = student.campus or (student.program.campus if student.program else None)
+                campus = student.campus or (
+                    student.program.campus if student.program else None
+                )
             if campus is None and request.program:
                 program = program_repo.get_by_name(request.program)
                 campus = program.campus if program else None
@@ -289,12 +317,12 @@ async def update_request_status(
                 campus_telNo = None
                 student = None
                 if request.sr_code:
-                    student = (
-                        student_repo.get_by_sr_code(request.sr_code)
-                    )
+                    student = student_repo.get_by_sr_code(request.sr_code)
                 campus = None
                 if student is not None:
-                    campus = student.campus or (student.program.campus if student.program else None)
+                    campus = student.campus or (
+                        student.program.campus if student.program else None
+                    )
                 if campus is None and request.program:
                     program = program_repo.get_by_name(request.program)
                     campus = program.campus if program else None
@@ -314,15 +342,16 @@ async def update_request_status(
                 print(f"✅ Release email sent to {request.requestor_email}")
         except Exception as e:
             print(f"⚠️ Release email failed: {e}")
-    
+
     return request
+
 
 def update_student_data(
     db: Session,
     request_id: int,
     updates: dict,
     user_name: str = "System",
-    notes: Optional[str] = None
+    notes: Optional[str] = None,
 ) -> CertificateRequest:
     """
     Update student information on a request
@@ -332,17 +361,16 @@ def update_student_data(
     request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Request not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
         )
-    
+
     # Update fields and create audit logs
     for field, new_value in updates.items():
         if new_value is not None and hasattr(request, field):
             old_value = getattr(request, field)
             if old_value != new_value:
                 setattr(request, field, new_value)
-                
+
                 # Create audit log
                 audit_log = AuditLog(
                     action="DATA_UPDATED",
@@ -352,21 +380,22 @@ def update_student_data(
                     old_value=str(old_value) if old_value else None,
                     new_value=str(new_value),
                     user_name=user_name,
-                    notes=notes
+                    notes=notes,
                 )
                 audit_repo.add(audit_log)
-    
+
     db.commit()
     db.refresh(request)
-    
+
     return request
+
 
 def add_note_to_request(
     db: Session,
     request_id: int,
     note_text: str,
     note_type: str = "INFO",
-    user_name: str = "System"
+    user_name: str = "System",
 ) -> AuditLog:
     """
     Add a note to a request
@@ -376,24 +405,20 @@ def add_note_to_request(
     request = request_repo.get_by_id(request_id)
     if not request:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Request not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
         )
-    
+
     audit_log = AuditLog(
         action="NOTE_ADDED",
         entity_type="certificate_request",
         entity_id=request_id,
         field_name="notes",
         new_value=note_text,
-        user_name=user_name
+        user_name=user_name,
     )
     audit_repo.add(audit_log)
-    
+
     db.commit()
     db.refresh(audit_log)
-    
+
     return audit_log
-
-
-

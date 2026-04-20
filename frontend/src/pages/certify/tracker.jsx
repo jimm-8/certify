@@ -3,6 +3,7 @@ import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import BulkStatusModal from "../../components/common/bulkStatusModal";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsSearch,
   BsCalendar3,
@@ -114,7 +115,9 @@ const Tracker = () => {
     try {
       if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const items = Array.isArray(data) ? data : data.items || [];
+      const items = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
       const snapshot = JSON.stringify(
         items.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
       );

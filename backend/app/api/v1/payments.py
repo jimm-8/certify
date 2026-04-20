@@ -24,6 +24,16 @@ from app.api.v1.auth import require_permissions
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
+def _payment_purpose_label(request: CertificateRequest) -> str:
+    request_label = request.request_label
+    prefix = (
+        "Certificate Request"
+        if request.request_type == "certificate"
+        else "Document Request"
+    )
+    return f"{prefix} {request.reference_number} - {request_label}"
+
+
 @router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
 def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dict = Depends(require_permissions("payments.create"))):
     request_repo = CertificateRequestRepository(db)
@@ -46,7 +56,7 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
     payment = Payment(
         sr_code=request.sr_code,
         payer_name=request.requestor_name,
-        purpose=f"Certificate Request {request.reference_number} - {request.certificate_type_name}",
+        purpose=_payment_purpose_label(request),
         amount=amount,
         payment_method=payload.payment_method,
         payment_status=payment_status,
@@ -121,7 +131,7 @@ def lookup_payment_request(reference_number: str, db: Session = Depends(get_db))
         sr_code=request.sr_code,
         reference_number=request.reference_number,
         student_name=request.student_name,
-        certificate_type_name=request.certificate_type_name,
+        certificate_type_name=request.request_label,
         requestor_name=request.requestor_name,
         request_cost=float(request.request_cost) if request.request_cost is not None else None,
         status=request.status.value if hasattr(request.status, "value") else str(request.status),
@@ -156,7 +166,7 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
     payment_purpose = (
         payload.purpose
         if payload.purpose
-        else f"Certificate Request {request.reference_number} - {request.certificate_type_name}"
+        else _payment_purpose_label(request)
     )
 
     payment = Payment(

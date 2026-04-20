@@ -25,6 +25,7 @@ import SignatureManager from "./pages/certify/settings/signatures";
 import Templates from "./pages/certify/templates/templates";
 import Reports from "./pages/certify/reports";
 import Activity from "./pages/certify/activity";
+import Notifications from "./pages/certify/notifications";
 import Payment from "./pages/certify/cashier/payment";
 import { getTokenPayload } from "./utils/auth";
 
@@ -222,6 +223,17 @@ function AppContent() {
           <RequireAuth>
             <MainLayout>
               <Activity />
+            </MainLayout>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/notifications"
+        element={
+          <RequireAuth>
+            <MainLayout>
+              <Notifications />
             </MainLayout>
           </RequireAuth>
         }

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsCalendar3,
   BsChevronDown,
@@ -108,7 +109,9 @@ export default function AllRequests() {
     try {
       setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 200 });
-      setRequests(Array.isArray(data) ? data : data.items || []);
+      setRequests(
+        filterCertifyEligibleRequests(Array.isArray(data) ? data : data.items || []),
+      );
     } catch (err) {
       console.error("Failed to fetch requests:", err);
     } finally {

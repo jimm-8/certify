@@ -9,6 +9,7 @@ import {
   BsDownload,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -86,7 +87,9 @@ const History = () => {
     try {
       setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const all = Array.isArray(data) ? data : data.items || [];
+      const all = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
       setRequests(all.filter((r) => r.status === "RELEASED"));
     } catch (error) {
       console.error("Failed to fetch released requests:", error);

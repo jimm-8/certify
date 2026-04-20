@@ -7,7 +7,7 @@ from app.models.audit_log import AuditLog
 from app.models.authorized_official import AuthorizedOfficial
 from app.models.campus import Campus
 from app.models.certificate import Certificate
-from app.models.certificate_request import CertificateRequest, CertificateType
+from app.models.certificate_request import CertificateRequest, CertificateType, RequestType
 from app.models.certificate_template import CertificateTemplate
 from app.models.certificate_verification import CertificateVerification
 from app.models.college import College
@@ -130,6 +130,11 @@ class CertificateRequestRepository(BaseRepository[CertificateRequest]):
 
     def by_status(self, status):
         return self.query().filter(CertificateRequest.status == status)
+
+    def certificates_only(self):
+        return self.query().filter(
+            CertificateRequest.request_type == RequestType.CERTIFICATE.value
+        )
 
 
 class CertificateTypeRepository(BaseRepository[CertificateType]):
