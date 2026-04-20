@@ -10,6 +10,7 @@ import {
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -77,6 +78,21 @@ const History = () => {
   const [selectedProgram, setSelectedProgram] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   useEffect(
     () => setCurrentPage(1),
@@ -148,7 +164,11 @@ const History = () => {
       setPdfUrl(url);
     } catch (error) {
       console.error("Failed to load certificate:", error);
-      alert("Failed to load certificate preview.");
+      showFeedback(
+        "Preview Failed",
+        "Failed to load certificate preview.",
+        "error",
+      );
     } finally {
       setPdfLoading(false);
     }
@@ -175,7 +195,11 @@ const History = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 3000);
     } catch (error) {
       console.error("Failed to download certificate:", error);
-      alert("Failed to download certificate. Please try again.");
+      showFeedback(
+        "Download Failed",
+        "Failed to download certificate. Please try again.",
+        "error",
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -494,6 +518,15 @@ const History = () => {
           </div>
         </div>
       )}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };

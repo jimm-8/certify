@@ -26,7 +26,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -34,7 +34,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb" },
     },
@@ -110,7 +110,9 @@ export default function AllRequests() {
       setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 200 });
       setRequests(
-        filterCertifyEligibleRequests(Array.isArray(data) ? data : data.items || []),
+        filterCertifyEligibleRequests(
+          Array.isArray(data) ? data : data.items || [],
+        ),
       );
     } catch (err) {
       console.error("Failed to fetch requests:", err);
@@ -146,18 +148,41 @@ export default function AllRequests() {
       name: "Reference No.",
       selector: (row) => row.reference_number,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
+      width: "400px",
     },
     {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
+      width: "300px",
     },
-    { name: "Program", selector: (row) => row.program, sortable: true },
+    {
+      name: "Program",
+      selector: (row) => {
+        let program = row.program;
+
+        program = program
+          .replace(/Bachelor of Science/gi, "BS")
+          .replace(/Bachelor of Arts/gi, "BA")
+          .replace(/Bachelor of/gi, ""); // remove completely
+
+        // Clean formatting
+        program = program
+          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return program;
+      },
+      sortable: true,
+      width: "280px",
+    },
     {
       name: "Date Requested",
       selector: (row) => row.created_at,
@@ -170,6 +195,7 @@ export default function AllRequests() {
               day: "numeric",
             })
           : "—",
+      width: "180px",
     },
     {
       name: "Status",
@@ -184,6 +210,7 @@ export default function AllRequests() {
           {row.status}
         </span>
       ),
+      width: "150px",
     },
   ];
 

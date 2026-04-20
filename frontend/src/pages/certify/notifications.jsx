@@ -52,9 +52,6 @@ const Notifications = () => {
           <BsChevronLeft style={{ strokeWidth: "0.5" }} />
           <span>Notifications</span>
         </button>
-        <div className="text-xs text-gray-500">
-          Historical-record and review-required alerts
-        </div>
       </div>
 
       {loading && (
@@ -75,17 +72,16 @@ const Notifications = () => {
           {notifications.map((log) => (
             <div
               key={log.id}
-              className="border border-amber-200 bg-amber-50/40 rounded-md px-3 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+              className="border border-amber-200 bg-amber-50/40 rounded-md px-2 py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
             >
               <div>
                 <div className="text-sm font-semibold text-gray-800">
                   Historical Record Review Needed
                 </div>
-                <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-amber-700">
-                  {log.old_value || "Certificate request"}
-                </div>
                 <div className="text-xs text-gray-500">
-                  {log.entity_id ? `Request #${log.entity_id}` : "Certificate request"}
+                  {log.entity_id
+                    ? `Request #${log.entity_id}`
+                    : "Certificate request"}
                 </div>
                 {log.notes && (
                   <div className="text-xs text-gray-700 mt-1">{log.notes}</div>

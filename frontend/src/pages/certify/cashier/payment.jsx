@@ -4,6 +4,7 @@ import requestService from "../../../services/requestService";
 import paymentService from "../../../services/paymentService";
 import { BsCalendar3, BsChevronDown, BsSearch } from "react-icons/bs";
 import { filterCertifyEligibleRequests } from "../../../utils/certifyRequestGuard";
+import FeedbackDialog from "../../../components/common/feedbackDialog";
 
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
@@ -63,6 +64,21 @@ export default function PaymentTagging() {
   const [orNumberInput, setOrNumberInput] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const filterOptions = [
     { label: "Today", days: 0 },
@@ -161,7 +177,7 @@ export default function PaymentTagging() {
       await fetchRequests();
     } catch (err) {
       console.error("Failed to record payment:", err);
-      alert("Failed to record payment.");
+      showFeedback("Payment Failed", "Failed to record payment.", "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [row.id]: false }));
     }
@@ -182,7 +198,7 @@ export default function PaymentTagging() {
   const confirmOrAndRecord = async () => {
     if (!selectedRow?.id) return;
     if (!orNumberInput.trim()) {
-      alert("Please enter OR Number.");
+      showFeedback("OR Number Required", "Please enter OR Number.", "warning");
       return;
     }
     await handleRecordPayment(selectedRow);
@@ -463,6 +479,15 @@ export default function PaymentTagging() {
           </div>
         </div>
       )}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }

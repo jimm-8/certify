@@ -12,9 +12,9 @@
     "test:run": "vitest run",
     "test:report": "vitest run --reporter json --outputFile test-results.json && node scripts/test-report.mjs",
     "test:integration": "vitest run src/test/integration",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:table": "vitest run --reporter json --outputFile test-results.json && playwright test --reporter=json && node scripts/test-report-table.mjs"
+    "test:e2e": "node scripts/run-playwright.mjs",
+    "test:e2e:ui": "node scripts/run-playwright.mjs --ui",
+    "test:table": "vitest run --reporter json --outputFile test-results.json && node scripts/run-playwright.mjs && node scripts/test-report-table.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

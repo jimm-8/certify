@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsSearch,
@@ -88,6 +89,21 @@ const Checking = () => {
   const [nowTick, setNowTick] = useState(Date.now());
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   useEffect(
     () => setCurrentPage(1),
@@ -309,10 +325,14 @@ const Checking = () => {
       await requestService.sendRejectionEmail(req.id, finalNotes);
       setSelectedRequest({ ...req, status: "REJECTED" });
       fetchRequests();
-      alert("Rejection email sent.");
+      showFeedback("Email Sent", "Rejection email sent.", "success");
     } catch (error) {
       console.error("Failed to reject request:", error);
-      alert("Failed to send rejection email.");
+      showFeedback(
+        "Email Failed",
+        "Failed to send rejection email.",
+        "error",
+      );
     } finally {
       setModalLoading(false);
       setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
@@ -324,10 +344,14 @@ const Checking = () => {
     setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
     try {
       await requestService.sendRejectionEmail(req.id, notes || "");
-      alert("Rejection email sent.");
+      showFeedback("Email Sent", "Rejection email sent.", "success");
     } catch (error) {
       console.error("Failed to send rejection email:", error);
-      alert("Failed to send rejection email.");
+      showFeedback(
+        "Email Failed",
+        "Failed to send rejection email.",
+        "error",
+      );
     } finally {
       setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
     }
@@ -683,6 +707,15 @@ const Checking = () => {
         }
         validationFlags={
           selectedRequest ? getValidationFlags(selectedRequest) : []
+        }
+      />
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
         }
       />
     </div>

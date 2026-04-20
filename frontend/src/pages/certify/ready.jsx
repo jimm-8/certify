@@ -18,6 +18,7 @@ import {
   writePrintQueueState,
 } from "../../utils/printQueue";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -157,6 +158,21 @@ const Ready = () => {
     total: 0,
   });
   const [bulkReleaseDone, setBulkReleaseDone] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const lastSnapshotRef = useRef("");
 
@@ -279,7 +295,11 @@ const Ready = () => {
       setPdfUrl(url);
     } catch (error) {
       console.error("Failed to load certificate:", error);
-      alert("Failed to load certificate preview.");
+      showFeedback(
+        "Preview Failed",
+        "Failed to load certificate preview.",
+        "error",
+      );
     } finally {
       setPdfLoading(false);
     }
@@ -296,7 +316,11 @@ const Ready = () => {
       fetchRequests();
     } catch (error) {
       console.error("Failed to mark as released:", error);
-      alert("Failed to update status. Please try again.");
+      showFeedback(
+        "Release Failed",
+        "Failed to update status. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -305,10 +329,14 @@ const Ready = () => {
     try {
       await requestService.sendReadyEmail(row.id);
       fetchRequests();
-      alert("Ready-for-pickup email sent.");
+      showFeedback(
+        "Email Sent",
+        "Ready-for-pickup email sent successfully.",
+        "success",
+      );
     } catch (error) {
       console.error("Failed to send ready email:", error);
-      alert("Failed to send email. Please try again.");
+      showFeedback("Email Failed", "Failed to send email. Please try again.", "error");
     } finally {
       setEmailLoading((prev) => ({ ...prev, [row.id]: false }));
     }
@@ -318,7 +346,11 @@ const Ready = () => {
     const targets = filteredRequests.filter((r) => !r.ready_email_sent_at);
 
     if (targets.length === 0) {
-      alert("All ready emails have already been sent.");
+      showFeedback(
+        "Nothing To Send",
+        "All ready emails have already been sent.",
+        "info",
+      );
       return;
     }
 
@@ -358,7 +390,11 @@ const Ready = () => {
     const targets = releasableRequests;
 
     if (targets.length === 0) {
-      alert("No requests are eligible to be marked as released.");
+      showFeedback(
+        "Nothing To Release",
+        "No requests are eligible to be marked as released.",
+        "info",
+      );
       return;
     }
 
@@ -396,7 +432,11 @@ const Ready = () => {
     }, 1500);
 
     if (failed.length > 0) {
-      alert(`Failed to release ${failed.length} request(s). Please retry.`);
+      showFeedback(
+        "Bulk Release Incomplete",
+        `Failed to release ${failed.length} request(s). Please retry.`,
+        "error",
+      );
     }
   };
 
@@ -445,21 +485,47 @@ const Ready = () => {
       const url = window.URL.createObjectURL(mergedBlob);
 
       const win = window.open(url);
-      win?.addEventListener("load", () => {
-        win.print();
-        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-      });
+      if (!win) {
+        throw new Error("Print preview window could not be opened.");
+      }
 
-      writePrintQueueState({
-        ...readPrintQueueState(),
-        active: false,
-        status: "done",
-        processed: filteredRequests.length,
-        lastPrintedAt: new Date().toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-      });
+      const markPrinted = () => {
+        writePrintQueueState({
+          ...readPrintQueueState(),
+          active: false,
+          status: "done",
+          processed: filteredRequests.length,
+          lastPrintedAt: new Date().toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+        });
+        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+      };
+
+      const handlePrintWindowReady = () => {
+        writePrintQueueState({
+          ...readPrintQueueState(),
+          active: true,
+          status: "printing",
+          processed: filteredRequests.length,
+          total: filteredRequests.length,
+          failed,
+          lastPrintedAt: new Date().toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+        });
+
+        win.addEventListener("afterprint", markPrinted, { once: true });
+        win.print();
+      };
+
+      if (win.document?.readyState === "complete") {
+        handlePrintWindowReady();
+      } else {
+        win.addEventListener("load", handlePrintWindowReady, { once: true });
+      }
     } catch (error) {
       console.error("Failed to merge and print PDFs:", error);
       writePrintQueueState({
@@ -471,7 +537,11 @@ const Ready = () => {
           minute: "2-digit",
         }),
       });
-      alert("Failed to print certificates. Please try again.");
+      showFeedback(
+        "Print Failed",
+        "Failed to print certificates. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -511,7 +581,10 @@ const Ready = () => {
           .replace(/Bachelor of Arts/gi, "BA")
           .replace(/Bachelor of/gi, "");
 
-        program = program.replace(/\s*in\s*/i, " ").replace(/\s+/g, " ").trim();
+        program = program
+          .replace(/\s*in\s*/i, " ")
+          .replace(/\s+/g, " ")
+          .trim();
 
         return program;
       },
@@ -622,6 +695,15 @@ const Ready = () => {
         statusDone={`${bulkReleaseProgress.total} requests released`}
         doneCount={bulkReleaseProgress.done}
         totalCount={bulkReleaseProgress.total}
+      />
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
       />
 
       <div className="mb-2 flex items-center justify-between gap-2">

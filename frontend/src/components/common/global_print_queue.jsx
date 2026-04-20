@@ -172,6 +172,8 @@ const GlobalPrintQueue = () => {
   const { active, status, processed, total, failed, lastPrintedAt } = printQueue;
   const isDone = status === "done";
   const isError = status === "error";
+  const isQueueClear =
+    !active && !isDone && !isError && queueStats.queuedCount === 0;
 
   const percent = useMemo(() => {
     if (active || isDone || isError) {
@@ -220,25 +222,40 @@ const GlobalPrintQueue = () => {
   let title = "Print queue";
   let detail = `${queueStats.queuedCount} waiting in queue`;
   let detailTone = "text-gray-500";
+  let statusCaption = "Waiting for print job";
+  let badgeValue = `${queueStats.queuedCount}`;
 
   if (active) {
-    title = "Printing in progress";
-    detail = `${processed} of ${total} certificates prepared`;
+    title = status === "printing" ? "Print dialog open" : "Preparing print batch";
+    detail =
+      status === "printing"
+        ? "Waiting for the browser print flow to finish."
+        : `${processed} of ${total} certificates prepared`;
     detailTone = "text-[#ee1133]";
+    statusCaption =
+      status === "printing" ? "Print job in browser" : "Preparing documents";
+    badgeValue = status === "printing" ? "Live" : `${processed}/${total}`;
   } else if (isDone) {
-    title = "Print batch ready";
+    title = "Print batch completed";
     detail =
       failed > 0
-        ? `${processed} processed, ${failed} failed`
-        : `${processed} certificates sent to print preview`;
+        ? `${processed} prepared, ${failed} failed`
+        : `${processed} certificates prepared for printing`;
     detailTone = "text-green-600";
+    statusCaption = "Last batch completed";
+    badgeValue = "Done";
   } else if (isError) {
-    title = "Print queue interrupted";
-    detail = "The batch could not be prepared.";
+    title = "Print batch interrupted";
+    detail = "The print batch could not be prepared.";
     detailTone = "text-red-600";
-  } else if (queueStats.queuedCount === 0) {
+    statusCaption = "Needs retry";
+    badgeValue = "Error";
+  } else if (isQueueClear) {
     title = "Queue is clear";
     detail = "All releasable certificates are already printed.";
+    detailTone = "text-green-600";
+    statusCaption = "No pending print jobs";
+    badgeValue = "Clear";
   }
 
   const floatingStyle = position
@@ -272,19 +289,19 @@ const GlobalPrintQueue = () => {
             </span>
             <div className="min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">
-                Printing Queue
+                Print Job Status
               </div>
               <div className="truncate text-sm font-semibold text-gray-800">
-                {active ? "Live print batch" : title}
+                {title}
               </div>
               <div className="truncate text-xs text-gray-500">
-                {active ? `${percent}% complete` : `${queueStats.queuedCount} queued`}
+                {statusCaption}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500">
-              {active || isDone ? `${percent}%` : `${queueStats.queuedCount}`}
+              {badgeValue}
             </span>
             <button
               type="button"
@@ -305,23 +322,10 @@ const GlobalPrintQueue = () => {
           <div className="border-t border-gray-100 px-4 pb-4 pt-1">
             <p className={`text-xs ${detailTone}`}>{detail}</p>
 
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isError
-                    ? "bg-red-500"
-                    : isDone
-                      ? "bg-green-500"
-                      : "bg-[#ee1133]"
-                }`}
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-gray-50 px-2 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Queued
+                  Pending
                 </div>
                 <div className="mt-1 text-sm font-semibold text-gray-800">
                   {queueStats.queuedCount}
@@ -337,7 +341,7 @@ const GlobalPrintQueue = () => {
               </div>
               <div className="rounded-xl bg-gray-50 px-2 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Batch
+                  Latest Batch
                 </div>
                 <div className="mt-1 text-sm font-semibold text-gray-800">
                   {active || isDone || isError
@@ -354,7 +358,7 @@ const GlobalPrintQueue = () => {
                   : "Available across Certify pages"}
               </span>
               <span>
-                {lastPrintedAt ? `Updated ${lastPrintedAt}` : "Waiting for print job"}
+                {lastPrintedAt ? `Updated ${lastPrintedAt}` : statusCaption}
               </span>
             </div>
           </div>

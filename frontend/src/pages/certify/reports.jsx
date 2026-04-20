@@ -11,6 +11,7 @@ import {
 } from "react-icons/bs";
 import { Chart } from "./analytics/chartSetup";
 import DonutChart from "./analytics/DonutChart";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 
 const Reports = () => {
   const [period, setPeriod] = useState("all");
@@ -27,6 +28,12 @@ const Reports = () => {
   const certScatterRef = useRef(null);
   const certScatterInstance = useRef(null);
   const [showCriticalOnly, setShowCriticalOnly] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
 
   useEffect(() => {
     if (!data || !certScatterRef.current) return;
@@ -492,7 +499,12 @@ const Reports = () => {
       const blob = await reportService.downloadSummary(period);
       downloadBlob(blob, `certify_summary_${period}.csv`);
     } catch (err) {
-      alert("Failed to download summary report.");
+      setFeedbackModal({
+        open: true,
+        title: "Download Failed",
+        message: "Failed to download summary report.",
+        tone: "error",
+      });
     }
   };
 
@@ -1005,6 +1017,15 @@ const Reports = () => {
           </div>
         </>
       )}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };
