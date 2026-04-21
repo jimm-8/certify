@@ -40,6 +40,7 @@ const OdrNewRequest = () => {
   const [selectedOffice, setSelectedOffice] = useState("");
   const [signatureData, setSignatureData] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedCertType, setSelectedCertType] = useState(null);
   const [selectedUnitCost, setSelectedUnitCost] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -74,9 +75,11 @@ const OdrNewRequest = () => {
     return Number.isNaN(numberValue) ? null : numberValue;
   };
 
+  const requiresCertificateType =
+    selectedDocument?.request_type === "certificate";
+
   const handleNext = () => {
     if (currentStep === 1) {
-      // Validate office + certType inline
       const errors = { office: "", certType: "" };
       let hasTopError = false;
 
@@ -84,21 +87,21 @@ const OdrNewRequest = () => {
         errors.office = "Please select an office to continue.";
         hasTopError = true;
       }
-      if (!selectedCertType) {
+      if (!selectedDocument) {
+        errors.certType = "Please select a document type to continue.";
+        hasTopError = true;
+      } else if (requiresCertificateType && !selectedCertType) {
         errors.certType = "Please select a certificate type to continue.";
         hasTopError = true;
       }
 
       setStep1Errors(errors);
 
-      // Validate the form fields (triggers visual errors inside OdrRequestForm)
       try {
         const formData = formRef.current?.getFormData();
         if (hasTopError) return;
         setSavedFormData(formData);
       } catch (err) {
-        // OdrRequestForm already highlights its own fields;
-        // show a brief banner to guide the user
         setError(err.message);
         return;
       }
@@ -154,7 +157,15 @@ const OdrNewRequest = () => {
       }
 
       const requestData = {
-        certificate_type_id: selectedCertType.id,
+        request_type: selectedDocument?.request_type || "document",
+        requested_document_name:
+          selectedDocument?.request_type === "document"
+            ? selectedDocument.requested_documents
+            : null,
+        certificate_type_id:
+          selectedDocument?.request_type === "certificate"
+            ? selectedCertType?.id || null
+            : null,
         requestor_name: savedFormData.name,
         requestor_address: savedFormData.currentAddress,
         requestor_relationship: savedFormData.relationshipToStudent,
@@ -175,6 +186,7 @@ const OdrNewRequest = () => {
       setSuccess(response);
       setCurrentStep(0);
       setSelectedOffice("");
+      setSelectedDocument(null);
       setSelectedCertType(null);
       setSelectedUnitCost(null);
       setSavedFormData(null);
@@ -508,6 +520,12 @@ const OdrNewRequest = () => {
               >
                 <OdrCertTypes
                   selectedOffice={selectedOffice}
+                  onDocumentSelect={(val) => {
+                    setSelectedDocument(val);
+                    if (step1Errors.certType)
+                      setStep1Errors((p) => ({ ...p, certType: "" }));
+                  }}
+                  selectedDocument={selectedDocument}
                   onCertTypeSelect={(val) => {
                     setSelectedCertType(val);
                     if (step1Errors.certType)

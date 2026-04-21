@@ -16,6 +16,7 @@ import app.models.app_setting
 from app.api.v1 import requests, templates, students, mock_student_db, signatures, program, dashboard, auth, users, payments, rbac, template_files, reports, campuses, settings
 from app.services.rbac_service import ensure_rbac_setup
 from app.services.audit_service import log_api_request
+from app.services.auto_print_service import AutoPrintWorker
 
 app = FastAPI(
     title="Certify API",
@@ -73,6 +74,7 @@ app.include_router(template_files.router, prefix="/api/v1")
 app.include_router(campuses.router, prefix="/api/v1")
 app.include_router(settings.router, prefix="/api/v1")
 
+auto_print_worker = AutoPrintWorker()
 
 @app.on_event("startup")
 def seed_rbac_defaults():
@@ -81,6 +83,14 @@ def seed_rbac_defaults():
         ensure_rbac_setup(db)
     finally:
         db.close()
+
+@app.on_event("startup")
+def start_auto_print_worker():
+    auto_print_worker.start()
+
+@app.on_event("shutdown")
+def stop_auto_print_worker():
+    auto_print_worker.stop()
 
 @app.get("/health")
 def health_check():

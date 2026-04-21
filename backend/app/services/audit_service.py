@@ -84,6 +84,32 @@ def log_action(
     return audit_log
 
 
+def log_print_completed(db, request, user_name: Optional[str] = "System") -> AuditLog:
+    certificate_type = (
+        getattr(request, "certificate_type_name", None)
+        or getattr(request, "requested_document_name", None)
+        or "Document"
+    )
+    student_name = getattr(request, "student_name", None) or "the requester"
+    message = (
+        f"The {certificate_type} requested by {student_name} has been successfully "
+        'printed. Please have it signed and send the "Ready for Pickup" email to '
+        "the requester."
+    )
+
+    return log_action(
+        db,
+        action="REQUEST_PRINTED",
+        entity_type="certificate_request",
+        entity_id=getattr(request, "id", None),
+        field_name="auto_printed_at",
+        old_value=certificate_type,
+        new_value=student_name,
+        user_name=user_name or "System",
+        notes=message,
+    )
+
+
 def log_api_request(
     method: str, path: str, status_code: int, auth_header: Optional[str]
 ) -> None:

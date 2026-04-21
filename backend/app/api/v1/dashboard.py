@@ -162,7 +162,7 @@ def get_dashboard_summary(
     _: dict = Depends(require_permissions("dashboard.read")),
 ):
     request_repo = CertificateRequestRepository(db)
-    requests_all = request_repo.query().all()
+    requests_all = request_repo.certificates_only().all()
     now = datetime.now()
     today = now.date()
     requests = _apply_period(requests_all, period, today)

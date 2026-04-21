@@ -30,8 +30,10 @@ class PaymentReferencesRequest(BaseModel):
 class PaymentInfo(BaseModel):
     reference_number: str
     amount: Optional[float] = None
+    or_number: Optional[str] = None
     payment_status: Optional[str] = None
     paid_at: Optional[datetime] = None
+    date_of_payment: Optional[datetime] = None
 
     class Config:
         from_attributes = True

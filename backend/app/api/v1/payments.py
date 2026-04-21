@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.payment import Payment
-from app.models.certificate_request import CertificateRequest, RequestStatus
+from app.models.certificate_request import (
+    AutoPrintStatus,
+    CertificateRequest,
+    RequestStatus,
+)
 from app.schemas.payment import (
     PaymentCreate,
     PaymentResponse,
@@ -15,7 +19,7 @@ from app.schemas.payment import (
     PaymentInfo,
     PaymentInfoListResponse,
 )
-from app.services.request_service import generate_or_number, update_request_status
+from app.services.request_service import update_request_status
 from app.repositories import CertificateRequestRepository, PaymentRepository
 import anyio
 from app.api.v1.auth import require_permissions
@@ -24,8 +28,22 @@ from app.api.v1.auth import require_permissions
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
+def _payment_purpose_label(request: CertificateRequest) -> str:
+    request_label = request.request_label
+    prefix = (
+        "Certificate Request"
+        if request.request_type == "certificate"
+        else "Document Request"
+    )
+    return f"{prefix} {request.reference_number} - {request_label}"
+
+
 @router.post("/", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
-def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dict = Depends(require_permissions("payments.create"))):
+def create_payment(
+    payload: PaymentCreate,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("payments.create")),
+):
     request_repo = CertificateRequestRepository(db)
     payment_repo = PaymentRepository(db)
     request = request_repo.get_by_id(payload.request_id)
@@ -34,7 +52,9 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
 
     amount = payload.amount
     if amount is None:
-        amount = float(request.request_cost) if request.request_cost is not None else None
+        amount = (
+            float(request.request_cost) if request.request_cost is not None else None
+        )
     if amount is None:
         raise HTTPException(
             status_code=400, detail="Payment amount is required for this request."
@@ -46,17 +66,17 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
     payment = Payment(
         sr_code=request.sr_code,
         payer_name=request.requestor_name,
-        purpose=f"Certificate Request {request.reference_number} - {request.certificate_type_name}",
+        purpose=_payment_purpose_label(request),
         amount=amount,
         payment_method=payload.payment_method,
         payment_status=payment_status,
         paid_at=paid_at,
+        or_number=payload.or_number,
+        date_of_payment=paid_at,
     )
 
-    if payload.or_number:
-        request.or_number = payload.or_number
-    elif not request.or_number:
-        request.or_number = generate_or_number(db)
+    # Invalidate existing PDF so it regenerates with DST info (OR number and date of payment)
+    request.pdf_path = None
 
     payment_repo.add(payment)
     db.commit()
@@ -72,6 +92,18 @@ def create_payment(payload: PaymentCreate, db: Session = Depends(get_db), _: dic
             "System",
             "Auto-marked for releasing after payment",
         )
+        db.refresh(request)
+        if (
+            request.status == RequestStatus.FOR_RELEASING
+            and request.auto_print_requested_at is None
+        ):
+            request.auto_print_requested_at = datetime.now()
+            request.auto_print_status = AutoPrintStatus.REQUESTED.value
+            request.auto_print_job_id = None
+            request.auto_print_error = None
+            request.auto_print_confirmed_at = None
+            db.commit()
+            db.refresh(request)
     return payment
 
 
@@ -85,11 +117,7 @@ def list_unpaid_requests(
     request_repo = CertificateRequestRepository(db)
     payment_repo = PaymentRepository(db)
 
-    requests = (
-        request_repo.query()
-        .order_by(CertificateRequest.created_at.desc())
-        .all()
-    )
+    requests = request_repo.query().order_by(CertificateRequest.created_at.desc()).all()
     unpaid = []
     for req in requests:
         if not req.reference_number:
@@ -113,15 +141,25 @@ def lookup_payment_request(reference_number: str, db: Session = Depends(get_db))
         sr_code=request.sr_code,
         reference_number=request.reference_number,
         student_name=request.student_name,
-        certificate_type_name=request.certificate_type_name,
+        certificate_type_name=request.request_label,
         requestor_name=request.requestor_name,
-        request_cost=float(request.request_cost) if request.request_cost is not None else None,
-        status=request.status.value if hasattr(request.status, "value") else str(request.status),
+        request_cost=(
+            float(request.request_cost) if request.request_cost is not None else None
+        ),
+        status=(
+            request.status.value
+            if hasattr(request.status, "value")
+            else str(request.status)
+        ),
     )
 
 
-@router.post("/by-reference", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
-def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session = Depends(get_db)):
+@router.post(
+    "/by-reference", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED
+)
+def create_payment_by_reference(
+    payload: PaymentByReferenceCreate, db: Session = Depends(get_db)
+):
     request_repo = CertificateRequestRepository(db)
     payment_repo = PaymentRepository(db)
     request = request_repo.get_by_reference(payload.reference_number)
@@ -130,7 +168,9 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
 
     amount = payload.amount
     if amount is None:
-        amount = float(request.request_cost) if request.request_cost is not None else None
+        amount = (
+            float(request.request_cost) if request.request_cost is not None else None
+        )
     if amount is None:
         raise HTTPException(
             status_code=400, detail="Payment amount is required for this request."
@@ -146,9 +186,7 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
         )
 
     payment_purpose = (
-        payload.purpose
-        if payload.purpose
-        else f"Certificate Request {request.reference_number} - {request.certificate_type_name}"
+        payload.purpose if payload.purpose else _payment_purpose_label(request)
     )
 
     payment = Payment(
@@ -159,12 +197,12 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
         payment_method=payload.payment_method,
         payment_status=payment_status,
         paid_at=paid_at,
+        or_number=payload.or_number,
+        date_of_payment=paid_at,
     )
 
-    if payload.or_number:
-        request.or_number = payload.or_number
-    elif not request.or_number:
-        request.or_number = generate_or_number(db)
+    # Invalidate existing PDF so it regenerates with DST info (OR number and date of payment)
+    request.pdf_path = None
 
     payment_repo.add(payment)
     db.commit()
@@ -180,6 +218,18 @@ def create_payment_by_reference(payload: PaymentByReferenceCreate, db: Session =
             "System",
             "Auto-marked for releasing after payment",
         )
+        db.refresh(request)
+        if (
+            request.status == RequestStatus.FOR_RELEASING
+            and request.auto_print_requested_at is None
+        ):
+            request.auto_print_requested_at = datetime.now()
+            request.auto_print_status = AutoPrintStatus.REQUESTED.value
+            request.auto_print_job_id = None
+            request.auto_print_error = None
+            request.auto_print_confirmed_at = None
+            db.commit()
+            db.refresh(request)
     return payment
 
 
@@ -199,9 +249,13 @@ def list_payments_by_references(
             items.append(
                 PaymentInfo(
                     reference_number=ref,
-                    amount=float(payment.amount) if payment.amount is not None else None,
+                    amount=(
+                        float(payment.amount) if payment.amount is not None else None
+                    ),
+                    or_number=payment.or_number,
                     payment_status=payment.payment_status,
                     paid_at=payment.paid_at,
+                    date_of_payment=payment.date_of_payment,
                 )
             )
     return PaymentInfoListResponse(items=items)

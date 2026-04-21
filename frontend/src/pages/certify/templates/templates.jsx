@@ -15,6 +15,7 @@ import {
   BiListOl,
 } from "react-icons/bi";
 import { FaXmark } from "react-icons/fa6";
+import FeedbackDialog from "../../../components/common/feedbackDialog";
 
 const INJECTED_PAPER_STYLE = `
   <style>
@@ -107,6 +108,7 @@ const Templates = () => {
   const [success, setSuccess] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [useDummyData, setUseDummyData] = useState(true);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const iframeRef = useRef(null);
   const navigate = useNavigate();
   const initializedRef = useRef(false);
@@ -298,14 +300,6 @@ const Templates = () => {
   }, [selected]);
 
   const handleResetToDefault = async () => {
-    // 1. Confirm with the user (optional but safer)
-    if (
-      !window.confirm(
-        "Are you sure? This will revert all unsaved changes to the original template file.",
-      )
-    )
-      return;
-
     if (!selected) return;
 
     // 2. Re-load from the default template file (source of truth)
@@ -497,7 +491,7 @@ const Templates = () => {
               View with Sample Data
             </label>
             <button
-              onClick={handleResetToDefault}
+              onClick={() => setConfirmResetOpen(true)}
               disabled={!originalContent || saving}
               className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
@@ -739,6 +733,20 @@ const Templates = () => {
           </div>
         </div>
       )}
+      <FeedbackDialog
+        open={confirmResetOpen}
+        title="Reset To Default"
+        message="This will revert all unsaved changes to the original template file."
+        tone="warning"
+        confirmLabel="Reset Template"
+        cancelLabel="Cancel"
+        loading={saving}
+        onConfirm={async () => {
+          setConfirmResetOpen(false);
+          await handleResetToDefault();
+        }}
+        onClose={() => setConfirmResetOpen(false)}
+      />
     </div>
   );
 };

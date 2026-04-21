@@ -129,7 +129,7 @@ def get_reports_summary(
     _: dict = Depends(require_permissions("reports.read")),
 ):
     request_repo = CertificateRequestRepository(db)
-    requests = request_repo.query().all()
+    requests = request_repo.certificates_only().all()
     now = datetime.now()
     today = now.date()
 
@@ -355,7 +355,7 @@ def export_reports(
     _: dict = Depends(require_permissions("reports.read")),
 ):
     request_repo = CertificateRequestRepository(db)
-    requests = request_repo.query().all()
+    requests = request_repo.certificates_only().all()
     now = datetime.now()
     today = now.date()
 

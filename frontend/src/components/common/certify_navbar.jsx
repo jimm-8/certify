@@ -1,14 +1,38 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Settings, HelpCircle, Activity } from "lucide-react";
+import { LogOut, Settings, HelpCircle, Activity, Bell } from "lucide-react";
 import authService from "../../services/authService";
 import { getTokenPayload } from "../../utils/auth";
+import requestService from "../../services/requestService";
+
+const NOTIFICATION_STORAGE_KEY = "certify.notifications.lastSeenId";
+const DISMISSED_NOTIFICATION_STORAGE_KEY = "certify.notifications.dismissedIds";
+const NOTIFICATION_ACTIONS = ["REQUEST_REVIEW_REQUIRED", "REQUEST_PRINTED"];
+
+const getNotificationMeta = (item) => {
+  if (item.action === "REQUEST_PRINTED") {
+    return {
+      title: "Document Printed",
+      badge: item.old_value || "Certificate request",
+      message: item.notes,
+    };
+  }
+
+  return {
+    title: "Historical Record Review Needed",
+    badge: item.old_value || "Certificate request",
+    message: item.notes,
+  };
+};
 
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [open, setOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
   const navigate = useNavigate();
 
   // Real-time clock
@@ -25,6 +49,12 @@ const CertifyNavbar = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpen(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
+        setNotificationsOpen(false);
       }
     };
 
@@ -58,6 +88,86 @@ const CertifyNavbar = () => {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+
+  useEffect(() => {
+    if (isCashier) return undefined;
+
+    let active = true;
+
+    const loadNotifications = async () => {
+      try {
+        const data = await requestService.getAllAuditLogs({
+          page: 1,
+          limit: 50,
+        });
+        if (!active) return;
+        const all = Array.isArray(data) ? data : data.items || [];
+        const items = all
+          .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setNotifications(items);
+      } catch (error) {
+        if (!active) return;
+        setNotifications([]);
+      }
+    };
+
+    loadNotifications();
+    const intervalId = window.setInterval(loadNotifications, 5000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isCashier]);
+
+  const getDismissedNotificationIds = () => {
+    try {
+      const stored = window.localStorage.getItem(
+        DISMISSED_NOTIFICATION_STORAGE_KEY,
+      );
+      const parsed = stored ? JSON.parse(stored) : [];
+      return Array.isArray(parsed)
+        ? parsed.map((value) => Number(value)).filter(Number.isFinite)
+        : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState(() =>
+    getDismissedNotificationIds(),
+  );
+
+  const visibleNotifications = notifications.filter(
+    (item) => !dismissedNotificationIds.includes(item.id),
+  );
+
+  const lastSeenNotificationId = Number.parseInt(
+    window.localStorage.getItem(NOTIFICATION_STORAGE_KEY) || "0",
+    10,
+  );
+  const unreadCount = visibleNotifications.filter(
+    (item) => item.id > lastSeenNotificationId,
+  ).length;
+
+  const markNotificationsSeen = () => {
+    const highestId = visibleNotifications[0]?.id;
+    if (!highestId) return;
+    window.localStorage.setItem(NOTIFICATION_STORAGE_KEY, String(highestId));
+  };
+
+  const dismissNotification = (notificationId) => {
+    setDismissedNotificationIds((current) => {
+      if (current.includes(notificationId)) return current;
+      const next = [...current, notificationId];
+      window.localStorage.setItem(
+        DISMISSED_NOTIFICATION_STORAGE_KEY,
+        JSON.stringify(next),
+      );
+      return next;
+    });
+  };
 
   const supportContacts = [
     {
@@ -96,11 +206,102 @@ const CertifyNavbar = () => {
           Certify
         </div>
 
-        <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+        <div className="flex items-center gap-2 relative" ref={dropdownRef}>
           <div className="text-right">
             <div className="text-sm">{formattedDate}</div>
             <div className="text-lg font-medium">{formattedTime}</div>
           </div>
+          {!isCashier && (
+            <div className="relative" ref={notificationsRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextOpen = !notificationsOpen;
+                  setNotificationsOpen(nextOpen);
+                  setOpen(false);
+                  if (nextOpen) markNotificationsSeen();
+                }}
+                className="relative rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Open notifications"
+              >
+                <Bell className="h-8 w-8" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-[#ee1133] px-1 text-center text-[10px] font-semibold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 top-12 z-50 w-96 overflow-hidden rounded-xl border border-gray-100 bg-white text-gray-700 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        Notifications
+                      </div>
+                      <div className="text-[11px] text-gray-500">
+                        Review-required requests from ODR
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        navigate("/notifications");
+                      }}
+                      className="text-xs font-medium text-[#ee1133] hover:underline"
+                    >
+                      View all
+                    </button>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {visibleNotifications.length === 0 ? (
+                      <div className="px-4 text-center py-6 text-xs text-gray-500">
+                        No notifications right now.
+                      </div>
+                    ) : (
+                      visibleNotifications.slice(0, 8).map((item) => {
+                        const meta = getNotificationMeta(item);
+                        const badgeClass =
+                          item.action === "REQUEST_PRINTED"
+                            ? "text-emerald-700"
+                            : "text-amber-700";
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              dismissNotification(item.id);
+                              setNotificationsOpen(false);
+                              navigate("/notifications");
+                            }}
+                            className="w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                          >
+                            <div className="text-sm font-semibold text-gray-800">
+                              {meta.title}
+                            </div>
+                            <div
+                              className={`mt-1 text-[11px] font-medium uppercase tracking-wide ${badgeClass}`}
+                            >
+                              {meta.badge}
+                            </div>
+                            <div className="mt-1 text-xs leading-5 text-gray-600">
+                              {meta.message}
+                            </div>
+                            <div className="mt-2 text-[11px] text-gray-400">
+                              {new Date(item.created_at).toLocaleString()}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div
             onClick={() => setOpen(!open)}
             className="w-10 h-10 rounded-full bg-white text-[#ee1133] flex items-center justify-center font-semibold shadow-md cursor-pointer"

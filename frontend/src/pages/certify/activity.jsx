@@ -15,6 +15,12 @@ const Activity = () => {
     const action = log.action || "";
     if (action === "AUTH_LOGIN") return "Signed in";
     if (action === "AUTH_PASSWORD_CHANGE") return "Changed password";
+    if (action === "REQUEST_REVIEW_REQUIRED") {
+      return "Historical record review required";
+    }
+    if (action === "REQUEST_PRINTED") {
+      return "Document printed";
+    }
     if (action === "API_PATCH") {
       const source = String(log.new_value || log.notes || "");
       const match = source.match(/\/requests\/(\d+)\/status/);
@@ -68,7 +74,12 @@ const Activity = () => {
       .then((data) => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
-        const filtered = all.filter((log) => log.user_name === username);
+        const filtered = all.filter(
+          (log) =>
+            log.user_name === username ||
+            log.action === "REQUEST_REVIEW_REQUIRED" ||
+            log.action === "REQUEST_PRINTED",
+        );
         setLogs(filtered);
       })
       .catch(() => {
@@ -130,6 +141,16 @@ const Activity = () => {
                 <div className="text-sm font-semibold text-gray-800">
                   {actionLabel(log)}
                 </div>
+                {log.action === "REQUEST_REVIEW_REQUIRED" && (
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-amber-700">
+                    {log.old_value || "Certificate request"}
+                  </div>
+                )}
+                {log.action === "REQUEST_PRINTED" && (
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
+                    {log.old_value || "Certificate request"}
+                  </div>
+                )}
                 <div className="text-xs text-gray-500">{entityLabel(log)}</div>
                 {log.notes && (
                   <div className="text-xs text-gray-600">{log.notes}</div>

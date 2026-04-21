@@ -1,9 +1,72 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 
+const REQUEST_OPTIONS = [
+  {
+    id: 1,
+    copies: 1,
+    request_type: "document",
+    requested_documents: "Authentication",
+    unit_cost: "20.00 per Page",
+  },
+  {
+    id: 2,
+    copies: 1,
+    request_type: "certificate",
+    requested_documents: "Certificate of Transfer Credentials",
+    unit_cost: "100.00",
+  },
+  {
+    id: 3,
+    copies: 1,
+    request_type: "certificate",
+    requested_documents: "Certification",
+    unit_cost: "30.00",
+  },
+  {
+    id: 4,
+    copies: 1,
+    request_type: "document",
+    requested_documents: "Diploma",
+    unit_cost: "400.00",
+  },
+  {
+    id: 5,
+    copies: 1,
+    request_type: "document",
+    requested_documents: "Form 137",
+    unit_cost: "100.00",
+  },
+  {
+    id: 6,
+    copies: 1,
+    request_type: "document",
+    requested_documents: "Graduation Fee",
+    unit_cost: "1, 000.00",
+  },
+  {
+    id: 7,
+    copies: 1,
+    request_type: "document",
+    requested_documents: "Second Copy of Registration Form",
+    unit_cost: "15.00",
+  },
+  {
+    id: 8,
+    copies: 2,
+    request_type: "document",
+    requested_documents: "Transcript of Records (TOR)",
+    unit_cost: "50.00 per Page",
+  },
+];
+
+const TRANSFER_CREDENTIALS_NAME = "Certificate of Transfer Credentials";
+
 const OdrCertTypes = ({
   selectedOffice,
+  onDocumentSelect,
+  selectedDocument,
   onCertTypeSelect,
   selectedCertType,
   onUnitCostSelect,
@@ -11,16 +74,15 @@ const OdrCertTypes = ({
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedCerts, setSelectedCerts] = useState({});
-  const [certificationChecked, setCertificationChecked] = useState(false);
 
-  const transferCredentialsName = "Certificate of Transfer Credentials";
+  const certificationChecked =
+    selectedDocument?.requested_documents === "Certification";
 
   const getTransferCredentialsType = () =>
     certificateTypes.find(
       (c) =>
         String(c.name || "").trim().toLowerCase() ===
-        transferCredentialsName.toLowerCase()
+        TRANSFER_CREDENTIALS_NAME.toLowerCase(),
     );
 
   useEffect(() => {
@@ -33,7 +95,7 @@ const OdrCertTypes = ({
         setCertificateTypes(data);
       } catch (err) {
         setError(
-          err.response?.data?.message || "Failed to fetch certificate types"
+          err.response?.data?.message || "Failed to fetch certificate types",
         );
         console.error("Error fetching certificate types:", err);
       } finally {
@@ -45,89 +107,27 @@ const OdrCertTypes = ({
   }, []);
 
   const handleCheckboxChange = (row) => {
-    const newChecked = !selectedCerts[row.id];
+    const isSelecting = selectedDocument?.id !== row.id;
 
-    setSelectedCerts((prev) => ({
-      ...prev,
-      [row.id]: !prev[row.id],
-    }));
-
-    // Check if "Certification" was clicked
-    if (row.requested_documents === "Certification") {
-      setCertificationChecked((prev) => !prev);
-      if (!newChecked) {
-        onCertTypeSelect(null);
-      }
+    if (!isSelecting) {
+      onDocumentSelect?.(null);
+      onCertTypeSelect(null);
+      onUnitCostSelect?.(null);
+      return;
     }
 
-    if (row.requested_documents === transferCredentialsName) {
-      if (newChecked) {
-        const transferType = getTransferCredentialsType();
-        if (transferType) onCertTypeSelect(transferType);
-      } else if (
-        selectedCertType?.name &&
-        String(selectedCertType.name).toLowerCase() ===
-          transferCredentialsName.toLowerCase()
-      ) {
-        onCertTypeSelect(null);
-      }
+    onDocumentSelect?.(row);
+    onUnitCostSelect?.(row.unit_cost);
+
+    if (row.requested_documents === TRANSFER_CREDENTIALS_NAME) {
+      onCertTypeSelect(getTransferCredentialsType() || null);
+      return;
     }
 
-    if (onUnitCostSelect) {
-      onUnitCostSelect(newChecked ? row.unit_cost : null);
+    if (row.requested_documents !== "Certification") {
+      onCertTypeSelect(null);
     }
   };
-
-  const data = [
-    {
-      id: 1,
-      copies: 1,
-      requested_documents: "Authentication",
-      unit_cost: "20.00 per Page",
-    },
-    {
-      id: 2,
-      copies: 1,
-      requested_documents: "Certificate of Transfer Credentials",
-      unit_cost: "100.00",
-    },
-    {
-      id: 3,
-      copies: 1,
-      requested_documents: "Certification",
-      unit_cost: "30.00",
-    },
-    {
-      id: 4,
-      copies: 1,
-      requested_documents: "Diploma",
-      unit_cost: "400.00",
-    },
-    {
-      id: 5,
-      copies: 1,
-      requested_documents: "Form 137",
-      unit_cost: "100.00",
-    },
-    {
-      id: 6,
-      copies: 1,
-      requested_documents: "Graduation Fee",
-      unit_cost: "1, 000.00",
-    },
-    {
-      id: 7,
-      copies: 1,
-      requested_documents: "Second Copy of Registration Form",
-      unit_cost: "15.00",
-    },
-    {
-      id: 8,
-      copies: 2,
-      requested_documents: "Transcript of Records (TOR)",
-      unit_cost: "50.00 per Page",
-    },
-  ];
 
   const columns = [
     {
@@ -135,7 +135,7 @@ const OdrCertTypes = ({
       cell: (row) => (
         <input
           type="checkbox"
-          checked={selectedCerts[row.id] || false}
+          checked={selectedDocument?.id === row.id}
           onChange={() => handleCheckboxChange(row)}
         />
       ),
@@ -199,7 +199,7 @@ const OdrCertTypes = ({
     <div className="ml-5 inline-block mt-3">
       <DataTable
         columns={columns}
-        data={selectedOffice ? data : []}
+        data={selectedOffice ? REQUEST_OPTIONS : []}
         customStyles={customStyles}
         dense
         persistTableHead
@@ -221,22 +221,20 @@ const OdrCertTypes = ({
               id="certificationType"
               value={selectedCertType?.id || ""}
               onChange={(e) => {
-                console.log("Selected cert type ID:", e.target.value); // ✅ Debug log
                 const cert = certificateTypes.find(
-                  (c) => c.id === parseInt(e.target.value)
+                  (c) => c.id === Number.parseInt(e.target.value, 10),
                 );
-                console.log("Found cert object:", cert); // ✅ Debug log
-                onCertTypeSelect(cert);
+                onCertTypeSelect(cert || null);
               }}
               className="border border-gray-300 rounded px-3 py-2 w-full"
-              required // ✅ Add required attribute
+              required
             >
               <option value="">Select a certificate type</option>
               {certificateTypes
                 .filter(
                   (cert) =>
                     String(cert.name || "").trim().toLowerCase() !==
-                    transferCredentialsName.toLowerCase()
+                    TRANSFER_CREDENTIALS_NAME.toLowerCase(),
                 )
                 .map((cert) => (
                   <option key={cert.id} value={cert.id}>

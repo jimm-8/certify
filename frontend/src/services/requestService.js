@@ -196,6 +196,16 @@ const requestService = {
       throw error;
     }
   },
+  // mark as printed (auto print)
+  markPrinted: async (requestId) => {
+    try {
+      const response = await api.post(`/requests/${requestId}/mark-printed`);
+      return response.data;
+    } catch (error) {
+      console.error("Error marking printed:", error);
+      throw error;
+    }
+  },
   // send rejection email
   sendRejectionEmail: async (requestId, notes = "") => {
     try {

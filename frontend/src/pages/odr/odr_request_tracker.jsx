@@ -79,12 +79,12 @@ const OdrRequestTracker = () => {
 
   const getStatusColor = (status) => {
     const colors = {
+      SUBMITTED: "text-yellow-700 bg-yellow-100",
       PENDING: "text-yellow-600 bg-yellow-100",
       APPROVED: "text-blue-600 bg-blue-100",
       PROCESSING: "text-purple-600 bg-purple-100",
-      FOR_REVIEW: "text-orange-600 bg-orange-100",
       FOR_RELEASING: "text-indigo-600 bg-indigo-100",
-      COMPLETED: "text-green-600 bg-green-100",
+      RELEASED: "text-green-600 bg-green-100",
       REJECTED: "text-red-600 bg-red-100",
     };
     return colors[status] || "text-gray-600 bg-gray-100";
@@ -295,8 +295,10 @@ const OdrRequestTracker = () => {
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Certificate Type</p>
-                <p className="font-semibold">{requestData.certificate_type}</p>
+                <p className="text-sm text-gray-500">Requested Document</p>
+                <p className="font-semibold">
+                  {requestData.request_label || requestData.certificate_type}
+                </p>
               </div>
 
               <div>
@@ -324,17 +326,17 @@ const OdrRequestTracker = () => {
             {/* Status Timeline (Optional - you can expand this) */}
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-600">
+                {requestData.status === "SUBMITTED" &&
+                  "Your request has been received and is waiting for handling."}
                 {requestData.status === "PENDING" &&
                   "Your request is waiting for registrar review."}
                 {requestData.status === "APPROVED" &&
                   "Your request has been approved and will be processed soon."}
                 {requestData.status === "PROCESSING" &&
                   "Your certificate is being generated."}
-                {requestData.status === "FOR_REVIEW" &&
-                  "Your certificate is ready for final review."}
                 {requestData.status === "FOR_RELEASING" &&
                   "Your certificate is ready for pickup!"}
-                {requestData.status === "COMPLETED" &&
+                {requestData.status === "RELEASED" &&
                   "Your certificate has been released."}
                 {requestData.status === "REJECTED" &&
                   "Your request was rejected. Please contact the registrar's office."}

@@ -34,9 +34,5 @@ backend/database/sample_data.sql
 backend/database/backups/*
 !backend/database/backups/.gitkeep
 
-# Uploads (ignored files, folder structure kept)
-backend/uploads/*
-!backend/uploads/certificates/
-!backend/uploads/qrcodes/
-!backend/uploads/signatures/
-!backend/uploads/**/.gitkeep
+# Uploads
+backend/uploads/

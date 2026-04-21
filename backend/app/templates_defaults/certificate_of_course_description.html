@@ -1,8 +1,8 @@
-﻿<!doctype html>
-<html>
+﻿
 
-<head>
-  <meta charset="UTF-8" />
+
+
+  <meta charset="UTF-8">
   <title>Certificate of Course Description</title>
   <style>
     @page {
@@ -118,7 +118,7 @@
     .registrar-label {
       font-size: 16px;
       font-weight: bold;
-      margin: 15px 0 16px 0;
+      margin: 0 0 16px 0;
       display: block;
       text-align: left;
     }
@@ -281,9 +281,9 @@
       }
     }
   </style>
-</head>
 
-<body>
+
+
 
   <table class="paper-table">
     <thead>
@@ -350,7 +350,7 @@
             {% for course in course_descriptions %}
             <div class="course-block-wrap">
               <table class="course-table">
-                <tr>
+                <tbody><tr>
                   <td class="label">Course Code</td>
                   <td class="colon">:</td>
                   <td style="font-weight: bold;">{{ course.course_code }}</td>
@@ -370,13 +370,12 @@
                   <td class="colon">:</td>
                   <td>{{ course.course_description }}</td>
                 </tr>
-              </table>
+              </tbody></table>
             </div>
             {% endfor %}
 
             <div class="paragraph">
-              Furthermore, the courses completed by <strong>{{ student_honorific }} <span
-                  style="text-transform: uppercase;">{{
+              Furthermore, the courses completed by <strong>{{ student_honorific }} <span style="text-transform: uppercase;">{{
                   student_name
                   }}</span></strong> adhere to the academic standards set by Batangas State University, The National
               Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
@@ -403,15 +402,14 @@
             <div class="signature-box">
               <div class="signature-box">
                 {% if signature_path %}
-                <img src="{{ signature_path }}" alt="Signature"
-                  style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
+                <img src="{{ signature_path }}" alt="Signature" style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;">
                 {% endif %}
-                <strong style="text-transform: uppercase;" class="name">{{ name_official }}</strong><br />
+                <strong style="text-transform: uppercase;" class="name">{{ name_official }}</strong><br>
                 {{ official_title }}
               </div>
             </div>
           </div>
-          </div>
+          
         </td>
       </tr>
     </tbody>
@@ -468,6 +466,5 @@
       }
     });
   </script>
-</body>
 
-</html>
+

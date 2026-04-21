@@ -34,7 +34,13 @@ REQUESTORS = [
     "Ana Garcia",
     "Carlo Mendoza",
 ]
-PURPOSES = ["Employment", "Further Studies", "Scholarship", "Board Exam", "Personal Record"]
+PURPOSES = [
+    "Employment",
+    "Further Studies",
+    "Scholarship",
+    "Board Exam",
+    "Personal Record",
+]
 NSTP_COMPONENTS = ["CWTS", "ROTC", "LTS"]
 AUTHORIZED_OFFICIAL = "Registrar Head"
 CAMPUS_ADDRESS = "Golden Country Homes, Alangilan, Batangas City"
@@ -94,7 +100,9 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
     sr_code = student.sr_code
     program_name = student.program.name if student.program else "Unknown Program"
     major_name = student.major or "General"
-    year_level = student.year_level or random.choice(["1st Year", "2nd Year", "3rd Year", "4th Year"])
+    year_level = student.year_level or random.choice(
+        ["1st Year", "2nd Year", "3rd Year", "4th Year"]
+    )
 
     date_issued = format_date(random_date())
     graduation_date = format_date(random_date(1800))
@@ -119,12 +127,17 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
                 authorized_official_name=AUTHORIZED_OFFICIAL,
                 processed_and_reviewed_by="Registrar Staff",
                 or_number=f"OR-{datetime.now().year}-{seq:05d}",
+                control_num=f"OR-{datetime.now().year}-{seq:05d}",
                 date_issued=date_issued,
                 amount=float(random.choice([50, 75, 100, 150])),
             )
         )
 
-    if not db.query(GraduationRecord).filter(GraduationRecord.sr_code == sr_code).first():
+    if (
+        not db.query(GraduationRecord)
+        .filter(GraduationRecord.sr_code == sr_code)
+        .first()
+    ):
         is_graduated = random.choice([True, False])
         db.add(
             GraduationRecord(
@@ -142,7 +155,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(EnrollmentRecord).filter(EnrollmentRecord.sr_code == sr_code).first():
+    if (
+        not db.query(EnrollmentRecord)
+        .filter(EnrollmentRecord.sr_code == sr_code)
+        .first()
+    ):
         is_current = random.choice([True, False])
         db.add(
             EnrollmentRecord(
@@ -164,7 +181,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(EarnedUnitsRecord).filter(EarnedUnitsRecord.sr_code == sr_code).first():
+    if (
+        not db.query(EarnedUnitsRecord)
+        .filter(EarnedUnitsRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             EarnedUnitsRecord(
                 sr_code=sr_code,
@@ -179,7 +200,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(EnglishMediumRecord).filter(EnglishMediumRecord.sr_code == sr_code).first():
+    if (
+        not db.query(EnglishMediumRecord)
+        .filter(EnglishMediumRecord.sr_code == sr_code)
+        .first()
+    ):
         has_graduated = random.choice([True, False])
         db.add(
             EnglishMediumRecord(
@@ -196,9 +221,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(CompletedAcademicRequirementsRecord).filter(
-        CompletedAcademicRequirementsRecord.sr_code == sr_code
-    ).first():
+    if (
+        not db.query(CompletedAcademicRequirementsRecord)
+        .filter(CompletedAcademicRequirementsRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             CompletedAcademicRequirementsRecord(
                 sr_code=sr_code,
@@ -213,7 +240,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(HonorGraduateRecord).filter(HonorGraduateRecord.sr_code == sr_code).first():
+    if (
+        not db.query(HonorGraduateRecord)
+        .filter(HonorGraduateRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             HonorGraduateRecord(
                 sr_code=sr_code,
@@ -231,7 +262,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(CourseDescriptionRecord).filter(CourseDescriptionRecord.sr_code == sr_code).first():
+    if (
+        not db.query(CourseDescriptionRecord)
+        .filter(CourseDescriptionRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             CourseDescriptionRecord(
                 sr_code=sr_code,
@@ -248,15 +283,23 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(IDIssuanceRecord).filter(IDIssuanceRecord.sr_code == sr_code).first():
+    if (
+        not db.query(IDIssuanceRecord)
+        .filter(IDIssuanceRecord.sr_code == sr_code)
+        .first()
+    ):
         currently_enrolled = random.choice([True, False])
         db.add(
             IDIssuanceRecord(
                 sr_code=sr_code,
                 student_name=student_name,
                 is_currently_enrolled=currently_enrolled,
-                year_attended_start=str(random.randint(2018, 2023)) if not currently_enrolled else None,
-                year_attended_end=str(random.randint(2023, 2026)) if not currently_enrolled else None,
+                year_attended_start=(
+                    str(random.randint(2018, 2023)) if not currently_enrolled else None
+                ),
+                year_attended_end=(
+                    str(random.randint(2023, 2026)) if not currently_enrolled else None
+                ),
                 semester_current=semester if currently_enrolled else None,
                 academic_year=academic_year if currently_enrolled else None,
                 id_number=f"ID-{seq:06d}",
@@ -266,7 +309,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(NSTPSerialRecord).filter(NSTPSerialRecord.sr_code == sr_code).first():
+    if (
+        not db.query(NSTPSerialRecord)
+        .filter(NSTPSerialRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             NSTPSerialRecord(
                 sr_code=sr_code,
@@ -294,7 +341,11 @@ def seed_for_student(db: Session, student: Student, seq: int) -> None:
             )
         )
 
-    if not db.query(TransferCredentialsRecord).filter(TransferCredentialsRecord.sr_code == sr_code).first():
+    if (
+        not db.query(TransferCredentialsRecord)
+        .filter(TransferCredentialsRecord.sr_code == sr_code)
+        .first()
+    ):
         db.add(
             TransferCredentialsRecord(
                 sr_code=sr_code,
@@ -331,14 +382,11 @@ def seed_certificate_dependency_data(limit: int = 50) -> None:
     try:
         Base.metadata.create_all(bind=engine)
 
-        students = (
-            db.query(Student)
-            .order_by(Student.id.asc())
-            .limit(limit)
-            .all()
-        )
+        students = db.query(Student).order_by(Student.id.asc()).limit(limit).all()
         if not students:
-            print("No students found. Run academic_seeder.py then student_seeder.py first.")
+            print(
+                "No students found. Run academic_seeder.py then student_seeder.py first."
+            )
             return
 
         print(f"Seeding certificate dependency tables for {len(students)} students...")

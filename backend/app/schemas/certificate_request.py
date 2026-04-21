@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -12,6 +12,33 @@ class RequestStatusEnum(str, Enum):
     PROCESSING = "PROCESSING"
     FOR_RELEASING = "FOR_RELEASING"
     RELEASED = "RELEASED"
+
+
+class RequestTypeEnum(str, Enum):
+    CERTIFICATE = "certificate"
+    DOCUMENT = "document"
+
+
+class AutoPrintStatusEnum(str, Enum):
+    REQUESTED = "REQUESTED"
+    SENDING = "SENDING"
+    SUBMITTED = "SUBMITTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+LEGACY_AUTO_PRINT_STATUS_MAP = {
+    "queued": AutoPrintStatusEnum.REQUESTED,
+    "requested": AutoPrintStatusEnum.REQUESTED,
+    "sending": AutoPrintStatusEnum.SENDING,
+    "submitted": AutoPrintStatusEnum.SUBMITTED,
+    "completed": AutoPrintStatusEnum.COMPLETED,
+    "printed": AutoPrintStatusEnum.COMPLETED,
+    "done": AutoPrintStatusEnum.COMPLETED,
+    "failed": AutoPrintStatusEnum.FAILED,
+    "error": AutoPrintStatusEnum.FAILED,
+    "offline": AutoPrintStatusEnum.FAILED,
+}
 
 # Schema for certificate type (what we send back)
 class CertificateDependencyField(BaseModel):
@@ -39,8 +66,16 @@ class CertificateTypeResponse(BaseModel):
 
 # Schema for creating a certificate request (what user sends us)
 class CertificateRequestCreate(BaseModel):
-    # Certificate info
-    certificate_type_id: int = Field(..., description="ID of certificate type")
+    request_type: RequestTypeEnum = Field(
+        RequestTypeEnum.CERTIFICATE,
+        description="Kind of request being submitted",
+    )
+    requested_document_name: Optional[str] = Field(
+        None, description="Requested non-certificate document name"
+    )
+    certificate_type_id: Optional[int] = Field(
+        None, description="ID of certificate type"
+    )
     
     # Requesting individual's information
     requestor_name: str = Field(..., min_length=2, max_length=255, description="Full name of requestor")
@@ -62,11 +97,30 @@ class CertificateRequestCreate(BaseModel):
     
     # Signature (base64 encoded image data)
     signature_data: Optional[str] = Field(None, description="Base64 encoded signature image")
+
+    @model_validator(mode="after")
+    def validate_request_kind(self):
+        requested_document_name = (self.requested_document_name or "").strip()
+
+        if self.request_type == RequestTypeEnum.CERTIFICATE:
+            if not self.certificate_type_id:
+                raise ValueError(
+                    "certificate_type_id is required for certificate requests"
+                )
+        elif self.request_type == RequestTypeEnum.DOCUMENT:
+            if not requested_document_name:
+                raise ValueError(
+                    "requested_document_name is required for document requests"
+                )
+            self.requested_document_name = requested_document_name
+
+        return self
     
     class Config:
         json_schema_extra = {
             "example": {
                 "certificate_type_id": 1,
+                "request_type": "certificate",
                 "requestor_name": "Juan Dela Cruz",
                 "requestor_address": "123 Main St, Manila, Philippines",
                 "requestor_relationship": "Self",
@@ -104,7 +158,10 @@ class CertificateRequestResponse(BaseModel):
 class CertificateRequestTrackResponse(BaseModel):
     reference_number: str
     status: RequestStatusEnum
-    certificate_type: str
+    request_type: RequestTypeEnum
+    requested_document_name: Optional[str] = None
+    certificate_type: Optional[str] = None
+    request_label: str
     student_name: str
     submitted_date: datetime
     updated_date: Optional[datetime] = None
@@ -116,8 +173,12 @@ class CertificateRequestTrackResponse(BaseModel):
 class CertificateRequestDetail(BaseModel):
     id: int
     reference_number: str
+    request_type: RequestTypeEnum
+    requested_document_name: Optional[str] = None
+    request_label: Optional[str] = None
     status: RequestStatusEnum
-    certificate_type_name: str
+    certificate_type_name: Optional[str] = None
+    control_num: Optional[str] = None
     or_number: Optional[str] = None
     
     # Requestor info
@@ -138,6 +199,12 @@ class CertificateRequestDetail(BaseModel):
     course_description_selection: Optional[str] = None
     grade_selection: Optional[str] = None
     ready_email_sent_at: Optional[datetime] = None
+    auto_print_requested_at: Optional[datetime] = None
+    auto_printed_at: Optional[datetime] = None
+    auto_print_status: Optional[AutoPrintStatusEnum] = None
+    auto_print_job_id: Optional[str] = None
+    auto_print_error: Optional[str] = None
+    auto_print_confirmed_at: Optional[datetime] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -146,6 +213,17 @@ class CertificateRequestDetail(BaseModel):
     # Timestamps
     created_at: datetime
     updated_at: Optional[datetime]
+
+    @field_validator("auto_print_status", mode="before")
+    @classmethod
+    def normalize_auto_print_status(cls, value):
+        if value is None or isinstance(value, AutoPrintStatusEnum):
+            return value
+
+        normalized = LEGACY_AUTO_PRINT_STATUS_MAP.get(
+            str(value).strip().lower()
+        )
+        return normalized or value
     
     class Config:
         from_attributes = True

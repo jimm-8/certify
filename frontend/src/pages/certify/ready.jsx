@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import settingsService from "../../services/settingsService";
@@ -9,9 +9,16 @@ import {
   BsEye,
   BsPrinter,
   BsCheckLg,
+  BsCheckCircle,
   BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
+import {
+  readPrintQueueState,
+  writePrintQueueState,
+} from "../../utils/printQueue";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -58,11 +65,68 @@ const customStyles = {
 };
 
 const LoadingState = () => (
-  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+  <div className="flex items-center justify-center gap-2 py-10 text-xs text-gray-400">
     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
     Loading requests...
   </div>
 );
+
+const BulkProgressOverlay = ({
+  show,
+  label,
+  done,
+  titleActive,
+  titleDone,
+  statusActive,
+  statusDone,
+  doneCount,
+  totalCount,
+}) => {
+  if (!show || totalCount <= 0) return null;
+  const pct = Math.min(Math.round((doneCount / totalCount) * 100), 100);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="text-[11px] font-medium uppercase tracking-widest text-gray-400">
+            {label}
+          </span>
+          <BsCheckCircle
+            size={14}
+            className={done ? "text-green-600" : "text-[#ee1133]"}
+          />
+        </div>
+        <div className="text-sm font-semibold text-gray-800">
+          {done ? titleDone : titleActive}
+        </div>
+        <div className="mt-1 text-xs text-gray-500">
+          {done ? statusDone : statusActive}
+        </div>
+        <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-gray-100">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${
+              done ? "bg-green-500" : "bg-[#ee1133]"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-[11px] text-gray-400">
+            {doneCount} of {totalCount} {done ? "completed" : "processed"}
+          </span>
+          <span
+            className={`text-[11px] font-medium ${
+              done ? "text-green-700" : "text-gray-500"
+            }`}
+          >
+            {pct}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Ready = () => {
   const [requests, setRequests] = useState([]);
@@ -87,6 +151,28 @@ const Ready = () => {
   const [nowTick, setNowTick] = useState(Date.now());
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [bulkEmailDone, setBulkEmailDone] = useState(false);
+  const [bulkReleasing, setBulkReleasing] = useState(false);
+  const [bulkReleaseProgress, setBulkReleaseProgress] = useState({
+    done: 0,
+    total: 0,
+  });
+  const [bulkReleaseDone, setBulkReleaseDone] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const lastSnapshotRef = useRef("");
 
@@ -99,7 +185,9 @@ const Ready = () => {
     try {
       if (!opts.silent) setLoading(true);
       const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const all = Array.isArray(data) ? data : data.items || [];
+      const all = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
       const filtered = all.filter((r) => r.status === "FOR_RELEASING");
       const snapshot = JSON.stringify(
         filtered.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
@@ -124,6 +212,10 @@ const Ready = () => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    console.log("READY requests:", requests);
+  }, [requests]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);
@@ -156,9 +248,11 @@ const Ready = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -183,9 +277,24 @@ const Ready = () => {
     return matchesSearch && matchesDate && matchesType && matchesProgram;
   });
 
+  const releasableRequests = filteredRequests.filter(
+    (r) => r.ready_email_sent_at,
+  );
+
   const lastUpdatedLabel = lastUpdatedAt
     ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
     : "—";
+
+  const getPrintStatusLabel = (row) => {
+    const printStatus = String(row.auto_print_status || "").toUpperCase();
+    if (row.auto_printed_at || printStatus === "COMPLETED") return "Confirmed";
+    if (printStatus === "SUBMITTED" || printStatus === "SENDING") {
+      return "In Printer";
+    }
+    if (printStatus === "FAILED") return "Failed";
+    if (row.auto_print_requested_at) return "Queued";
+    return "No";
+  };
 
   const handleView = async (row) => {
     setPdfLoading(true);
@@ -197,7 +306,11 @@ const Ready = () => {
       setPdfUrl(url);
     } catch (error) {
       console.error("Failed to load certificate:", error);
-      alert("Failed to load certificate preview.");
+      showFeedback(
+        "Preview Failed",
+        "Failed to load certificate preview.",
+        "error",
+      );
     } finally {
       setPdfLoading(false);
     }
@@ -214,7 +327,11 @@ const Ready = () => {
       fetchRequests();
     } catch (error) {
       console.error("Failed to mark as released:", error);
-      alert("Failed to update status. Please try again.");
+      showFeedback(
+        "Release Failed",
+        "Failed to update status. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -223,10 +340,18 @@ const Ready = () => {
     try {
       await requestService.sendReadyEmail(row.id);
       fetchRequests();
-      alert("Ready-for-pickup email sent.");
+      showFeedback(
+        "Email Sent",
+        "Ready-for-pickup email sent successfully.",
+        "success",
+      );
     } catch (error) {
       console.error("Failed to send ready email:", error);
-      alert("Failed to send email. Please try again.");
+      showFeedback(
+        "Email Failed",
+        "Failed to send email. Please try again.",
+        "error",
+      );
     } finally {
       setEmailLoading((prev) => ({ ...prev, [row.id]: false }));
     }
@@ -234,46 +359,124 @@ const Ready = () => {
 
   const handleBulkSendReadyEmails = async () => {
     const targets = filteredRequests.filter((r) => !r.ready_email_sent_at);
+
     if (targets.length === 0) {
-      alert("All ready emails have already been sent.");
+      showFeedback(
+        "Nothing To Send",
+        "All ready emails have already been sent.",
+        "info",
+      );
       return;
     }
 
     setBulkEmailing(true);
     setBulkEmailProgress({ sent: 0, total: targets.length });
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const row = targets[i];
+
+      try {
+        await requestService.sendReadyEmail(row.id);
+      } catch (error) {
+        console.error(error);
+      }
+
+      setBulkEmailProgress({
+        sent: i + 1,
+        total: targets.length,
+      });
+    }
+
+    setBulkEmailProgress({
+      sent: targets.length,
+      total: targets.length,
+    });
+
+    setBulkEmailDone(true);
+    fetchRequests();
+
+    setTimeout(() => {
+      setBulkEmailing(false);
+      setBulkEmailDone(false);
+    }, 1500);
+  };
+
+  const handleBulkMarkReleased = async () => {
+    const targets = releasableRequests;
+
+    if (targets.length === 0) {
+      showFeedback(
+        "Nothing To Release",
+        "No requests are eligible to be marked as released.",
+        "info",
+      );
+      return;
+    }
+
+    setBulkReleasing(true);
+    setBulkReleaseProgress({ done: 0, total: targets.length });
+
     const failed = [];
 
     for (let i = 0; i < targets.length; i += 1) {
       const row = targets[i];
       try {
-        await requestService.sendReadyEmail(row.id);
+        await requestService.updateStatus(row.id, "RELEASED");
       } catch (error) {
-        console.error("Failed to send ready email:", error);
+        console.error(error);
         failed.push(row.reference_number || row.id);
-      } finally {
-        setBulkEmailProgress((prev) => ({
-          sent: Math.min(prev.sent + 1, prev.total),
-          total: prev.total,
-        }));
       }
+
+      setBulkReleaseProgress({
+        done: i + 1,
+        total: targets.length,
+      });
     }
 
+    setBulkReleaseProgress({
+      done: targets.length,
+      total: targets.length,
+    });
+
+    setBulkReleaseDone(true);
     fetchRequests();
-    setBulkEmailing(false);
+
+    setTimeout(() => {
+      setBulkReleasing(false);
+      setBulkReleaseDone(false);
+    }, 1500);
 
     if (failed.length > 0) {
-      alert(`Failed to send ${failed.length} email(s). Please retry.`);
-    } else {
-      alert("All ready-for-pickup emails sent.");
+      showFeedback(
+        "Bulk Release Incomplete",
+        `Failed to release ${failed.length} request(s). Please retry.`,
+        "error",
+      );
     }
   };
 
   const handlePrintAll = async () => {
+    if (filteredRequests.length === 0) return;
+
+    writePrintQueueState({
+      active: true,
+      status: "preparing",
+      processed: 0,
+      total: filteredRequests.length,
+      failed: 0,
+      lastPrintedAt: new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    });
+
     try {
       const { PDFDocument } = await import("pdf-lib");
       const mergedPdf = await PDFDocument.create();
+      let failed = 0;
 
-      for (const row of filteredRequests) {
+      for (let i = 0; i < filteredRequests.length; i += 1) {
+        const row = filteredRequests[i];
         try {
           const blob = await requestService.downloadCertificate(row.id);
           const arrayBuffer = await blob.arrayBuffer();
@@ -282,6 +485,13 @@ const Ready = () => {
           pages.forEach((page) => mergedPdf.addPage(page));
         } catch (err) {
           console.error(`Failed to load PDF for ${row.reference_number}:`, err);
+          failed += 1;
+        } finally {
+          writePrintQueueState({
+            ...readPrintQueueState(),
+            processed: i + 1,
+            failed,
+          });
         }
       }
 
@@ -289,15 +499,69 @@ const Ready = () => {
       const mergedBlob = new Blob([mergedBytes], { type: "application/pdf" });
       const url = window.URL.createObjectURL(mergedBlob);
 
-      // Open merged PDF and trigger print
       const win = window.open(url);
-      win?.addEventListener("load", () => {
-        win.print();
+      if (!win) {
+        throw new Error("Print preview window could not be opened.");
+      }
+
+      const markPrinted = () => {
+        writePrintQueueState({
+          ...readPrintQueueState(),
+          active: false,
+          status: "done",
+          processed: filteredRequests.length,
+          lastPrintedAt: new Date().toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+        });
+        Promise.allSettled(
+          filteredRequests.map((row) => requestService.markPrinted(row.id)),
+        ).then(() => {
+          fetchRequests({ silent: true });
+        });
         setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-      });
+      };
+
+      const handlePrintWindowReady = () => {
+        writePrintQueueState({
+          ...readPrintQueueState(),
+          active: true,
+          status: "printing",
+          processed: filteredRequests.length,
+          total: filteredRequests.length,
+          failed,
+          lastPrintedAt: new Date().toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          }),
+        });
+
+        win.addEventListener("afterprint", markPrinted, { once: true });
+        win.print();
+      };
+
+      if (win.document?.readyState === "complete") {
+        handlePrintWindowReady();
+      } else {
+        win.addEventListener("load", handlePrintWindowReady, { once: true });
+      }
     } catch (error) {
       console.error("Failed to merge and print PDFs:", error);
-      alert("Failed to print certificates. Please try again.");
+      writePrintQueueState({
+        ...readPrintQueueState(),
+        active: false,
+        status: "error",
+        lastPrintedAt: new Date().toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      });
+      showFeedback(
+        "Print Failed",
+        "Failed to print certificates. Please try again.",
+        "error",
+      );
     }
   };
 
@@ -309,10 +573,10 @@ const Ready = () => {
       width: "140px",
     },
     {
-      name: "OR #",
-      selector: (row) => row.or_number,
+      name: "OR No.",
+      selector: (row) => row.payment?.or_number || "",
       sortable: true,
-      cell: (row) => row.or_number || "—",
+      cell: (row) => row.payment?.or_number || "-",
       width: "110px",
     },
     {
@@ -335,11 +599,10 @@ const Ready = () => {
         program = program
           .replace(/Bachelor of Science/gi, "BS")
           .replace(/Bachelor of Arts/gi, "BA")
-          .replace(/Bachelor of/gi, ""); // remove completely
+          .replace(/Bachelor of/gi, "");
 
-        // Clean formatting
         program = program
-          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s*in\s*/i, " ")
           .replace(/\s+/g, " ")
           .trim();
 
@@ -383,6 +646,13 @@ const Ready = () => {
       width: "150px",
     },
     {
+      name: "Is Printed",
+      selector: (row) => getPrintStatusLabel(row),
+      cell: (row) => getPrintStatusLabel(row),
+      sortable: true,
+      width: "120px",
+    },
+    {
       name: "Action",
       ignoreRowClick: true,
       minWidth: "150px",
@@ -392,7 +662,7 @@ const Ready = () => {
           <button
             onClick={() => handleView(row)}
             title="View Details"
-            className="flex items-center px-3 py-1.5 text-xs font-medium text-[#ee1133] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
+            className="flex items-center rounded-md border border-blue-200 px-3 py-1.5 text-xs font-medium text-[#ee1133] transition-colors duration-150 hover:bg-blue-50"
           >
             <BsEye size={13} />
           </button>
@@ -402,7 +672,7 @@ const Ready = () => {
               onClick={() => handleSendReadyEmail(row)}
               title="Send Ready Email"
               disabled={emailLoading[row.id]}
-              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50"
+              className="flex items-center rounded-md border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-50 disabled:opacity-50"
             >
               {emailLoading[row.id] ? "..." : <BsEnvelopeArrowUp size={13} />}
             </button>
@@ -412,7 +682,7 @@ const Ready = () => {
             <button
               onClick={() => handleComplete(row)}
               title="Mark as Released"
-              className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150"
+              className="flex items-center rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50"
             >
               <BsCheckLg size={13} />
             </button>
@@ -423,15 +693,45 @@ const Ready = () => {
   ];
 
   return (
-    <div className="bg-white w-full rounded-md border border-gray-200 shadow-sm -mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        {/* LEFT — Bulk Send Email */}
+    <div className="mb-4 min-h-[calc(100vh-10rem)] w-full rounded-md border border-gray-200 bg-white p-2 shadow-sm -mt-3">
+      <BulkProgressOverlay
+        show={bulkEmailing}
+        label="Bulk send"
+        done={bulkEmailDone}
+        titleActive="Sending emails"
+        titleDone="All done"
+        statusActive={`${bulkEmailProgress.sent} of ${bulkEmailProgress.total} sent`}
+        statusDone={`${bulkEmailProgress.total} emails delivered`}
+        doneCount={bulkEmailProgress.sent}
+        totalCount={bulkEmailProgress.total}
+      />
+      <BulkProgressOverlay
+        show={bulkReleasing}
+        label="Bulk release"
+        done={bulkReleaseDone}
+        titleActive="Marking as released"
+        titleDone="All done"
+        statusActive={`${bulkReleaseProgress.done} of ${bulkReleaseProgress.total} done`}
+        statusDone={`${bulkReleaseProgress.total} requests released`}
+        doneCount={bulkReleaseProgress.done}
+        totalCount={bulkReleaseProgress.total}
+      />
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
+
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
             onClick={handleBulkSendReadyEmails}
             disabled={bulkEmailing || filteredRequests.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md bg-[#ee1133] px-2 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
           >
             {bulkEmailing ? (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -444,37 +744,27 @@ const Ready = () => {
           <button
             onClick={handlePrintAll}
             disabled={filteredRequests.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             <BsPrinter size={13} />
             Print All
           </button>
+
+          <button
+            onClick={handleBulkMarkReleased}
+            disabled={bulkReleasing || releasableRequests.length === 0}
+            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            <BsCheckLg size={13} />
+            Mark All Released
+          </button>
         </div>
 
-        {bulkEmailing && bulkEmailProgress.total > 0 && (
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-40 rounded-full bg-gray-200 overflow-hidden">
-              <div
-                className="h-full bg-[#ee1133] transition-all"
-                style={{
-                  width: `${Math.round(
-                    (bulkEmailProgress.sent / bulkEmailProgress.total) * 100,
-                  )}%`,
-                }}
-              />
-            </div>
-            <span className="text-[11px] text-gray-500">
-              {bulkEmailProgress.sent}/{bulkEmailProgress.total}
-            </span>
-          </div>
-        )}
-
-        {/* RIGHT — Filters */}
         <div className="flex items-center gap-2">
           <select
             value={selectedProgram}
             onChange={(e) => setSelectedProgram(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none"
           >
             <option value="">All Programs</option>
             {programs.map((p) => (
@@ -487,7 +777,7 @@ const Ready = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none"
           >
             <option value="">All Certificate Types</option>
             {certificateTypes.map((ct) => (
@@ -497,19 +787,18 @@ const Ready = () => {
             ))}
           </select>
 
-          {/* Date Filter */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-1.5 bg-white text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50"
             >
               <BsCalendar3 size={14} className="text-gray-400" />
               <span className="font-medium">{selectedFilter.label}</span>
               <BsChevronDown size={14} className="text-gray-400" />
             </button>
             {dropdownOpen && (
-              <div className="absolute top-full right-0 mt-1 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden">
-                <div className="px-3 py-1.5 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+              <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+                <div className="border-b border-gray-100 px-3 py-1.5 text-xs uppercase tracking-wide text-gray-400">
                   Filter
                 </div>
                 {filterOptions.map((option) => (
@@ -519,9 +808,9 @@ const Ready = () => {
                       setSelectedFilter(option);
                       setDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-xs transition-colors ${
+                    className={`w-full px-4 py-2.5 text-left text-xs transition-colors ${
                       selectedFilter.label === option.label
-                        ? "bg-blue-600 text-white font-medium"
+                        ? "bg-blue-600 font-medium text-white"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
@@ -532,26 +821,23 @@ const Ready = () => {
             )}
           </div>
 
-          {/* Search */}
-          <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
+          <div className="flex items-center overflow-hidden rounded-md border border-gray-300">
             <input
               type="text"
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="text-xs px-3 py-1.5 focus:outline-none w-40"
+              className="w-40 px-3 py-1.5 text-xs focus:outline-none"
             />
             <div className="w-px self-stretch bg-gray-300" />
-            <div className="px-3 py-1.5 cursor-pointer group">
-              <BsSearch className="text-gray-400 group-hover:text-[#ee1133] transition-colors duration-150" />
+            <div className="group cursor-pointer px-3 py-1.5">
+              <BsSearch className="text-gray-400 transition-colors duration-150 group-hover:text-[#ee1133]" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      {/* Table */}
-      <div className="border border-gray-200 rounded mt-2">
+      <div className="mt-2 rounded border border-gray-200">
         <div className="overflow-auto">
           <div style={{ minWidth: "1690px" }}>
             <DataTable
@@ -602,9 +888,8 @@ const Ready = () => {
           </div>
         </div>
 
-        {/* Pagination outside scroll */}
         {filteredRequests.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+          <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
             <span>{filteredRequests.length} total records</span>
             <div className="flex items-center gap-2">
               <select
@@ -613,7 +898,7 @@ const Ready = () => {
                   setRowsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="border border-gray-300 rounded px-2 py-1 text-xs"
+                className="rounded border border-gray-300 px-2 py-1 text-xs"
               >
                 {[10, 25, 50].map((n) => (
                   <option key={n} value={n}>
@@ -624,7 +909,7 @@ const Ready = () => {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50 disabled:opacity-40"
               >
                 ‹
               </button>
@@ -638,7 +923,7 @@ const Ready = () => {
                   Math.ceil(filteredRequests.length / rowsPerPage)
                 }
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                className="rounded border border-gray-300 px-2 py-1 hover:bg-gray-50 disabled:opacity-40"
               >
                 ›
               </button>
@@ -646,27 +931,27 @@ const Ready = () => {
           </div>
         )}
       </div>
+
       <span className="text-[11px] text-gray-400">
         Last updated: {lastUpdatedLabel}
       </span>
 
-      {/* PDF Viewer Modal */}
       {(pdfUrl || pdfLoading) && (
         <div
           onClick={handleClosePdf}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-[2px]"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-4xl h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
+            className="relative flex h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
           >
-            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between border-b border-gray-100 px-3 py-3 shrink-0">
               <p className="text-sm font-semibold text-gray-800">
                 Certificate Preview
               </p>
               <button
                 onClick={handleClosePdf}
-                className="text-lg rounded-md  border-gray-200 hover:text-[#B22222] transition-colors"
+                className="rounded-md border-gray-200 text-lg transition-colors hover:text-[#B22222]"
               >
                 <FaXmark />
               </button>
@@ -674,14 +959,14 @@ const Ready = () => {
 
             <div className="flex-1 overflow-hidden">
               {pdfLoading ? (
-                <div className="flex items-center justify-center h-full gap-2 text-sm text-gray-400">
+                <div className="flex h-full items-center justify-center gap-2 text-sm text-gray-400">
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
                   Loading certificate...
                 </div>
               ) : (
                 <iframe
                   src={pdfUrl}
-                  className="w-full h-full border-0"
+                  className="h-full w-full border-0"
                   title="Certificate Preview"
                 />
               )}
