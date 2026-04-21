@@ -2,73 +2,610 @@
   "program_code": "BSCpE",
   "curriculum_name": "BSCpE Curriculum",
   "academic_year": "2018-2019",
+  "total_courses": 65,
   "courses": [
-    { "course_code": "ENGG 401", "course_title": "Introduction to Engineering", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "GEd 101", "course_title": "Understanding the Self", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "GEd 102", "course_title": "Mathematics in the Modern World", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "GEd 105", "course_title": "Readings in Philippine History", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "GEd 106", "course_title": "Purposive Communication", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "MATH 401", "course_title": "Differential Calculus", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "SC1 401", "course_title": "General Chemistry", "course_description": "", "units": 4, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "PE 101", "course_title": "Physical Fitness, Gymnastics and Aerobics", "course_description": "", "units": 2, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "NSTP 111", "course_title": "National Service Training Program 1", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 401", "course_title": "Computer Programming 1", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "ENGG 402", "course_title": "Engineering Drawing", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "GEd 104", "course_title": "Contemporary World", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "GEd 108", "course_title": "Art Appreciation", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "GEd 109", "course_title": "Science, Technology and Society", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "MATH 402", "course_title": "Integral Calculus", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "SCI 403", "course_title": "Physics 1", "course_description": "", "units": 4, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "PE 102", "course_title": "Rhythmic Activities", "course_description": "", "units": 2, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "NSTP 121", "course_title": "National Service Training Program 2", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "GEd 103", "course_title": "Life and Works of Rizal", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "GEd 107", "course_title": "Ethics", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "SCI 402", "course_title": "Modern Biology", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "CpE 403", "course_title": "Computer Engineering as a Discipline", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 404", "course_title": "Programming Logic and Design", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 405", "course_title": "Discrete Mathematics", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "EE 423", "course_title": "Fundamentals of Electrical Engineering", "course_description": "", "units": 4, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "ENGG 403", "course_title": "Computer-Aided Design", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "ENGG 404", "course_title": "Engineering Economics", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "MATH 403", "course_title": "Engineering Data Analysis", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "MATH 404", "course_title": "Differential Equations", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "PE 103", "course_title": "Individual and Dual Sports", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 406", "course_title": "Object Oriented Programming", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 407", "course_title": "CpE Laws and Professional Practice", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 408", "course_title": "Advanced Engineering Mathematics for CpE", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpEE 401", "course_title": "Cognate/Elective Course 1", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "ECE 421", "course_title": "Electronic Circuits: Devices and Analysis", "course_description": "", "units": 4, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "ENGG 411", "course_title": "Basic Occupational Health and Safety", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "ENGG 414", "course_title": "Numerical Methods", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "Fili 101", "course_title": "Kontekstwalisadong Komunikasyon sa Filipino", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "PE 104", "course_title": "Team Sports", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 410", "course_title": "Logic Circuits and Design", "course_description": "", "units": 4, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 411", "course_title": "Data Structures and Algorithms", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 412", "course_title": "Introduction to Networks, Data and Digital Communications (CISCO 1)", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 413", "course_title": "Fundamentals of Mixed Signals and Sensors", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 414", "course_title": "Feedback and Control Systems", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 415", "course_title": "Introduction to HDL", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "ENGG 416", "course_title": "Research Methods", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "Fili 102", "course_title": "Filipino sa Iba't Ibang Disiplina", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 417", "course_title": "Microprocessors", "course_description": "", "units": 4, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 418", "course_title": "Software Design", "course_description": "", "units": 4, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 419", "course_title": "Routing and Switching (CISCO 2)", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 420", "course_title": "Digital Signal Processing", "course_description": "", "units": 4, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 421", "course_title": "Emerging Technologies in CpE", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 422", "course_title": "CpE Practice and Design 1", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpEE 402", "course_title": "Cognate/Elective Course 2", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 423", "course_title": "Scaling Networks (CISCO 3)", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "CpE 424", "course_title": "Operating Systems", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "CpE 425", "course_title": "Computer Architecture and Organization", "course_description": "", "units": 4, "year_level": 3, "semester_offered": "Midterm", "program": "BSCpE" },
-    { "course_code": "CpE 426", "course_title": "Computer Engineering Drafting and Design", "course_description": "", "units": 1, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 427", "course_title": "Connecting Networks and Security (CISCO 4)", "course_description": "", "units": 4, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 428", "course_title": "Embedded Systems", "course_description": "", "units": 4, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpE 429", "course_title": "Seminars and Fieldtrips", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "IE 425", "course_title": "Manufacturing and Quality Control", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "CpEE 403", "course_title": "Cognate/Elective Course 3", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "Litr 102", "course_title": "ASEAN Literature", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "1st", "program": "BSCpE" },
-    { "course_code": "ENGG 405", "course_title": "Technopreneurship", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "ENGG 417", "course_title": "On-the-Job Training", "course_description": "", "units": 4, "year_level": 4, "semester_offered": "2nd", "program": "BSCpE" },
-    { "course_code": "CpE 430", "course_title": "CpE Practice and Design 2", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "2nd", "program": "BSCpE" }
+    {
+      "course_code": "ENGG 401",
+      "course_title": "Introduction to Engineering",
+      "course_description": "This course provides a foundational overview of the engineering profession, focusing on professional ethics and basic problem-solving.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 101",
+      "course_title": "Understanding the Self",
+      "course_description": "This course involves an interdisciplinary exploration into the nature of identity and the factors that influence personal development.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 102",
+      "course_title": "Mathematics in the Modern World",
+      "course_description": "This course examines the nature of mathematics as a versatile tool for analyzing patterns and making informed decisions in modern life.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 105",
+      "course_title": "Readings in Philippine History",
+      "course_description": "This course analyzes the Philippine past through primary sources to foster a deeper understanding of the nation's political and social evolution.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 106",
+      "course_title": "Purposive Communication",
+      "course_description": "This course develops advanced communication skills tailored for diverse audiences and professional purposes in global settings.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "MATH 401",
+      "course_title": "Differential Calculus",
+      "course_description": "This course explores the principles of limits, continuity, and derivatives, focusing on their application in solving engineering-related rate problems.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "SC1 401",
+      "course_title": "General Chemistry",
+      "course_description": "This course covers the fundamental laws of chemistry, including atomic structure and chemical bonding, essential for engineering material analysis.",
+      "units": 4,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "PE 101",
+      "course_title": "Physical Fitness, Gymnastics and Aerobics",
+      "course_description": "This course introduces students to physical fitness concepts and training in gymnastics for overall health.",
+      "units": 2,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "NSTP 111",
+      "course_title": "National Service Training Program 1",
+      "course_description": "This course focuses on civic consciousness and defense preparedness, encouraging students to contribute to the general welfare of the community.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 401",
+      "course_title": "Computer Programming 1",
+      "course_description": "This course introduces logic formulation and the application of high-level programming languages to solve basic computational tasks.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 402",
+      "course_title": "Engineering Drawing",
+      "course_description": "This course demonstrates the standards of technical sketching and orthographic projections necessary for communicating engineering designs.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 104",
+      "course_title": "Contemporary World",
+      "course_description": "This course reviews the complexities of globalization and its significant impact on international economic and political landscapes.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 108",
+      "course_title": "Art Appreciation",
+      "course_description": "This course builds the capacity to analyze and value various art forms, exploring their cultural and aesthetic significance.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 109",
+      "course_title": "Science, Technology and Society",
+      "course_description": "This course explores the dynamic relationship between scientific progress, technological innovation, and social forces.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "MATH 402",
+      "course_title": "Integral Calculus",
+      "course_description": "This course presents the concepts of integration and anti-derivatives, highlighting their utility in determining areas, volumes, and physical work.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "SCI 403",
+      "course_title": "Physics 1",
+      "course_description": "This course investigates the laws of mechanics, heat, and sound, focusing on the application of Newton’s principles to physical systems.",
+      "units": 4,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "PE 102",
+      "course_title": "Rhythmic Activities",
+      "course_description": "This course emphasizes movement and coordination through various rhythmic activities and traditional dance forms.",
+      "units": 2,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "NSTP 121",
+      "course_title": "National Service Training Program 2",
+      "course_description": "This course continues civic training with a focus on community-based projects and practical service applications.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 103",
+      "course_title": "Life and Works of Rizal",
+      "course_description": "This course delves into the history, literary contributions, and nationalistic influence of Jose Rizal on Philippine society.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "GEd 107",
+      "course_title": "Ethics",
+      "course_description": "This course discusses the moral frameworks and ethical theories that guide human conduct and professional responsibility.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "SCI 402",
+      "course_title": "Modern Biology",
+      "course_description": "This course highlights essential biological principles, focusing on cell structures, genetics, and ecological health.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 403",
+      "course_title": "Computer Engineering as a Discipline",
+      "course_description": "This course provides an overview of the Computer Engineering field, its specialized tracks, and professional career paths.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 404",
+      "course_title": "Programming Logic and Design",
+      "course_description": "This course introduces structured programming techniques and logic formulation essential for software development.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 405",
+      "course_title": "Discrete Mathematics",
+      "course_description": "This course covers mathematical structures that are fundamentally discrete, such as logic, sets, and graph theory.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "EE 423",
+      "course_title": "Fundamentals of Electrical Engineering",
+      "course_description": "This course investigates basic electrical circuit laws and components, providing a foundation for electronic systems.",
+      "units": 4,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 403",
+      "course_title": "Computer-Aided Design",
+      "course_description": "This course facilitates the mastery of CAD software for creating precise 2D and 3D digital representations of engineering projects.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 404",
+      "course_title": "Engineering Economics",
+      "course_description": "This course provides financial tools needed to evaluate the economic feasibility of engineering projects and investments.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "MATH 403",
+      "course_title": "Engineering Data Analysis",
+      "course_description": "This course employs statistical techniques and probability theory to analyze data sets within engineering research.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "MATH 404",
+      "course_title": "Differential Equations",
+      "course_description": "This course explains methods for solving equations used to model dynamic physical engineering systems.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "PE 103",
+      "course_title": "Individual and Dual Sports",
+      "course_description": "This course provides training in the skills, rules, and strategies of various individual and partner-based sports.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 406",
+      "course_title": "Object Oriented Programming",
+      "course_description": "This course explores the principles of classes, inheritance, and polymorphism for modular software design.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 407",
+      "course_title": "CpE Laws and Professional Practice",
+      "course_description": "This course examines the legal obligations and ethical standards specifically governing the practice of Computer Engineering.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 408",
+      "course_title": "Advanced Engineering Mathematics for CpE",
+      "course_description": "This course integrates advanced mathematical methods and transforms required for complex computer engineering analysis.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpEE 401",
+      "course_title": "Cognate/Elective Course 1",
+      "course_description": "This course offers specialized instruction in a choice of emerging technical areas within the computer engineering field.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ECE 421",
+      "course_title": "Electronic Circuits: Devices and Analysis",
+      "course_description": "This course covers the behavior of semiconductor devices and the analysis of fundamental electronic circuits.",
+      "units": 4,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 411",
+      "course_title": "Basic Occupational Health and Safety",
+      "course_description": "This course identifies workplace hazards and teaches the safety protocols required for industrial engineering environments.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 414",
+      "course_title": "Numerical Methods",
+      "course_description": "This course introduces computational algorithms to solve mathematical problems that are difficult to handle analytically.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "Fili 101",
+      "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+      "course_description": "This course refines communication skills in Filipino across various professional and contextualized scenarios.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "PE 104",
+      "course_title": "Team Sports",
+      "course_description": "This course focuses on the development of teamwork and strategy through participation in competitive group sports.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 410",
+      "course_title": "Logic Circuits and Design",
+      "course_description": "This course presents the principles of digital logic, focusing on the design of combinational and sequential hardware circuits.",
+      "units": 4,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 411",
+      "course_title": "Data Structures and Algorithms",
+      "course_description": "This course focuses on the organization and manipulation of data to optimize software performance and computational efficiency.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 412",
+      "course_title": "Introduction to Networks, Data and Digital Communications (CISCO 1)",
+      "course_description": "This course investigates the architecture and protocols used in data transmission and computer network foundations.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 413",
+      "course_title": "Fundamentals of Mixed Signals and Sensors",
+      "course_description": "This course explores the interface between analog signals and digital systems using modern sensing technologies.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 414",
+      "course_title": "Feedback and Control Systems",
+      "course_description": "This course investigates the mathematical modeling and analysis of automated feedback control systems.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 415",
+      "course_title": "Introduction to HDL",
+      "course_description": "This course covers Hardware Description Languages used to model, simulate, and implement complex digital logic systems.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 416",
+      "course_title": "Research Methods",
+      "course_description": "This course outlines the methodologies of scientific research, from data gathering to the writing of technical results.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "Fili 102",
+      "course_title": "Filipino sa Iba't Ibang Disiplina",
+      "course_description": "This course promotes the specialized use of the Filipino language in academic research across different disciplines.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 417",
+      "course_title": "Microprocessors",
+      "course_description": "This course examines the architecture and assembly language programming of modern microprocessor systems.",
+      "units": 4,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 418",
+      "course_title": "Software Design",
+      "course_description": "This course explores the methodologies of designing robust software systems and modular program architectures.",
+      "units": 4,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 419",
+      "course_title": "Routing and Switching (CISCO 2)",
+      "course_description": "This course provides hands-on training in configuring network routers and switches for efficient data routing.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 420",
+      "course_title": "Digital Signal Processing",
+      "course_description": "This course analyzes discrete-time signals and systems, focusing on filtering and signal transformation techniques.",
+      "units": 4,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 421",
+      "course_title": "Emerging Technologies in CpE",
+      "course_description": "This course reviews the latest advancements and disruptive trends currently shaping the computer engineering industry.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 422",
+      "course_title": "CpE Practice and Design 1",
+      "course_description": "This course initiates the capstone project, focusing on identifying engineering problems and initial project feasibility.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpEE 402",
+      "course_title": "Cognate/Elective Course 2",
+      "course_description": "This course continues technical specialization within a chosen sub-field of computer hardware or software engineering.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 423",
+      "course_title": "Scaling Networks (CISCO 3)",
+      "course_description": "This course covers advanced network protocols and the configuration of larger, scalable corporate network infrastructures.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 424",
+      "course_title": "Operating Systems",
+      "course_description": "This course discusses the fundamental principles of OS management, including process scheduling, memory, and file systems.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 425",
+      "course_title": "Computer Architecture and Organization",
+      "course_description": "This course focuses on the hardware design of computer systems and the interface between machine language and hardware.",
+      "units": 4,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 426",
+      "course_title": "Computer Engineering Drafting and Design",
+      "course_description": "This course demonstrates specialized technical drawing and design standards for computer hardware and system layouts.",
+      "units": 1,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 427",
+      "course_title": "Connecting Networks and Security (CISCO 4)",
+      "course_description": "This course details the implementation of wide-area network technologies and comprehensive network security configurations.",
+      "units": 4,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 428",
+      "course_title": "Embedded Systems",
+      "course_description": "This course focuses on the design and programming of specialized computer systems built into larger physical hardware devices.",
+      "units": 4,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 429",
+      "course_title": "Seminars and Fieldtrips",
+      "course_description": "This course exposes students to industry trends and facility operations through professional seminars and engineering site visits.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "IE 425",
+      "course_title": "Manufacturing and Quality Control",
+      "course_description": "This course explores the processes of industrial production and the statistical methods used to ensure product quality.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpEE 403",
+      "course_title": "Cognate/Elective Course 3",
+      "course_description": "This course provides final specialized training in advanced topics such as AI, cybersecurity, or mobile computing systems.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "Litr 102",
+      "course_title": "ASEAN Literature",
+      "course_description": "This course explores the diverse literary traditions and cultural identities of nations within the ASEAN region.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 405",
+      "course_title": "Technopreneurship",
+      "course_description": "This course explores the intersection of technical innovation and business to prepare students for launching tech-driven ventures.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "ENGG 417",
+      "course_title": "On-the-Job Training",
+      "course_description": "This course provides immersive industry internship experience, allowing students to apply engineering knowledge in real-world settings.",
+      "units": 4,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    },
+    {
+      "course_code": "CpE 430",
+      "course_title": "CpE Practice and Design 2",
+      "course_description": "This course conducts the implementation and final testing phases of the capstone engineering design project.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSCpE"
+    }
   ]
 }

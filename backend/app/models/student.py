@@ -19,6 +19,7 @@ class Student(Base):
 
     program_id = Column(Integer, ForeignKey("programs.id"), nullable=False)
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True)
+    curriculum_id = Column(Integer, ForeignKey("curriculums.id"), nullable=True)
 
     major = Column(String(255), nullable=True)
     year_level = Column(String(20), nullable=True)
@@ -30,3 +31,4 @@ class Student(Base):
 
     program = relationship("Program", back_populates="students")
     campus = relationship("Campus")
+    curriculum = relationship("Curriculum")

@@ -402,18 +402,24 @@ class CertificateDependencyEngine:
         is_candidate = CertificateDependencyEngine._is_candidate_record(
             graduation_record
         )
+        student_id_record = (
+            StudentIdRecordRepository(db).get_by_sr_code(sr_code) if sr_code else None
+        )
+        is_currently_enrolled = CertificateDependencyEngine._is_currently_enrolled_record(
+            student_id_record
+        )
 
         if base_key == "CERTIFICATE_OF_GRADUATION":
             return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ENROLLMENT":
-            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
+            return f"{base_key}_V1" if is_currently_enrolled else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ENGLISH_MEDIUM":
             return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
 
         if base_key == "CERTIFICATE_OF_ID_ISSUANCE":
-            return f"{base_key}_V1" if is_candidate else f"{base_key}_V2"
+            return f"{base_key}_V1" if is_currently_enrolled else f"{base_key}_V2"
 
         if has_v2:
             return f"{base_key}_V2"
@@ -496,6 +502,15 @@ class CertificateDependencyEngine:
             is_graduated = False
         status = str(getattr(record, "status", "") or "").strip().lower()
         return (not is_graduated) and status == "candidate"
+
+    @staticmethod
+    def _is_currently_enrolled_record(record) -> bool:
+        if not record:
+            return False
+        try:
+            return bool(getattr(record, "is_currently_enrolled", False))
+        except Exception:
+            return False
 
     @staticmethod
     def _get_academic_summary(db: Session, sr_code: Optional[str]) -> dict:

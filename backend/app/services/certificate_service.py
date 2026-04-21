@@ -340,6 +340,9 @@ def generate_certificate_pdf(
     overall_gwa = (
         academic_summary.get("gwa") if isinstance(academic_summary, dict) else None
     )
+    is_currently_enrolled = bool(
+        getattr(student_id_record, "is_currently_enrolled", False)
+    )
     total_units_earned = (
         academic_summary.get("total_units_earned")
         if isinstance(academic_summary, dict)
@@ -377,6 +380,7 @@ def generate_certificate_pdf(
         "year_graduated": request.year_graduated
         or (date_of_graduation[-4:] if date_of_graduation else ""),
         "is_graduated": is_graduated,
+        "is_currently_enrolled": is_currently_enrolled,
         "graduation_status": graduation_status,
         "reference_number": request.reference_number,
         "control_num": getattr(request, "control_num", "") or "",

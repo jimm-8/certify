@@ -57,7 +57,7 @@ def seed_from_file(path):
                     if not course_code:
                         continue
 
-                    # Insert course if missing
+                    # Insert new courses, or refresh existing ones from the seed JSON.
                     cur.execute(
                         """
                         INSERT INTO courses (
@@ -65,7 +65,13 @@ def seed_from_file(path):
                             units, year_level, semester_offered, program
                         )
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (course_code) DO NOTHING
+                        ON CONFLICT (course_code) DO UPDATE SET
+                            course_title = EXCLUDED.course_title,
+                            course_description = EXCLUDED.course_description,
+                            units = EXCLUDED.units,
+                            year_level = EXCLUDED.year_level,
+                            semester_offered = EXCLUDED.semester_offered,
+                            program = EXCLUDED.program
                         """,
                         (
                             c.get("course_code"),

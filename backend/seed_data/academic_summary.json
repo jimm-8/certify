@@ -1,5 +1,23 @@
 [
   {
+    "sr_code": "25-05148",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.85,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 1.75,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
     "sr_code": "21-00472",
     "academic_year": "2024-2025",
     "semester": "2nd",

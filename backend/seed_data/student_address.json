@@ -1,5 +1,21 @@
 [
   {
+    "sr_code": "25-05148",
+    "address_line": "San Agustin 1",
+    "city": "Naujan",
+    "province": "Oriental Mindoro",
+    "zip_code": "5204",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-07058",
+    "address_line": "Maraykit",
+    "city": "San Juan",
+    "province": "Batangas",
+    "zip_code": "4266",
+    "country": "Philippines"
+  },
+  {
     "sr_code": "21-00472",
     "address_line": "123, Bulihan",
     "city": "Malvar",
