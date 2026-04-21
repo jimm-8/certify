@@ -83,7 +83,7 @@ describe("GlobalPrintQueue", () => {
     render(<GlobalPrintQueue />);
 
     const queue = screen.getByTestId("global-print-queue");
-    const dragHandle = screen.getByText("Printing Queue").closest("div");
+    const dragHandle = screen.getByText("Print Job Status").closest("div");
     queue.getBoundingClientRect = vi.fn(() => ({
       left: 500,
       top: 400,

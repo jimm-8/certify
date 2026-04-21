@@ -63,7 +63,9 @@ const GlobalPrintQueue = () => {
   const [printQueue, setPrintQueue] = useState(getDefaultPrintQueueState);
   const [queueStats, setQueueStats] = useState({
     queuedCount: 0,
+    submittedCount: 0,
     printedCount: 0,
+    failedCount: 0,
     totalVisible: 0,
   });
   const [minimized, setMinimized] = useState(() => {
@@ -158,12 +160,26 @@ const GlobalPrintQueue = () => {
           (request) => request.status === "FOR_RELEASING",
         );
         const printedCount = releasable.filter(
-          (request) => request.auto_printed_at,
+          (request) =>
+            request.auto_printed_at ||
+            String(request.auto_print_status || "").toUpperCase() ===
+              "COMPLETED",
+        ).length;
+        const submittedCount = releasable.filter((request) =>
+          ["SENDING", "SUBMITTED"].includes(
+            String(request.auto_print_status || "").toUpperCase(),
+          ),
+        ).length;
+        const failedCount = releasable.filter(
+          (request) =>
+            String(request.auto_print_status || "").toUpperCase() === "FAILED",
         ).length;
 
         setQueueStats({
           queuedCount: Math.max(releasable.length - printedCount, 0),
+          submittedCount,
           printedCount,
+          failedCount,
           totalVisible: releasable.length,
         });
       } catch (error) {
@@ -265,9 +281,27 @@ const GlobalPrintQueue = () => {
     detailTone = "text-red-600";
     statusCaption = "Needs retry";
     badgeValue = "Error";
+  } else if (queueStats.submittedCount > 0) {
+    title = "Waiting for printer response";
+    detail =
+      queueStats.submittedCount === 1
+        ? "1 job has been submitted to the printer and is awaiting completion."
+        : `${queueStats.submittedCount} jobs are awaiting printer completion.`;
+    detailTone = "text-amber-600";
+    statusCaption = "Submitted to printer";
+    badgeValue = `${queueStats.submittedCount}`;
+  } else if (queueStats.failedCount > 0) {
+    title = "Print attention needed";
+    detail =
+      queueStats.failedCount === 1
+        ? "1 print job needs to be retried."
+        : `${queueStats.failedCount} print jobs need to be retried.`;
+    detailTone = "text-red-600";
+    statusCaption = "Print failed";
+    badgeValue = `${queueStats.failedCount}`;
   } else if (isQueueClear) {
     title = "Queue is clear";
-    detail = "All releasable certificates are already printed.";
+    detail = "All releasable certificates are confirmed as printed.";
     detailTone = "text-green-600";
     statusCaption = "No pending print jobs";
     badgeValue = "Clear";
@@ -295,7 +329,7 @@ const GlobalPrintQueue = () => {
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.18)] backdrop-blur">
         <div
           onPointerDown={handleDragStart}
-          className="flex w-full cursor-move items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50/80"
+          className="flex w-full cursor-move items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-gray-50/80"
           style={{ touchAction: "none" }}
         >
           <div className="flex min-w-0 items-center gap-3">
@@ -303,19 +337,19 @@ const GlobalPrintQueue = () => {
               <BsPrinter size={16} />
             </span>
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">
                 Print Job Status
               </div>
-              <div className="truncate text-sm font-semibold text-gray-800">
+              <div className="truncate text-xs font-semibold text-gray-800">
                 {title}
               </div>
-              <div className="truncate text-xs text-gray-500">
+              <div className="truncate text-[10px] text-gray-500">
                 {statusCaption}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500">
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[9px] font-medium text-gray-500">
               {badgeValue}
             </span>
             <button
@@ -336,8 +370,8 @@ const GlobalPrintQueue = () => {
         </div>
 
         {!minimized && (
-          <div className="border-t border-gray-100 px-4 pb-4 pt-1">
-            <p className={`text-xs ${detailTone}`}>{detail}</p>
+          <div className="border-t border-gray-100 px-4 pb-4 pt-2">
+            <p className={`text-[11px] ${detailTone}`}>{detail}</p>
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-gray-50 px-2 py-2">
@@ -345,35 +379,40 @@ const GlobalPrintQueue = () => {
                   Pending
                 </div>
                 <div className="mt-1 text-sm font-semibold text-gray-800">
-                  {queueStats.queuedCount}
+                  {Math.max(
+                    queueStats.queuedCount - queueStats.submittedCount,
+                    0,
+                  )}
                 </div>
               </div>
               <div className="rounded-xl bg-gray-50 px-2 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Printed
+                  In Printer
+                </div>
+                <div className="mt-1 text-sm font-semibold text-gray-800">
+                  {queueStats.submittedCount}
+                </div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-2 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-gray-400">
+                  Confirmed
                 </div>
                 <div className="mt-1 text-sm font-semibold text-gray-800">
                   {queueStats.printedCount}
                 </div>
               </div>
-              <div className="rounded-xl bg-gray-50 px-2 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Latest Batch
-                </div>
-                <div className="mt-1 text-sm font-semibold text-gray-800">
-                  {active || isDone || isError
-                    ? `${processed}/${total}`
-                    : queueStats.totalVisible || "--"}
-                </div>
-              </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
+            <div className="mt-3 flex items-center justify-between text-[10px] text-gray-400">
               <span>
-                {failed > 0 ? `${failed} failed in latest batch` : ""}
+                {failed > 0
+                  ? `${failed} failed in latest batch`
+                  : queueStats.failedCount > 0
+                    ? `${queueStats.failedCount} need retry`
+                    : null}
               </span>
               <span>
-                {lastPrintedAt ? `Updated ${lastPrintedAt}` : statusCaption}
+                {lastPrintedAt ? `Updated ${lastPrintedAt}` : statusCaption}.
               </span>
             </div>
           </div>

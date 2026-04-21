@@ -12,6 +12,7 @@ import json
 
 from app.database import get_db
 from app.models.certificate_request import (
+    AutoPrintStatus,
     CertificateRequest,
     CertificateType,
     RequestStatus,
@@ -816,12 +817,20 @@ def mark_printed(
         return {
             "message": "Request already marked as printed.",
             "auto_printed_at": request.auto_printed_at,
+            "auto_print_status": request.auto_print_status,
         }
     request.auto_printed_at = datetime.now()
+    request.auto_print_confirmed_at = request.auto_printed_at
+    request.auto_print_status = AutoPrintStatus.COMPLETED.value
+    request.auto_print_error = None
     db.commit()
     db.refresh(request)
     log_print_completed(db, request)
-    return {"message": "Marked as printed.", "auto_printed_at": request.auto_printed_at}
+    return {
+        "message": "Marked as printed.",
+        "auto_printed_at": request.auto_printed_at,
+        "auto_print_status": request.auto_print_status,
+    }
 
 # Endpoint: Send rejection email manually
 @router.post("/{request_id}/send-rejection-email")

@@ -15,6 +15,7 @@ from app.repositories import (
     AuditLogRepository,
     AuthorizedOfficialRepository,
     CertificateRequestRepository,
+    PaymentRepository,
     StudentAddressRepository,
     StudentRepository,
 )
@@ -36,6 +37,7 @@ def generate_certificate_pdf(
 
     request_repo = CertificateRequestRepository(db)
     signature_repo = AuthorizedOfficialRepository(db)
+    payment_repo = PaymentRepository(db)
     student_address_repo = StudentAddressRepository(db)
     audit_repo = AuditLogRepository(db)
     request = request_repo.get_by_id(request_id)
@@ -67,12 +69,86 @@ def generate_certificate_pdf(
         parts = [student.first_name, student.middle_name, student.last_name]
         return " ".join([p for p in parts if p]).strip()
 
-    def _ordinal(n: int) -> str:
-        if 10 <= (n % 100) <= 20:
-            suffix = "th"
-        else:
-            suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-        return f"{n}{suffix}"
+    def _number_to_words(n: int) -> str:
+        small_numbers = {
+            0: "zero",
+            1: "first",
+            2: "second",
+            3: "third",
+            4: "fourth",
+            5: "fifth",
+            6: "sixth",
+            7: "seventh",
+            8: "eighth",
+            9: "ninth",
+            10: "tenth",
+            11: "eleventh",
+            12: "twelfth",
+            13: "thirteenth",
+            14: "fourteenth",
+            15: "fifteenth",
+            16: "sixteenth",
+            17: "seventeenth",
+            18: "eighteenth",
+            19: "nineteenth",
+            20: "twentieth",
+        }
+        tens_map = {
+            20: "twenty",
+            30: "thirty",
+            40: "forty",
+            50: "fifty",
+            60: "sixty",
+            70: "seventy",
+            80: "eighty",
+            90: "ninety",
+        }
+        ordinal_suffix_map = {
+            1: "first",
+            2: "second",
+            3: "third",
+            4: "fourth",
+            5: "fifth",
+            6: "sixth",
+            7: "seventh",
+            8: "eighth",
+            9: "ninth",
+        }
+
+        if n in small_numbers:
+            return small_numbers[n]
+        if n < 100:
+            tens = (n // 10) * 10
+            ones = n % 10
+            if ones == 0:
+                tens_word = tens_map.get(tens, str(tens))
+                return (
+                    f"{tens_word[:-1]}ieth"
+                    if tens_word.endswith("y")
+                    else f"{tens_word}ieth"
+                )
+            ones_word = ordinal_suffix_map.get(ones, small_numbers.get(ones, str(ones)))
+            return f"{tens_map.get(tens, str(tens))}-{ones_word}"
+        return str(n)
+
+    def _format_year_level(value) -> str:
+        try:
+            return _number_to_words(int(value))
+        except (TypeError, ValueError):
+            return str(value or "")
+
+    def _format_semester(value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        semester_map = {
+            "1st": "First",
+            "first": "First",
+            "2nd": "Second",
+            "second": "Second",
+            "3rd": "Third",
+            "third": "Third",
+            "summer": "Summer",
+        }
+        return semester_map.get(normalized, str(value or "").strip())
 
     def _honorific_for_gender(value: str) -> str:
         normalized = str(value or "").strip().lower()
@@ -158,6 +234,13 @@ def generate_certificate_pdf(
     campus_telNo = (campus.campus_telNo if campus else None) or ""
     campus_email = (campus.campus_email if campus else None) or ""
     campus_certCode = (campus.campus_certCode if campus else None) or ""
+    payment = payment_repo.get_by_reference(request.reference_number)
+    date_of_payment = ""
+    or_number = ""
+    if payment:
+        if getattr(payment, "date_of_payment", None):
+            date_of_payment = payment.date_of_payment.strftime("%B %d, %Y")
+        or_number = getattr(payment, "or_number", "") or ""
 
     student_address = ""
     if student:
@@ -183,10 +266,10 @@ def generate_certificate_pdf(
     if enrollment:
         if enrollment.year_level is not None:
             try:
-                year_level = _ordinal(int(enrollment.year_level))
+                year_level = _format_year_level(enrollment.year_level)
             except (TypeError, ValueError):
                 year_level = str(enrollment.year_level)
-        current_semester = str(enrollment.semester or "")
+        current_semester = _format_semester(enrollment.semester)
         academic_year = str(enrollment.academic_year or "")
 
     def _semester_order(value: str) -> int:
@@ -228,11 +311,11 @@ def generate_certificate_pdf(
         first = sorted_enrollments[0]
         print(f"[DEBUG] Resolved first: {first.semester} {first.academic_year}")
         last = sorted_enrollments[-1]
-        first_enrollment_semester = str(getattr(first, "semester", "") or "")
+        first_enrollment_semester = _format_semester(getattr(first, "semester", ""))
         first_enrollment_academic_year = str(getattr(first, "academic_year", "") or "")
-        enrollment_from_semester = str(getattr(first, "semester", "") or "")
+        enrollment_from_semester = _format_semester(getattr(first, "semester", ""))
         enrollment_from_academic_year = str(getattr(first, "academic_year", "") or "")
-        enrollment_to_semester = str(getattr(last, "semester", "") or "")
+        enrollment_to_semester = _format_semester(getattr(last, "semester", ""))
         enrollment_to_academic_year = str(getattr(last, "academic_year", "") or "")
 
     date_of_graduation = ""
@@ -295,7 +378,9 @@ def generate_certificate_pdf(
         "is_graduated": is_graduated,
         "graduation_status": graduation_status,
         "reference_number": request.reference_number,
-        "or_number": getattr(request, "or_number", "") or "",
+        "control_num": getattr(request, "control_num", "") or "",
+        "or_number": or_number,
+        "date_of_payment": date_of_payment,
         "purpose": request.purpose,
         "verification_code": request.verification_token,
         "requestor_name": request.requestor_name,
@@ -361,7 +446,7 @@ def generate_certificate_pdf(
         "request_purpose": request.purpose,
         "request_amount": getattr(request, "request_cost", "") or "",
         "cav_no": request.reference_number,
-        "series_no": getattr(request, "or_number", "") or "",
+        "series_no": getattr(request, "control_num", "") or "",
         "student_id_number": student.sr_code if student else request.sr_code,
         "nstp_component": getattr(nstp_record, "component", "") if nstp_record else "",
         "nstp_serial_number": (
@@ -382,10 +467,9 @@ def generate_certificate_pdf(
     if enrollments:
 
         def _format_period(e):
-            sem = str(getattr(e, "semester", "") or "").strip()
+            sem = _format_semester(getattr(e, "semester", ""))
             ay = str(getattr(e, "academic_year", "") or "").strip()
-            # Only append "Semester" after 1st and 2nd
-            if sem.lower() in ("1st", "2nd"):
+            if sem.lower() in ("first", "second", "third"):
                 sem = f"{sem} Semester"
             return f"{sem}, Academic Year {ay}".strip()
 

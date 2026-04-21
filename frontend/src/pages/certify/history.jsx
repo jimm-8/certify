@@ -213,10 +213,10 @@ const History = () => {
       width: "150px",
     },
     {
-      name: "OR #",
-      selector: (row) => row.or_number,
+      name: "Control No.",
+      selector: (row) => row.control_num,
       sortable: true,
-      cell: (row) => row.or_number || "—",
+      cell: (row) => row.control_num || "-",
       width: "130px",
     },
     {

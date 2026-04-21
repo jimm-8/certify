@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -17,6 +17,28 @@ class RequestStatusEnum(str, Enum):
 class RequestTypeEnum(str, Enum):
     CERTIFICATE = "certificate"
     DOCUMENT = "document"
+
+
+class AutoPrintStatusEnum(str, Enum):
+    REQUESTED = "REQUESTED"
+    SENDING = "SENDING"
+    SUBMITTED = "SUBMITTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+LEGACY_AUTO_PRINT_STATUS_MAP = {
+    "queued": AutoPrintStatusEnum.REQUESTED,
+    "requested": AutoPrintStatusEnum.REQUESTED,
+    "sending": AutoPrintStatusEnum.SENDING,
+    "submitted": AutoPrintStatusEnum.SUBMITTED,
+    "completed": AutoPrintStatusEnum.COMPLETED,
+    "printed": AutoPrintStatusEnum.COMPLETED,
+    "done": AutoPrintStatusEnum.COMPLETED,
+    "failed": AutoPrintStatusEnum.FAILED,
+    "error": AutoPrintStatusEnum.FAILED,
+    "offline": AutoPrintStatusEnum.FAILED,
+}
 
 # Schema for certificate type (what we send back)
 class CertificateDependencyField(BaseModel):
@@ -156,6 +178,7 @@ class CertificateRequestDetail(BaseModel):
     request_label: Optional[str] = None
     status: RequestStatusEnum
     certificate_type_name: Optional[str] = None
+    control_num: Optional[str] = None
     or_number: Optional[str] = None
     
     # Requestor info
@@ -178,6 +201,10 @@ class CertificateRequestDetail(BaseModel):
     ready_email_sent_at: Optional[datetime] = None
     auto_print_requested_at: Optional[datetime] = None
     auto_printed_at: Optional[datetime] = None
+    auto_print_status: Optional[AutoPrintStatusEnum] = None
+    auto_print_job_id: Optional[str] = None
+    auto_print_error: Optional[str] = None
+    auto_print_confirmed_at: Optional[datetime] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None
@@ -186,6 +213,17 @@ class CertificateRequestDetail(BaseModel):
     # Timestamps
     created_at: datetime
     updated_at: Optional[datetime]
+
+    @field_validator("auto_print_status", mode="before")
+    @classmethod
+    def normalize_auto_print_status(cls, value):
+        if value is None or isinstance(value, AutoPrintStatusEnum):
+            return value
+
+        normalized = LEGACY_AUTO_PRINT_STATUS_MAP.get(
+            str(value).strip().lower()
+        )
+        return normalized or value
     
     class Config:
         from_attributes = True

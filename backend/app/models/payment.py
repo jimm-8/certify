@@ -15,4 +15,6 @@ class Payment(Base):
     payment_method = Column(String(50), nullable=True)
     payment_status = Column(String(20), nullable=True)
     paid_at = Column(DateTime(timezone=True), nullable=True)
+    or_number = Column(String(20), nullable=True)
+    date_of_payment = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

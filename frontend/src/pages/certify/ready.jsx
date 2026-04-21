@@ -285,6 +285,17 @@ const Ready = () => {
     ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
     : "—";
 
+  const getPrintStatusLabel = (row) => {
+    const printStatus = String(row.auto_print_status || "").toUpperCase();
+    if (row.auto_printed_at || printStatus === "COMPLETED") return "Confirmed";
+    if (printStatus === "SUBMITTED" || printStatus === "SENDING") {
+      return "In Printer";
+    }
+    if (printStatus === "FAILED") return "Failed";
+    if (row.auto_print_requested_at) return "Queued";
+    return "No";
+  };
+
   const handleView = async (row) => {
     setPdfLoading(true);
     try {
@@ -336,7 +347,11 @@ const Ready = () => {
       );
     } catch (error) {
       console.error("Failed to send ready email:", error);
-      showFeedback("Email Failed", "Failed to send email. Please try again.", "error");
+      showFeedback(
+        "Email Failed",
+        "Failed to send email. Please try again.",
+        "error",
+      );
     } finally {
       setEmailLoading((prev) => ({ ...prev, [row.id]: false }));
     }
@@ -558,10 +573,10 @@ const Ready = () => {
       width: "140px",
     },
     {
-      name: "OR #",
-      selector: (row) => row.or_number,
+      name: "OR No.",
+      selector: (row) => row.payment?.or_number || "",
       sortable: true,
-      cell: (row) => row.or_number || "—",
+      cell: (row) => row.payment?.or_number || "-",
       width: "110px",
     },
     {
@@ -632,10 +647,10 @@ const Ready = () => {
     },
     {
       name: "Is Printed",
-      selector: (row) => (row.auto_printed_at ? "Yes" : "No"),
-      cell: (row) => (row.auto_printed_at ? "Yes" : "No"),
+      selector: (row) => getPrintStatusLabel(row),
+      cell: (row) => getPrintStatusLabel(row),
       sortable: true,
-      width: "110px",
+      width: "120px",
     },
     {
       name: "Action",
@@ -716,7 +731,7 @@ const Ready = () => {
           <button
             onClick={handleBulkSendReadyEmails}
             disabled={bulkEmailing || filteredRequests.length === 0}
-            className="flex items-center gap-1.5 rounded-md bg-[#ee1133] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md bg-[#ee1133] px-2 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
           >
             {bulkEmailing ? (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />

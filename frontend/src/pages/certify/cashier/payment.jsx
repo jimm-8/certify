@@ -314,10 +314,13 @@ export default function PaymentTagging() {
     },
     {
       name: "OR No.",
-      selector: (row) => row.or_number || "",
+      selector: (row) => paymentMap[row.reference_number]?.or_number || "",
       sortable: false,
       width: "150px",
-      cell: (row) => (unpaidIds.has(row.id) ? "—" : row.or_number || "—"),
+      cell: (row) =>
+        unpaidIds.has(row.id)
+          ? "-"
+          : paymentMap[row.reference_number]?.or_number || "-",
     },
     {
       name: "Action",

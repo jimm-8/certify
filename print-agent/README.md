@@ -16,8 +16,10 @@ The service runs at `http://127.0.0.1:3100`.
 
 - `GET /health`
 - `GET /printers` -> list installed printers
+- `GET /jobs/:jobId` -> inspect tracked print job status
 - `POST /print?printer=Your Printer Name&copies=1`
   - Body: raw `application/pdf`
+  - Returns a local `job_id` that can be polled until `status` becomes `completed` or `failed`
 
 ## Test (PowerShell)
 

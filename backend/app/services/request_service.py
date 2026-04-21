@@ -14,6 +14,7 @@ from app.services.fee_service import (
 from pypdf import PdfReader
 
 from app.models.certificate_request import (
+    AutoPrintStatus,
     CertificateRequest,
     RequestStatus,
     RequestType,
@@ -74,7 +75,7 @@ def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
     request_repo = CertificateRequestRepository(db)
     count = (
         request_repo.query()
-        .filter(CertificateRequest.or_number.like(f"{prefix}%"))
+        .filter(CertificateRequest.control_num.like(f"{prefix}%"))
         .count()
     )
 
@@ -193,8 +194,8 @@ async def update_request_status(
     audit_repo.add(audit_log)
 
     if new_status == RequestStatus.PROCESSING:
-        if not request.or_number:
-            request.or_number = generate_or_number(db)
+        if not request.control_num:
+            request.control_num = generate_or_number(db)
         try:
             from app.services.certificate_service import generate_certificate_pdf
 
@@ -264,7 +265,7 @@ async def update_request_status(
                     sr_code=request.sr_code,
                     issued_by=user_name,
                     issued_at=datetime.now(),
-                    or_number=request.or_number,
+                    or_number=request.control_num,
                     file_path=request.pdf_path,
                 )
             )
@@ -311,6 +312,10 @@ async def update_request_status(
     if new_status == RequestStatus.FOR_RELEASING:
         try:
             request.auto_print_requested_at = datetime.now()
+            request.auto_print_status = AutoPrintStatus.REQUESTED.value
+            request.auto_print_job_id = None
+            request.auto_print_error = None
+            request.auto_print_confirmed_at = None
             # When wet signature is enabled, ready email is sent manually
             skip_ready_email = get_bool_setting(db, "use_wet_signature", False)
             if not skip_ready_email:

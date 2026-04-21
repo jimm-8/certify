@@ -1,4 +1,13 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Numeric
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+)
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
@@ -19,10 +28,19 @@ class RequestStatus(str, enum.Enum):
     FOR_RELEASING = "FOR_RELEASING"
     RELEASED = "RELEASED"
 
+
+class AutoPrintStatus(str, enum.Enum):
+    REQUESTED = "REQUESTED"
+    SENDING = "SENDING"
+    SUBMITTED = "SUBMITTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 # Certificate types table
 class CertificateType(Base):
     __tablename__ = "certificate_types"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, nullable=False)
     description = Column(Text, nullable=True)
@@ -30,15 +48,16 @@ class CertificateType(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 # Certificate requests table
 class CertificateRequest(Base):
     __tablename__ = "certificate_requests"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     reference_number = Column(String(50), unique=True, nullable=False, index=True)
     pin = Column(String(4), nullable=False)
-    or_number = Column(String(20), nullable=True, index=True)
-    
+    control_num = Column(String(20), nullable=True, index=True)
+
     request_type = Column(
         String(50),
         nullable=False,
@@ -48,24 +67,26 @@ class CertificateRequest(Base):
     )
     requested_document_name = Column(String(255), nullable=True)
 
-    certificate_type_id = Column(Integer, ForeignKey("certificate_types.id"), nullable=True)
+    certificate_type_id = Column(
+        Integer, ForeignKey("certificate_types.id"), nullable=True
+    )
     certificate_type_name = Column(String(255), nullable=True)
-    
+
     requestor_name = Column(String(255), nullable=False)
     requestor_address = Column(Text, nullable=False)
     requestor_relationship = Column(String(50), nullable=False)
     requestor_contact = Column(String(20), nullable=False)
     requestor_email = Column(String(255), nullable=False)
     purpose = Column(Text, nullable=False)
-    
+
     sr_code = Column(String(20), nullable=True)
     student_name = Column(String(255), nullable=False)
     program = Column(String(255), nullable=False)
     major = Column(String(255), nullable=True)
     year_graduated = Column(String(10), nullable=True)
-    
+
     signature_data = Column(Text, nullable=True)
-    
+
     # JSON-encoded list of selected course codes for course description certificates
     course_description_selection = Column(Text, nullable=True)
     # JSON-encoded list of selected grade row keys for certification of grades
@@ -77,9 +98,15 @@ class CertificateRequest(Base):
     ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
     auto_print_requested_at = Column(DateTime(timezone=True), nullable=True)
     auto_printed_at = Column(DateTime(timezone=True), nullable=True)
-    
-    status = Column(Enum(RequestStatus), default=RequestStatus.SUBMITTED, nullable=False)
-    
+    auto_print_status = Column(String(32), nullable=True)
+    auto_print_job_id = Column(String(120), nullable=True, index=True)
+    auto_print_error = Column(Text, nullable=True)
+    auto_print_confirmed_at = Column(DateTime(timezone=True), nullable=True)
+
+    status = Column(
+        Enum(RequestStatus), default=RequestStatus.SUBMITTED, nullable=False
+    )
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -91,3 +118,11 @@ class CertificateRequest(Base):
     def is_certificate_request(self):
         return self.request_type == RequestType.CERTIFICATE.value
 
+    @property
+    def or_number(self):
+        """Backward-compatible alias for older code paths."""
+        return self.control_num
+
+    @or_number.setter
+    def or_number(self, value):
+        self.control_num = value

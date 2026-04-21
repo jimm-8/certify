@@ -251,6 +251,11 @@
       margin-bottom: 2px;
     }
 
+    .value {
+      font-size: 11pt;
+      font-weight: bold;
+    }
+
     /* Label with line ABOVE it */
     .gor-label,
     .date-label {
@@ -327,7 +332,7 @@
           {{ campus_name }}{% if campus_name %} Campus{% endif %}
         </div>
         <div class="address">{{ campus_address }}</div>
-        <div class="telNo">{{ campus_telNo }}</div>
+        <div class="telNo">Tel Nos.: {{ campus_telNo }}</div>
         <div class="email">Email Address:
           {{ campus_email }} | Website Address:
           https://www.batstate-u.edu.ph
@@ -401,7 +406,8 @@
             <span class="gor-label">(GOR SERIAL NUMBER)</span>
           </div>
           <div class="date">
-            <span class="value">{{ date_of_payment }}</span>
+            <span id="payment-date" class="value">
+              {{ date_of_payment }}</span>
             <span class="date-label">(DATE OF PAYMENT)</span>
           </div>
         </div>
@@ -446,6 +452,23 @@
           el.innerHTML = `${day}<sup>${suffix}</sup>`;
         }
       });
+
+      const el = document.getElementById("payment-date");
+
+      if (el) {
+        const rawDate = el.textContent.trim();
+        const dateObj = new Date(rawDate);
+
+        if (!isNaN(dateObj)) {
+          const formatted = dateObj.toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "2-digit"
+          });
+
+          el.textContent = formatted;
+        }
+      }
     </script>
 </body>
 

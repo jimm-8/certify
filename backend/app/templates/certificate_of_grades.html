@@ -188,7 +188,7 @@
   .dst-row {
     display: flex;
     justify-content: center;
-    margin-top: 25px;
+    margin-top: 15px;
     gap: 12px;
     /* space BETWEEN the two fields */
   }
@@ -200,6 +200,11 @@
     text-align: center;
     font-size: 6.5pt;
     font-style: italic;
+  }
+
+  .value {
+    font-size: 11pt;
+    font-weight: bold;
   }
 
   /* Value (number/date) */
@@ -292,7 +297,7 @@
             <div class="details">
               <div class="campus-bold">{{ campus_name|default('Alangilan') }} Campus</div>
               <div class="address-bold">{{ campus_address }}</div>
-              <div class="contact-info">
+              <div class="contact-info">Tel Nos.:
                 ({{ campus_telNo }})<br>
                 Email Address: {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph
               </div>
@@ -393,7 +398,7 @@
                 <span class="gor-label">(GOR SERIAL NUMBER)</span>
               </div>
               <div class="date">
-                <span class="value">{{ date_of_payment }}</span>
+                <span id="payment-date" class="value">{{ date_of_payment }}</span>
                 <span class="date-label">(DATE OF PAYMENT)</span>
               </div>
             </div>
@@ -429,4 +434,21 @@
       el.innerHTML = day + `<sup>${(s[(v - 20) % 10] || s[v] || s[0])}</sup>`;
     }
   });
+
+  const el = document.getElementById("payment-date");
+
+  if (el) {
+    const rawDate = el.textContent.trim();
+    const dateObj = new Date(rawDate);
+
+    if (!isNaN(dateObj)) {
+      const formatted = dateObj.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "2-digit"
+      });
+
+      el.textContent = formatted;
+    }
+  }
 </script>
