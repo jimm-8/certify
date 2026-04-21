@@ -7,7 +7,7 @@ const Main = ({ children }) => {
   const shouldShowPrintQueue = location.pathname !== "/payment-tagging";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--school-surface)] text-[var(--school-ink)]">
       <CertifyNavbar />
       <div className="px-3">{children}</div>
       {shouldShowPrintQueue ? <GlobalPrintQueue /> : null}

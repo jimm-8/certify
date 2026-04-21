@@ -94,6 +94,8 @@ class CertificateRequest(Base):
 
     verification_token = Column(String(100), unique=True, nullable=True, index=True)
     pdf_path = Column(String(500), nullable=True)
+    pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
+    pdf_generation_time_ms = Column(Integer, nullable=True)
     request_cost = Column(Numeric(10, 2), nullable=True)
     ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
     auto_print_requested_at = Column(DateTime(timezone=True), nullable=True)

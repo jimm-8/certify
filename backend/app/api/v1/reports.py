@@ -77,6 +77,19 @@ def _format_duration(seconds: float | None) -> str:
     return f"{minutes}m"
 
 
+def _format_generation_duration(milliseconds: float | None) -> str:
+    if milliseconds is None:
+        return "0 ms"
+    if milliseconds < 1000:
+        return f"{int(round(milliseconds))} ms"
+    seconds = milliseconds / 1000
+    if seconds < 60:
+        return f"{seconds:.2f} s"
+    minutes = int(seconds // 60)
+    remaining_seconds = seconds % 60
+    return f"{minutes}m {remaining_seconds:.1f}s"
+
+
 def _last_n_days(n: int, today):
     return [today - timedelta(days=i) for i in range(n - 1, -1, -1)]
 
@@ -178,6 +191,17 @@ def get_reports_summary(
             pass
     if durations:
         avg_processing_seconds = sum(durations) / len(durations)
+
+    pdf_generation_durations = [
+        r.pdf_generation_time_ms
+        for r in filtered
+        if getattr(r, "pdf_generation_time_ms", None) is not None
+    ]
+    avg_pdf_generation_ms = (
+        sum(pdf_generation_durations) / len(pdf_generation_durations)
+        if pdf_generation_durations
+        else None
+    )
 
     certificate_counter = Counter(
         r.certificate_type_name for r in filtered if r.certificate_type_name
@@ -309,6 +333,15 @@ def get_reports_summary(
             "release_rate": release_rate,
             "rejection_rate": rejection_rate,
             "avg_processing_time_label": _format_duration(avg_processing_seconds),
+            "avg_pdf_generation_time_ms": (
+                round(avg_pdf_generation_ms, 2)
+                if avg_pdf_generation_ms is not None
+                else None
+            ),
+            "avg_pdf_generation_time_label": _format_generation_duration(
+                avg_pdf_generation_ms
+            ),
+            "pdf_generation_samples": len(pdf_generation_durations),
             "avg_daily_requests_last_30_days": avg_daily_requests,
             "status_breakdown": status_counts,
             "pending": pending_count,

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from time import perf_counter
 
 from app.models.audit_log import AuditLog
 from app.models.certificate_request import CertificateRequest, RequestStatus
@@ -555,6 +556,8 @@ def generate_certificate_pdf(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{request.reference_number}_{timestamp}.pdf"
     pdf_path = os.path.join(output_dir, filename)
+    generation_started_at = datetime.now()
+    generation_started_timer = perf_counter()
 
     try:
         pdf_bytes = CertificateEngine.generate(resolved_key, data)
@@ -595,6 +598,10 @@ def generate_certificate_pdf(
             ) from fallback_exc
 
     request.pdf_path = pdf_path
+    request.pdf_generated_at = generation_started_at
+    request.pdf_generation_time_ms = max(
+        1, int(round((perf_counter() - generation_started_timer) * 1000))
+    )
 
     audit_log = AuditLog(
         action="CERTIFICATE_GENERATED",

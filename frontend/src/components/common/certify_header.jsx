@@ -75,8 +75,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
   );
 };
 
-const CertifyHeader = ({ onTabChange }) => {
-  const [activeTab, setActiveTab] = useState(0);
+const CertifyHeader = ({ activeTab = 0, onTabChange }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const buttonRef = useRef(null);
   const portalRef = useRef(null);
@@ -122,7 +121,6 @@ const CertifyHeader = ({ onTabChange }) => {
   ];
 
   const handleTabClick = (index) => {
-    setActiveTab(index);
     setDropdownOpen(false);
     if (onTabChange) onTabChange(index);
   };
@@ -144,7 +142,7 @@ const CertifyHeader = ({ onTabChange }) => {
 
   return (
     <div className="mt-3">
-      <div className="bg-white rounded-md border h-10 border-gray-200 shadow-sm flex items-stretch overflow-x-auto">
+      <div className="flex h-10 items-stretch overflow-x-auto rounded-md border border-[var(--school-border)] bg-white shadow-sm">
         {/* Tabs */}
         <div className="flex items-stretch">
           {tabs.map((tab, index) => (
@@ -154,8 +152,8 @@ const CertifyHeader = ({ onTabChange }) => {
                 className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all duration-200
                   ${
                     activeTab === index
-                      ? "border-[#ee1133] text-[#ee1133]"
-                      : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+                      ? "border-[var(--school-crimson)] bg-[var(--school-ivory)]/60 text-[var(--school-crimson)]"
+                      : "border-transparent text-gray-500 hover:border-[var(--school-crimson)] hover:text-[var(--school-ink)]"
                   }`}
               >
                 {tab.icon}
@@ -173,13 +171,12 @@ const CertifyHeader = ({ onTabChange }) => {
           <div className="relative flex items-center" ref={buttonRef}>
             <button
               onClick={() => {
-                setActiveTab(null);
                 setDropdownOpen((prev) => !prev);
               }}
               className={`p-2 rounded-md transition-colors flex-shrink-0 ${
                 dropdownOpen
-                  ? "text-[#ee1133]"
-                  : "text-gray-400 hover:text-[#ee1133]"
+                  ? "text-[var(--school-crimson)]"
+                  : "text-gray-400 hover:text-[var(--school-crimson)]"
               }`}
             >
               <BsThreeDotsVertical size={16} />

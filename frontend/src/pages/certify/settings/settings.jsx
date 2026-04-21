@@ -4,6 +4,7 @@ import authService from "../../../services/authService";
 import userService from "../../../services/userService";
 import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
+import FeedbackDialog from "../../../components/common/feedbackDialog";
 
 const Settings = () => {
   const payload = getTokenPayload();
@@ -25,15 +26,27 @@ const Settings = () => {
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [department, setDepartment] = useState("");
-  const [success, setSuccess] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [changeError, setChangeError] = useState("");
-  const [changeSuccess, setChangeSuccess] = useState("");
   const [changing, setChanging] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
   const navigate = useNavigate();
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -47,7 +60,11 @@ const Settings = () => {
         setDepartment(data.department || "");
       } catch (err) {
         if (!mounted) return;
-        setSuccess("");
+        showFeedback(
+          "Profile Load Failed",
+          "Failed to load profile details.",
+          "error",
+        );
       }
     };
     loadProfile();
@@ -106,7 +123,6 @@ const Settings = () => {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setSuccess("");
               try {
                 setSavingProfile(true);
                 await userService.updateMe({
@@ -115,9 +131,17 @@ const Settings = () => {
                   contact_number: contact,
                   department,
                 });
-                setSuccess("Profile details saved.");
+                showFeedback(
+                  "Profile Saved",
+                  "Profile details saved.",
+                  "success",
+                );
               } catch (err) {
-                setSuccess("");
+                showFeedback(
+                  "Save Failed",
+                  "Failed to save profile details.",
+                  "error",
+                );
               } finally {
                 setSavingProfile(false);
               }
@@ -196,13 +220,6 @@ const Settings = () => {
                 />
               </div>
             </div>
-
-            {success && (
-              <div className="text-xs text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                {success}
-              </div>
-            )}
-
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-gray-500">
                 Profile updates are saved to your account.
@@ -231,26 +248,38 @@ const Settings = () => {
             className="space-y-3"
             onSubmit={async (e) => {
               e.preventDefault();
-              setChangeError("");
-              setChangeSuccess("");
               if (!currentPassword || !newPassword) {
-                setChangeError("Please fill in all required fields.");
+                showFeedback(
+                  "Missing Fields",
+                  "Please fill in all required fields.",
+                  "warning",
+                );
                 return;
               }
               if (newPassword !== confirmPassword) {
-                setChangeError("New password and confirmation do not match.");
+                showFeedback(
+                  "Password Mismatch",
+                  "New password and confirmation do not match.",
+                  "warning",
+                );
                 return;
               }
               try {
                 setChanging(true);
                 await authService.changePassword(currentPassword, newPassword);
-                setChangeSuccess("Password updated successfully.");
+                showFeedback(
+                  "Password Updated",
+                  "Password updated successfully.",
+                  "success",
+                );
                 setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
               } catch (err) {
-                setChangeError(
+                showFeedback(
+                  "Update Failed",
                   err.response?.data?.detail || "Failed to update password.",
+                  "error",
                 );
               } finally {
                 setChanging(false);
@@ -292,18 +321,6 @@ const Settings = () => {
                 />
               </div>
             </div>
-
-            {changeError && (
-              <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-                {changeError}
-              </div>
-            )}
-            {changeSuccess && (
-              <div className="text-xs text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                {changeSuccess}
-              </div>
-            )}
-
             <div className="flex justify-end">
               <button
                 type="submit"
@@ -327,6 +344,15 @@ const Settings = () => {
           </ul>
         </div>
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import settingsService from "../../services/settingsService";
+import paymentService from "../../services/paymentService";
 import {
   BsSearch,
   BsCalendar3,
@@ -9,7 +10,6 @@ import {
   BsEye,
   BsPrinter,
   BsCheckLg,
-  BsCheckCircle,
   BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
@@ -71,60 +71,46 @@ const LoadingState = () => (
   </div>
 );
 
-const BulkProgressOverlay = ({
-  show,
-  label,
+const BulkStatusDialog = ({
+  open,
+  title,
+  message,
+  tone,
+  current,
+  total,
   done,
-  titleActive,
-  titleDone,
-  statusActive,
-  statusDone,
-  doneCount,
-  totalCount,
+  onClose,
 }) => {
-  if (!show || totalCount <= 0) return null;
-  const pct = Math.min(Math.round((doneCount / totalCount) * 100), 100);
+  if (!open || total <= 0) return null;
+  const percent = Math.min(Math.round((current / total) * 100), 100);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="text-[11px] font-medium uppercase tracking-widest text-gray-400">
-            {label}
-          </span>
-          <BsCheckCircle
-            size={14}
-            className={done ? "text-green-600" : "text-[#ee1133]"}
-          />
-        </div>
-        <div className="text-sm font-semibold text-gray-800">
-          {done ? titleDone : titleActive}
-        </div>
-        <div className="mt-1 text-xs text-gray-500">
-          {done ? statusDone : statusActive}
-        </div>
-        <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-gray-100">
+    <FeedbackDialog
+      open={open}
+      title={title}
+      message={message}
+      tone={tone}
+      loading={!done}
+      confirmLabel={done ? "Close" : "Working..."}
+      onClose={onClose}
+    >
+      <div className="space-y-2">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
               done ? "bg-green-500" : "bg-[#ee1133]"
             }`}
-            style={{ width: `${pct}%` }}
+            style={{ width: `${percent}%` }}
           />
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[11px] text-gray-400">
-            {doneCount} of {totalCount} {done ? "completed" : "processed"}
+        <div className="flex items-center justify-between text-[11px] text-gray-500">
+          <span>
+            {current} of {total} processed
           </span>
-          <span
-            className={`text-[11px] font-medium ${
-              done ? "text-green-700" : "text-gray-500"
-            }`}
-          >
-            {pct}%
-          </span>
+          <span className="font-semibold text-gray-700">{percent}%</span>
         </div>
       </div>
-    </div>
+    </FeedbackDialog>
   );
 };
 
@@ -158,19 +144,55 @@ const Ready = () => {
     total: 0,
   });
   const [bulkReleaseDone, setBulkReleaseDone] = useState(false);
+  const [bulkDialog, setBulkDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+    current: 0,
+    total: 0,
+    done: false,
+  });
   const [feedbackModal, setFeedbackModal] = useState({
     open: false,
     title: "",
     message: "",
     tone: "default",
+    loading: false,
+    confirmLabel: "Got it",
+    cancelLabel: "",
   });
+  const [paymentMap, setPaymentMap] = useState({});
 
-  const showFeedback = (title, message, tone = "default") => {
+  const showFeedback = (title, message, tone = "default", extra = {}) => {
     setFeedbackModal({
       open: true,
       title,
       message,
       tone,
+      loading: false,
+      confirmLabel: "Got it",
+      cancelLabel: "",
+      ...extra,
+    });
+  };
+
+  const showBulkDialog = ({
+    title,
+    message,
+    tone = "info",
+    current = 0,
+    total = 0,
+    done = false,
+  }) => {
+    setBulkDialog({
+      open: true,
+      title,
+      message,
+      tone,
+      current,
+      total,
+      done,
     });
   };
 
@@ -189,9 +211,19 @@ const Ready = () => {
         Array.isArray(data) ? data : data.items || [],
       );
       const filtered = all.filter((r) => r.status === "FOR_RELEASING");
+      const refs = filtered.map((r) => r.reference_number).filter(Boolean);
+      const paymentInfo =
+        refs.length > 0
+          ? await paymentService.getPaymentsByReferences(refs)
+          : { items: [] };
+      const nextPaymentMap = {};
+      (paymentInfo?.items || []).forEach((item) => {
+        nextPaymentMap[item.reference_number] = item;
+      });
       const snapshot = JSON.stringify(
         filtered.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
       );
+      setPaymentMap(nextPaymentMap);
       if (snapshot !== lastSnapshotRef.current) {
         lastSnapshotRef.current = snapshot;
         setRequests(filtered);
@@ -341,7 +373,7 @@ const Ready = () => {
       await requestService.sendReadyEmail(row.id);
       fetchRequests();
       showFeedback(
-        "Email Sent",
+        "Task Successful",
         "Ready-for-pickup email sent successfully.",
         "success",
       );
@@ -371,6 +403,11 @@ const Ready = () => {
 
     setBulkEmailing(true);
     setBulkEmailProgress({ sent: 0, total: targets.length });
+    showBulkDialog({
+      title: "Sending Emails",
+      message: `0 of ${targets.length} email${targets.length !== 1 ? "s" : ""} processed.`,
+      total: targets.length,
+    });
 
     for (let i = 0; i < targets.length; i += 1) {
       const row = targets[i];
@@ -385,6 +422,12 @@ const Ready = () => {
         sent: i + 1,
         total: targets.length,
       });
+      showBulkDialog({
+        title: "Sending Emails",
+        message: `${i + 1} of ${targets.length} email${targets.length !== 1 ? "s" : ""} processed.`,
+        total: targets.length,
+        current: i + 1,
+      });
     }
 
     setBulkEmailProgress({
@@ -394,11 +437,14 @@ const Ready = () => {
 
     setBulkEmailDone(true);
     fetchRequests();
-
-    setTimeout(() => {
-      setBulkEmailing(false);
-      setBulkEmailDone(false);
-    }, 1500);
+    showBulkDialog({
+      title: "Bulk Send Complete",
+      message: `${targets.length} ready email${targets.length !== 1 ? "s were" : " was"} processed.`,
+      tone: "success",
+      current: targets.length,
+      total: targets.length,
+      done: true,
+    });
   };
 
   const handleBulkMarkReleased = async () => {
@@ -415,6 +461,11 @@ const Ready = () => {
 
     setBulkReleasing(true);
     setBulkReleaseProgress({ done: 0, total: targets.length });
+    showBulkDialog({
+      title: "Updating Release Status",
+      message: `0 of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
+      total: targets.length,
+    });
 
     const failed = [];
 
@@ -431,6 +482,12 @@ const Ready = () => {
         done: i + 1,
         total: targets.length,
       });
+      showBulkDialog({
+        title: "Updating Release Status",
+        message: `${i + 1} of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
+        total: targets.length,
+        current: i + 1,
+      });
     }
 
     setBulkReleaseProgress({
@@ -440,19 +497,18 @@ const Ready = () => {
 
     setBulkReleaseDone(true);
     fetchRequests();
-
-    setTimeout(() => {
-      setBulkReleasing(false);
-      setBulkReleaseDone(false);
-    }, 1500);
-
-    if (failed.length > 0) {
-      showFeedback(
-        "Bulk Release Incomplete",
-        `Failed to release ${failed.length} request(s). Please retry.`,
-        "error",
-      );
-    }
+    showBulkDialog({
+      title: failed.length > 0
+        ? "Bulk Release Incomplete"
+        : "Bulk Release Complete",
+      message: failed.length > 0
+        ? `Released ${targets.length - failed.length} of ${targets.length} request(s). Please retry the failed items.`
+        : `${targets.length} request${targets.length !== 1 ? "s were" : " was"} marked as released.`,
+      tone: failed.length > 0 ? "warning" : "success",
+      current: targets.length,
+      total: targets.length,
+      done: true,
+    });
   };
 
   const handlePrintAll = async () => {
@@ -574,9 +630,9 @@ const Ready = () => {
     },
     {
       name: "OR No.",
-      selector: (row) => row.payment?.or_number || "",
+      selector: (row) => paymentMap[row.reference_number]?.or_number || "",
       sortable: true,
-      cell: (row) => row.payment?.or_number || "-",
+      cell: (row) => paymentMap[row.reference_number]?.or_number || "-",
       width: "110px",
     },
     {
@@ -694,33 +750,31 @@ const Ready = () => {
 
   return (
     <div className="mb-4 min-h-[calc(100vh-10rem)] w-full rounded-md border border-gray-200 bg-white p-2 shadow-sm -mt-3">
-      <BulkProgressOverlay
-        show={bulkEmailing}
-        label="Bulk send"
-        done={bulkEmailDone}
-        titleActive="Sending emails"
-        titleDone="All done"
-        statusActive={`${bulkEmailProgress.sent} of ${bulkEmailProgress.total} sent`}
-        statusDone={`${bulkEmailProgress.total} emails delivered`}
-        doneCount={bulkEmailProgress.sent}
-        totalCount={bulkEmailProgress.total}
-      />
-      <BulkProgressOverlay
-        show={bulkReleasing}
-        label="Bulk release"
-        done={bulkReleaseDone}
-        titleActive="Marking as released"
-        titleDone="All done"
-        statusActive={`${bulkReleaseProgress.done} of ${bulkReleaseProgress.total} done`}
-        statusDone={`${bulkReleaseProgress.total} requests released`}
-        doneCount={bulkReleaseProgress.done}
-        totalCount={bulkReleaseProgress.total}
+      <BulkStatusDialog
+        open={bulkDialog.open}
+        title={bulkDialog.title}
+        message={bulkDialog.message}
+        tone={bulkDialog.tone}
+        current={bulkDialog.current}
+        total={bulkDialog.total}
+        done={bulkDialog.done}
+        onClose={() => {
+          if (!bulkDialog.done) return;
+          setBulkDialog((current) => ({ ...current, open: false }));
+          setBulkEmailing(false);
+          setBulkEmailDone(false);
+          setBulkReleaseDone(false);
+          setBulkReleasing(false);
+        }}
       />
       <FeedbackDialog
         open={feedbackModal.open}
         title={feedbackModal.title}
         message={feedbackModal.message}
         tone={feedbackModal.tone}
+        loading={feedbackModal.loading}
+        confirmLabel={feedbackModal.confirmLabel}
+        cancelLabel={feedbackModal.cancelLabel}
         onClose={() =>
           setFeedbackModal((current) => ({ ...current, open: false }))
         }
@@ -738,7 +792,7 @@ const Ready = () => {
             ) : (
               <BsEnvelopeArrowUp size={13} />
             )}
-            {bulkEmailing ? "Sending Emails..." : "Send All Emails"}
+            {bulkEmailing ? "Sending..." : "Send All Emails"}
           </button>
 
           <button

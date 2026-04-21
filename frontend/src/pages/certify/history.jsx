@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
+import paymentService from "../../services/paymentService";
 import {
   BsSearch,
   BsCalendar3,
@@ -84,6 +85,7 @@ const History = () => {
     message: "",
     tone: "default",
   });
+  const [paymentMap, setPaymentMap] = useState({});
 
   const showFeedback = (title, message, tone = "default") => {
     setFeedbackModal({
@@ -106,7 +108,20 @@ const History = () => {
       const all = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );
-      setRequests(all.filter((r) => r.status === "RELEASED"));
+      const releasedRequests = all.filter((r) => r.status === "RELEASED");
+      const refs = releasedRequests
+        .map((r) => r.reference_number)
+        .filter(Boolean);
+      const paymentInfo =
+        refs.length > 0
+          ? await paymentService.getPaymentsByReferences(refs)
+          : { items: [] };
+      const nextPaymentMap = {};
+      (paymentInfo?.items || []).forEach((item) => {
+        nextPaymentMap[item.reference_number] = item;
+      });
+      setPaymentMap(nextPaymentMap);
+      setRequests(releasedRequests);
     } catch (error) {
       console.error("Failed to fetch released requests:", error);
     } finally {
@@ -213,11 +228,11 @@ const History = () => {
       width: "150px",
     },
     {
-      name: "Control No.",
-      selector: (row) => row.control_num,
+      name: "OR No.",
+      selector: (row) => paymentMap[row.reference_number]?.or_number || "",
       sortable: true,
-      cell: (row) => row.control_num || "-",
-      width: "130px",
+      cell: (row) => paymentMap[row.reference_number]?.or_number || "-",
+      width: "110px",
     },
     {
       name: "Certificate Type",

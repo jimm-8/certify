@@ -67,6 +67,49 @@ const LoadingState = () => (
   </div>
 );
 
+const BulkStatusDialog = ({
+  open,
+  title,
+  message,
+  tone,
+  current,
+  total,
+  done,
+  onClose,
+}) => {
+  if (!open || total <= 0) return null;
+  const percent = Math.min(Math.round((current / total) * 100), 100);
+
+  return (
+    <FeedbackDialog
+      open={open}
+      title={title}
+      message={message}
+      tone={tone}
+      loading={!done}
+      confirmLabel={done ? "Close" : "Working..."}
+      onClose={onClose}
+    >
+      <div className="space-y-2">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${
+              done ? "bg-green-500" : "bg-[#ee1133]"
+            }`}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-gray-500">
+          <span>
+            {current} of {total} processed
+          </span>
+          <span className="font-semibold text-gray-700">{percent}%</span>
+        </div>
+      </div>
+    </FeedbackDialog>
+  );
+};
+
 const Checking = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +138,15 @@ const Checking = () => {
     message: "",
     tone: "default",
   });
+  const [bulkDialog, setBulkDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+    current: 0,
+    total: 0,
+    done: false,
+  });
 
   const showFeedback = (title, message, tone = "default") => {
     setFeedbackModal({
@@ -102,6 +154,25 @@ const Checking = () => {
       title,
       message,
       tone,
+    });
+  };
+
+  const showBulkDialog = ({
+    title,
+    message,
+    tone = "info",
+    current = 0,
+    total = 0,
+    done = false,
+  }) => {
+    setBulkDialog({
+      open: true,
+      title,
+      message,
+      tone,
+      current,
+      total,
+      done,
     });
   };
 
@@ -367,18 +438,44 @@ const Checking = () => {
     }
     setBulkApproveLoading(true);
     try {
-      await Promise.all(
-        filteredRequests.map((r) =>
-          requestService.updateStatus(
-            r.id,
-            "PROCESSING",
-            "Request moved to processing",
-          ),
-        ),
-      );
+      showBulkDialog({
+        title: "Processing Requests",
+        message: `0 of ${filteredRequests.length} request${filteredRequests.length !== 1 ? "s" : ""} processed.`,
+        total: filteredRequests.length,
+      });
+      for (let i = 0; i < filteredRequests.length; i += 1) {
+        const request = filteredRequests[i];
+        await requestService.updateStatus(
+          request.id,
+          "PROCESSING",
+          "Request moved to processing",
+        );
+        showBulkDialog({
+          title: "Processing Requests",
+          message: `${i + 1} of ${filteredRequests.length} request${filteredRequests.length !== 1 ? "s" : ""} processed.`,
+          total: filteredRequests.length,
+          current: i + 1,
+        });
+      }
       fetchRequests();
+      showBulkDialog({
+        title: "Bulk Process Complete",
+        message: `${filteredRequests.length} request${filteredRequests.length !== 1 ? "s were" : " was"} moved to processing.`,
+        tone: "success",
+        current: filteredRequests.length,
+        total: filteredRequests.length,
+        done: true,
+      });
     } catch (error) {
       console.error("Bulk advance failed:", error);
+      showBulkDialog({
+        title: "Bulk Process Failed",
+        message: "Failed to update all selected requests.",
+        tone: "error",
+        current: 0,
+        total: filteredRequests.length || 1,
+        done: true,
+      });
     } finally {
       setBulkApproveLoading(false);
     }
@@ -708,6 +805,20 @@ const Checking = () => {
         validationFlags={
           selectedRequest ? getValidationFlags(selectedRequest) : []
         }
+      />
+      <BulkStatusDialog
+        open={bulkDialog.open}
+        title={bulkDialog.title}
+        message={bulkDialog.message}
+        tone={bulkDialog.tone}
+        current={bulkDialog.current}
+        total={bulkDialog.total}
+        done={bulkDialog.done}
+        onClose={() => {
+          if (!bulkDialog.done) return;
+          setBulkDialog((current) => ({ ...current, open: false }));
+          setBulkApproveLoading(false);
+        }}
       />
       <FeedbackDialog
         open={feedbackModal.open}

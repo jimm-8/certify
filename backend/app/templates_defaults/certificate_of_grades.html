@@ -1,4 +1,4 @@
-﻿<meta charset="UTF-8">
+<meta charset="UTF-8">
 <title>Certificate of Grades</title>
 <style>
   @page {
@@ -34,8 +34,7 @@
   .header-wrapper {
     position: relative;
     text-align: center;
-    padding-top: 0 !important;
-    margin-top: 0;
+    padding-top: 0;
     /* Removed padding to let doc-meta sit at top */
   }
 
@@ -189,10 +188,12 @@
   .dst-row {
     display: flex;
     justify-content: center;
-    margin-top: 35px;
+    margin-top: 15px;
     gap: 12px;
+    /* space BETWEEN the two fields */
   }
 
+  /* Each column */
   .gor,
   .date {
     width: 45%;
@@ -201,12 +202,23 @@
     font-style: italic;
   }
 
-  .gor::before,
-  .date::before {
-    content: "";
+  .value {
+    font-size: 11pt;
+    font-weight: bold;
+  }
+
+  /* Value (number/date) */
+  .gor div:first-child,
+  .date div:first-child {
+    margin-bottom: 2px;
+  }
+
+  /* Label with line ABOVE it */
+  .gor-label,
+  .date-label {
     display: block;
     border-top: 1px solid #000;
-    margin-bottom: 3px;
+    padding-top: 2px;
   }
 
   .qr-container {
@@ -230,6 +242,7 @@
     margin-left: 1.2in;
     margin-top: 5px;
     text-align: left;
+    font-weight: bold;
   }
 
   .footer-tagline {
@@ -265,7 +278,7 @@
         <div class="header-wrapper">
           <div class="doc-meta">
             <div>
-              <p>BatStateU-CE-REG-04</p>
+              <p>BatStateU-CE-REG-03</p>
             </div>
             <div>
               <p>Effectivity Date: February 23, 2026</p>
@@ -284,7 +297,7 @@
             <div class="details">
               <div class="campus-bold">{{ campus_name|default('Alangilan') }} Campus</div>
               <div class="address-bold">{{ campus_address }}</div>
-              <div class="contact-info">
+              <div class="contact-info">Tel Nos.:
                 ({{ campus_telNo }})<br>
                 Email Address: {{ campus_email }} | Website Address: https://www.batstate-u.edu.ph
               </div>
@@ -380,8 +393,14 @@
           <div class="dst">
             <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
             <div class="dst-row">
-              <div class="gor">(GOR SERIAL NUMBER)</div>
-              <div class="date">(DATE OF PAYMENT)</div>
+              <div class="gor">
+                <span class="value">{{ or_number }}</span>
+                <span class="gor-label">(GOR SERIAL NUMBER)</span>
+              </div>
+              <div class="date">
+                <span id="payment-date" class="value">{{ date_of_payment }}</span>
+                <span class="date-label">(DATE OF PAYMENT)</span>
+              </div>
             </div>
           </div>
 
@@ -394,7 +413,7 @@
 
           <div class="ref-codes">
             <div>{{ campus_certCode }}</div>
-            <div>{{ or_number }}</div>
+            <div>{{ control_num }}</div>
           </div>
           <div class="footer-tagline">
             <p>Leading Innovations, Transforming Lives, Building the Nation</p>
@@ -415,4 +434,21 @@
       el.innerHTML = day + `<sup>${(s[(v - 20) % 10] || s[v] || s[0])}</sup>`;
     }
   });
+
+  const el = document.getElementById("payment-date");
+
+  if (el) {
+    const rawDate = el.textContent.trim();
+    const dateObj = new Date(rawDate);
+
+    if (!isNaN(dateObj)) {
+      const formatted = dateObj.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "2-digit"
+      });
+
+      el.textContent = formatted;
+    }
+  }
 </script>

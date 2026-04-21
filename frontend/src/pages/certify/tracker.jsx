@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
-import BulkStatusModal from "../../components/common/bulkStatusModal";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsSearch,
@@ -63,6 +63,61 @@ const LoadingState = () => (
   </div>
 );
 
+const BulkStatusDialog = ({
+  open,
+  title,
+  message,
+  tone,
+  current,
+  total,
+  done,
+  onClose,
+  children,
+  loading,
+  confirmLabel,
+  confirmDisabled,
+  cancelLabel,
+  onConfirm,
+}) => {
+  const percent =
+    total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
+
+  return (
+    <FeedbackDialog
+      open={open}
+      title={title}
+      message={message}
+      tone={tone}
+      loading={loading}
+      confirmLabel={confirmLabel}
+      confirmDisabled={confirmDisabled}
+      cancelLabel={cancelLabel}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    >
+      {children}
+      {total > 0 && (
+        <div className="mt-4 space-y-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                done ? "bg-green-500" : "bg-[#ee1133]"
+              }`}
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-gray-500">
+            <span>
+              {current} of {total} processed
+            </span>
+            <span className="font-semibold text-gray-700">{percent}%</span>
+          </div>
+        </div>
+      )}
+    </FeedbackDialog>
+  );
+};
+
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
@@ -97,10 +152,24 @@ const Tracker = () => {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [statusLoadingId, setStatusLoadingId] = useState(null);
-  const [statusError, setStatusError] = useState("");
-  const [statusToast, setStatusToast] = useState(null);
+  const [bulkDialog, setBulkDialog] = useState({
+    mode: "form",
+    title: "Bulk Change Status",
+    message:
+      "Select which group to update. Only requests matching the selected status will be affected.",
+    tone: "default",
+    current: 0,
+    total: 0,
+    done: false,
+  });
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
 
   const lastSnapshotRef = useRef("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,6 +179,28 @@ const Tracker = () => {
     () => setCurrentPage(1),
     [search, selectedFilter, selectedType, selectedProgram],
   );
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
+
+  const resetBulkDialog = () => {
+    setBulkDialog({
+      mode: "form",
+      title: "Bulk Change Status",
+      message:
+        "Select which group to update. Only requests matching the selected status will be affected.",
+      tone: "default",
+      current: 0,
+      total: 0,
+      done: false,
+    });
+  };
 
   const fetchRequests = async (opts = { silent: false }) => {
     try {
@@ -203,10 +294,8 @@ const Tracker = () => {
   const handleView = (row) => setSelectedRequest(row);
 
   const handleMarkProcessing = async (row) => {
-    setStatusError("");
     try {
       setStatusLoadingId(row.id);
-      setStatusToast({ type: "loading", message: "Updating status..." });
       const newStatus =
         row.status === "APPROVED" ? "PROCESSING" : "FOR_RELEASING";
       const updated = await requestService.updateStatus(row.id, newStatus);
@@ -217,7 +306,7 @@ const Tracker = () => {
         setSelectedRequest(updated);
       }
       fetchRequests();
-      setStatusToast({ type: "success", message: "Status updated." });
+      showFeedback("Status Updated", "Request status updated successfully.", "success");
     } catch (error) {
       console.error("Failed to update status:", error);
       const detail =
@@ -225,31 +314,51 @@ const Tracker = () => {
         error.response?.data?.message ||
         error.message ||
         "Failed to update status.";
-      setStatusError(detail);
-      setStatusToast({ type: "error", message: detail });
+      showFeedback("Update Failed", detail, "error");
     } finally {
       setStatusLoadingId(null);
-      setTimeout(() => setStatusToast(null), 2500);
     }
   };
 
   const handleBulkStatusChange = async () => {
     if (!bulkStatus) return;
     setBulkLoading(true);
-    setStatusError("");
+    const targets = filteredRequests.filter((r) => r.status === bulkStatus);
+    setBulkDialog({
+      mode: "progress",
+      title: "Updating Status",
+      message: `0 of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
+      tone: "info",
+      current: 0,
+      total: targets.length,
+      done: false,
+    });
     try {
-      setStatusToast({ type: "loading", message: "Updating requests..." });
-      await Promise.all(
-        filteredRequests
-          .filter((r) => r.status === bulkStatus)
-          .map((r) =>
-            requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus]),
-          ),
-      );
-      setBulkModalOpen(false);
-      setBulkStatus("");
+      for (let i = 0; i < targets.length; i += 1) {
+        await requestService.updateStatus(
+          targets[i].id,
+          bulkStatusTarget[bulkStatus],
+        );
+        setBulkDialog({
+          mode: "progress",
+          title: "Updating Status",
+          message: `${i + 1} of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
+          tone: "info",
+          current: i + 1,
+          total: targets.length,
+          done: false,
+        });
+      }
       fetchRequests();
-      setStatusToast({ type: "success", message: "Bulk update completed." });
+      setBulkDialog({
+        mode: "done",
+        title: "Bulk Update Complete",
+        message: `${targets.length} request${targets.length !== 1 ? "s were" : " was"} updated successfully.`,
+        tone: "success",
+        current: targets.length,
+        total: targets.length,
+        done: true,
+      });
     } catch (error) {
       console.error("Bulk status change failed:", error);
       const detail =
@@ -257,11 +366,17 @@ const Tracker = () => {
         error.response?.data?.message ||
         error.message ||
         "Bulk status change failed.";
-      setStatusError(detail);
-      setStatusToast({ type: "error", message: detail });
+      setBulkDialog({
+        mode: "done",
+        title: "Bulk Update Failed",
+        message: detail,
+        tone: "error",
+        current: bulkDialog.current,
+        total: targets.length || 1,
+        done: true,
+      });
     } finally {
       setBulkLoading(false);
-      setTimeout(() => setStatusToast(null), 2500);
     }
   };
 
@@ -537,43 +652,90 @@ const Tracker = () => {
         readOnly={true}
       />
 
-      <BulkStatusModal
+      <BulkStatusDialog
         open={bulkModalOpen}
+        title={bulkDialog.title}
+        message={bulkDialog.message}
+        tone={bulkDialog.tone}
+        current={bulkDialog.current}
+        total={bulkDialog.total}
+        done={bulkDialog.done}
+        loading={bulkLoading}
+        confirmLabel={
+          bulkDialog.mode === "form"
+            ? "Apply"
+            : bulkDialog.done
+              ? "Close"
+              : "Working..."
+        }
+        cancelLabel={bulkDialog.mode === "form" ? "Cancel" : ""}
+        confirmDisabled={
+          bulkDialog.mode === "form" ? !bulkStatus || affectedCount === 0 : false
+        }
         onClose={() => {
+          if (bulkLoading) return;
           setBulkModalOpen(false);
           setBulkStatus("");
+          resetBulkDialog();
         }}
-        bulkStatus={bulkStatus}
-        setBulkStatus={setBulkStatus}
-        onApply={handleBulkStatusChange}
-        loading={bulkLoading}
-        affectedCount={affectedCount}
+        onConfirm={
+          bulkDialog.mode === "form"
+            ? handleBulkStatusChange
+            : () => {
+                setBulkModalOpen(false);
+                setBulkStatus("");
+                resetBulkDialog();
+              }
+        }
+      >
+        {bulkDialog.mode === "form" && (
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  All
+                </label>
+                <select
+                  value={bulkStatus}
+                  onChange={(e) => setBulkStatus(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:outline-none"
+                >
+                  <option value="">Select status...</option>
+                  <option value="PROCESSING">Processing</option>
+                  <option value="FOR_RELEASING">For Releasing</option>
+                </select>
+              </div>
+              <div className="mt-4 text-sm text-gray-400">to</div>
+              <div className="flex-1">
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  Change to
+                </label>
+                <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500">
+                  {bulkStatus
+                    ? statusLabels[bulkStatusTarget[bulkStatus]] ||
+                      bulkStatusTarget[bulkStatus]
+                    : "Select a status first"}
+                </div>
+              </div>
+            </div>
+            {bulkStatus && (
+              <p className="mt-3 text-xs text-gray-400">
+                {affectedCount} request{affectedCount !== 1 ? "s" : ""} will be updated.
+              </p>
+            )}
+          </div>
+        )}
+      </BulkStatusDialog>
+
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
       />
-
-      {(statusLoadingId || bulkLoading) && (
-        <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-          <div className="bg-white rounded-md px-6 py-4 shadow-lg flex items-center gap-3">
-            <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-gray-700">Updating status...</span>
-          </div>
-        </div>
-      )}
-
-      {statusToast && (
-        <div className="fixed top-5 right-5 z-50">
-          <div
-            className={`px-4 py-3 rounded-md shadow-lg text-sm ${
-              statusToast.type === "success"
-                ? "bg-green-600 text-white"
-                : statusToast.type === "error"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-900 text-white"
-            }`}
-          >
-            {statusToast.message}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
