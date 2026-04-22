@@ -148,9 +148,13 @@
       text-indent: 0.5in;
     }
 
+    .second {
+      margin-top: 10px;
+    }
+
     /* COURSE DESCRIPTION BLOCKS */
     .course-block-wrap {
-      margin-top: 20px;
+      margin-top: 10px;
       page-break-inside: avoid;
       /* Prevents a single course from splitting across pages */
     }
@@ -162,7 +166,7 @@
     }
 
     .course-table td {
-      padding: 2px 0;
+      padding: 0;
       vertical-align: top;
     }
 
@@ -178,7 +182,7 @@
 
     /* SIGNATURE & FOOTER */
     .signature-section {
-      margin-top: 60px;
+      margin-top: 15px;
       page-break-inside: avoid;
     }
 
@@ -191,7 +195,7 @@
     /* FOOTER ELEMENTS */
     .footer-container {
       position: relative;
-      padding-top: 20px;
+      padding-top: 0px;
     }
 
     .dst {
@@ -389,7 +393,7 @@
             </div>
             {% endfor %}
 
-            <div class="paragraph">
+            <div class="paragraph second">
               Furthermore, the courses completed by <strong>{{ student_honorific }} <span
                   style="text-transform: uppercase;">{{
                   student_name
@@ -400,8 +404,9 @@
             </div>
 
             <div class="paragraph">
-              This certification is issued upon request of <strong>{{ student_honorific }}</strong>
-              <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
+              This certification is issued upon request of <strong>{{ student_honorific }}
+                <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname
+                  }}</span></strong> on
               this
               <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
                 }}</span>

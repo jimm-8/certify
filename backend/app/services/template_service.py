@@ -27,6 +27,7 @@ from sqlalchemy import case
 from sqlalchemy import func
 from app.utils.pdf_generator import CertificateGenerator
 from app.utils.template_engine import CertificateTemplateEngine
+from app.services.purpose_service import certificate_purpose_text
 import re
 import json
 
@@ -78,6 +79,10 @@ class CertificateTemplateService:
         now = datetime.now()
         month_text = now.strftime("%B")
         full_date = now.strftime("%B %d, %Y")
+        request_purpose_display = certificate_purpose_text(
+            getattr(request, "purpose", ""),
+            getattr(request, "purpose_category", None),
+        )
 
         context = {
             "student_name": request.student_name,
@@ -88,6 +93,7 @@ class CertificateTemplateService:
             "certificate_type": request.certificate_type_name,
             "reference_number": request.reference_number,
             "purpose": request.purpose,
+            "request_purpose": request_purpose_display,
             "requestor_name": request.requestor_name,
             "requestor_relationship": request.requestor_relationship,
             "requestor_address": request.requestor_address,
@@ -135,7 +141,10 @@ class CertificateTemplateService:
         if snapshot.get("year_level_text"):
             context["student_year"] = snapshot["year_level_text"]
         context.setdefault("course_name", request.program or "")
-        context.setdefault("request_purpose", request.purpose or "")
+        context.setdefault("request_purpose", certificate_purpose_text(
+            getattr(request, "purpose", ""),
+            getattr(request, "purpose_category", None),
+        ))
         if snapshot.get("attendance_period"):
             context.setdefault("attendance_periods", [snapshot["attendance_period"]])
         if snapshot.get("earned_credits"):
@@ -182,7 +191,10 @@ class CertificateTemplateService:
             "college_name": request.major or "",
             "year_level": snapshot.get("year_level_text", request.major or ""),
             "requestor_name": requestor_display_name,
-            "purpose_of_request": request.purpose or "",
+            "purpose_of_request": certificate_purpose_text(
+                getattr(request, "purpose", ""),
+                getattr(request, "purpose_category", None),
+            ),
             "date_of_graduation": snapshot.get(
                 "date_of_graduation", request.year_graduated or ""
             ),

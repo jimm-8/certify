@@ -7,11 +7,20 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { getTokenPayload } from "../../utils/auth";
 
 const tabs = [
-  { label: "Dashboard", icon: <LayoutGrid size={15} /> },
-  { label: "Received Request", icon: <Inbox size={15} /> },
-  { label: "Under Processing", icon: <LuRefreshCw size={15} /> },
-  { label: "For Release", icon: <PackageCheck size={15} /> },
-  { label: "History", icon: <History size={15} /> },
+  { key: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} /> },
+  { key: "received", label: "Received Request", icon: <Inbox size={15} /> },
+  {
+    key: "processing",
+    label: "Under Processing",
+    icon: <LuRefreshCw size={15} />,
+  },
+  { key: "ready", label: "For Release", icon: <PackageCheck size={15} /> },
+  {
+    key: "history",
+    label: "History",
+    icon: <History size={15} />,
+    showBadge: false,
+  },
 ];
 
 const baseMenuItems = [
@@ -75,7 +84,7 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
   );
 };
 
-const CertifyHeader = ({ activeTab = 0, onTabChange }) => {
+const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const buttonRef = useRef(null);
   const portalRef = useRef(null);
@@ -140,6 +149,12 @@ const CertifyHeader = ({ activeTab = 0, onTabChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const getTabCount = (tab) => {
+    if (!tab.key || tab.showBadge === false) return null;
+    const count = tabCounts[tab.key];
+    return typeof count === "number" ? count : null;
+  };
+
   return (
     <div className="mt-3">
       <div className="flex h-10 items-stretch overflow-x-auto rounded-md border border-[var(--school-border)] bg-white shadow-sm">
@@ -157,7 +172,18 @@ const CertifyHeader = ({ activeTab = 0, onTabChange }) => {
                   }`}
               >
                 {tab.icon}
-                {tab.label}
+                <span>{tab.label}</span>
+                {typeof getTabCount(tab) === "number" && (
+                  <span
+                    className={`inline-flex min-w-[1.35rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+                      activeTab === index
+                        ? "bg-[var(--school-crimson)] text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {getTabCount(tab)}
+                  </span>
+                )}
               </button>
 
               {index < tabs.length - 1 && (

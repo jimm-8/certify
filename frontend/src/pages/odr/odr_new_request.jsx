@@ -35,6 +35,35 @@ const officeToCampusMap = {
   jplpc_malvar: "JPLPC",
 };
 
+const formatApiError = (error) => {
+  const detail = error?.response?.data?.detail;
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item?.msg) return item.msg;
+        return null;
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  if (typeof error?.response?.data?.message === "string") {
+    return error.response.data.message;
+  }
+
+  if (typeof error?.message === "string") {
+    return error.message;
+  }
+
+  return "Failed to submit request. Please try again.";
+};
+
 const OdrNewRequest = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedOffice, setSelectedOffice] = useState("");
@@ -196,12 +225,7 @@ const OdrNewRequest = () => {
       setStep2Errors({ signature: "", confirmed: "" });
       if (signatureRef.current?.clear) signatureRef.current.clear();
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to submit request. Please try again.";
-      setError(errorMessage);
+      setError(formatApiError(err));
     } finally {
       setLoading(false);
     }

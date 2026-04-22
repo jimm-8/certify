@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -78,6 +79,10 @@ class CertificateRequest(Base):
     requestor_contact = Column(String(20), nullable=False)
     requestor_email = Column(String(255), nullable=False)
     purpose = Column(Text, nullable=False)
+    purpose_normalized = Column(Text, nullable=True)
+    purpose_category = Column(String(50), nullable=False, default="OTHER")
+    purpose_extracted_notes = Column(Text, nullable=True)
+    needs_instruction_review = Column(Boolean, nullable=False, default=False)
 
     sr_code = Column(String(20), nullable=True)
     student_name = Column(String(255), nullable=False)

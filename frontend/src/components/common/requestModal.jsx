@@ -559,7 +559,7 @@ const RequestModal = ({
       }
       setSavingGradesSelection(false);
     }
-    onApprove?.(request);
+    await onApprove(request);
   };
 
   return (

@@ -20,6 +20,7 @@ from app.repositories import (
     StudentAddressRepository,
     StudentRepository,
 )
+from app.services.purpose_service import certificate_purpose_text
 from app.services.settings_service import get_bool_setting
 
 
@@ -368,6 +369,10 @@ def generate_certificate_pdf(
         return "he/she"
 
     student_pronoun = _pronoun_for_gender(student_gender)
+    request_purpose_display = certificate_purpose_text(
+        request.purpose,
+        getattr(request, "purpose_category", None),
+    )
     data = {
         "student_name": student_name,
         "student_honorific": student_honorific,
@@ -448,7 +453,7 @@ def generate_certificate_pdf(
         "date_issued_day": day_text,
         "date_issued_month": month_text,
         "date_issued_year": year_text,
-        "request_purpose": request.purpose,
+        "request_purpose": request_purpose_display,
         "request_amount": getattr(request, "request_cost", "") or "",
         "cav_no": request.reference_number,
         "series_no": getattr(request, "control_num", "") or "",

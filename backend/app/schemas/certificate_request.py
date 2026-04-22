@@ -188,7 +188,11 @@ class CertificateRequestDetail(BaseModel):
     requestor_contact: str
     requestor_email: str
     purpose: str
-    
+    purpose_normalized: Optional[str] = None
+    purpose_category: Optional[str] = None
+    purpose_extracted_notes: Optional[str] = None
+    needs_instruction_review: bool = False
+
     # Student info
     sr_code: Optional[str]
     student_name: str

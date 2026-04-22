@@ -137,6 +137,8 @@ const Checking = () => {
     title: "",
     message: "",
     tone: "default",
+    loading: false,
+    confirmLabel: "Got it",
   });
   const [bulkDialog, setBulkDialog] = useState({
     open: false,
@@ -148,12 +150,19 @@ const Checking = () => {
     done: false,
   });
 
-  const showFeedback = (title, message, tone = "default") => {
+  const showFeedback = (
+    title,
+    message,
+    tone = "default",
+    options = {},
+  ) => {
     setFeedbackModal({
       open: true,
       title,
       message,
       tone,
+      loading: options.loading ?? false,
+      confirmLabel: options.confirmLabel || "Got it",
     });
   };
 
@@ -352,19 +361,35 @@ const Checking = () => {
 
   const handleModalApprove = async (req) => {
     const nextStatus = "PROCESSING";
-    setModalLoading(true);
+    setSelectedRequest(null);
+    showFeedback(
+      "Submitting Request",
+      "Please wait while the certificate request is being submitted.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Submitting...",
+      },
+    );
     try {
       await requestService.updateStatus(
         req.id,
         nextStatus,
         "Request moved to processing",
       );
-      setSelectedRequest(null);
-      fetchRequests();
+      await fetchRequests({ silent: true });
+      showFeedback(
+        "Request Submitted",
+        "Certificate request submitted successfully.",
+        "success",
+      );
     } catch (error) {
       console.error("Failed to advance request:", error);
-    } finally {
-      setModalLoading(false);
+      showFeedback(
+        "Submission Failed",
+        "Failed to submit the certificate request.",
+        "error",
+      );
     }
   };
 
@@ -825,6 +850,8 @@ const Checking = () => {
         title={feedbackModal.title}
         message={feedbackModal.message}
         tone={feedbackModal.tone}
+        loading={feedbackModal.loading}
+        confirmLabel={feedbackModal.confirmLabel}
         onClose={() =>
           setFeedbackModal((current) => ({ ...current, open: false }))
         }

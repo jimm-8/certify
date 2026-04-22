@@ -69,14 +69,23 @@ export default function PaymentTagging() {
     title: "",
     message: "",
     tone: "default",
+    loading: false,
+    confirmLabel: "Got it",
   });
 
-  const showFeedback = (title, message, tone = "default") => {
+  const showFeedback = (
+    title,
+    message,
+    tone = "default",
+    options = {},
+  ) => {
     setFeedbackModal({
       open: true,
       title,
       message,
       tone,
+      loading: options.loading ?? false,
+      confirmLabel: options.confirmLabel || "Got it",
     });
   };
 
@@ -163,6 +172,15 @@ export default function PaymentTagging() {
   const handleRecordPayment = async (row) => {
     if (!row?.id) return;
     setActionLoading((prev) => ({ ...prev, [row.id]: true }));
+    showFeedback(
+      "Recording Payment",
+      "Please wait while the payment is being recorded.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Recording...",
+      },
+    );
     try {
       await paymentService.createPayment({
         request_id: row.id,
@@ -175,6 +193,11 @@ export default function PaymentTagging() {
         or_number: orNumberInput.trim(),
       });
       await fetchRequests();
+      showFeedback(
+        "Payment Recorded",
+        "Payment has been tagged successfully.",
+        "success",
+      );
     } catch (err) {
       console.error("Failed to record payment:", err);
       showFeedback("Payment Failed", "Failed to record payment.", "error");
@@ -488,6 +511,8 @@ export default function PaymentTagging() {
         title={feedbackModal.title}
         message={feedbackModal.message}
         tone={feedbackModal.tone}
+        loading={feedbackModal.loading}
+        confirmLabel={feedbackModal.confirmLabel}
         onClose={() =>
           setFeedbackModal((current) => ({ ...current, open: false }))
         }

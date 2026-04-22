@@ -54,6 +54,7 @@ from app.schemas.certificate_request import CertificateVerificationResponse
 
 from app.services.certificate_service import generate_certificate_pdf
 from app.services.fee_service import compute_request_cost, is_certification_of_grades, is_course_description
+from app.services.purpose_service import analyze_request_purpose
 from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
@@ -185,6 +186,12 @@ async def create_certificate_request(
             computed_cost = compute_request_cost(cert_type.name)
 
     # Create new request
+    purpose_metadata = analyze_request_purpose(
+        request_data.purpose,
+        certificate_type_name=cert_type.name if cert_type else None,
+        requested_document_name=requested_document_name,
+    )
+
     new_request = CertificateRequest(
         reference_number=reference_number,
         pin=pin,
@@ -197,7 +204,11 @@ async def create_certificate_request(
         requestor_relationship=request_data.requestor_relationship,
         requestor_contact=request_data.requestor_contact,
         requestor_email=request_data.requestor_email,
-        purpose=request_data.purpose,
+        purpose=purpose_metadata["purpose_raw"],
+        purpose_normalized=purpose_metadata["purpose_normalized"],
+        purpose_category=purpose_metadata["purpose_category"],
+        purpose_extracted_notes=purpose_metadata["purpose_extracted_notes"],
+        needs_instruction_review=purpose_metadata["needs_instruction_review"],
         sr_code=request_data.sr_code,
         student_name=request_data.student_name,
         program=request_data.program,
