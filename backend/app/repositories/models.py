@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from sqlalchemy import or_
+from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
 from app.models.academic_summary import AcademicSummary
@@ -283,8 +283,33 @@ class PaymentRepository(BaseRepository[Payment]):
         super().__init__(db, Payment)
 
     def get_by_reference(self, reference_number: str):
+        ref = str(reference_number or "").strip()
+        if not ref:
+            return None
+
+        labeled_purpose = f"% {ref} - %"
+
         return (
-            self.query().filter(Payment.purpose.ilike(f"%{reference_number}%")).first()
+            self.query()
+            .filter(
+                or_(
+                    Payment.purpose == ref,
+                    Payment.purpose.ilike(labeled_purpose),
+                    Payment.purpose.ilike(f"%{ref}%"),
+                )
+            )
+            .order_by(
+                case(
+                    (Payment.purpose == ref, 0),
+                    (Payment.purpose.ilike(labeled_purpose), 1),
+                    else_=2,
+                ),
+                Payment.date_of_payment.desc(),
+                Payment.paid_at.desc(),
+                Payment.created_at.desc(),
+                Payment.id.desc(),
+            )
+            .first()
         )
 
 

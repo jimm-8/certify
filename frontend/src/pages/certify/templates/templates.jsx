@@ -22,21 +22,47 @@ const INJECTED_PAPER_STYLE = `
     body { 
       background-color: #e5e7eb !important; 
       display: flex; 
+      align-items: flex-start;
       justify-content: center; 
       margin: 0; 
+      padding: 24px 0 40px;
+      box-sizing: border-box;
     }
     .paper-shell {
       background-color: white !important;
-      width: 216mm; 
-      min-height: 330mm; 
-      padding: 10mm;
+      width: 8.5in;
+      min-height: 11in;
+      padding: 0;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       box-sizing: border-box;
-      margin-top: -30px;
-      margin-bottom: 40px;
+      margin: 0 auto;
+      overflow: hidden;
     }
     .paper-shell:focus {
       outline: none;
+    }
+  </style>
+`;
+
+const LETTER_PAPER_STYLE = `
+  <style>
+    .paper-shell {
+      position: relative;
+      padding: 0.4in 0.5in;
+      min-height: 11in;
+    }
+    .paper-shell .paper-table {
+      width: 100% !important;
+      min-height: calc(11in - 0.8in) !important;
+      background: #fff !important;
+    }
+    .paper-shell .footer-tagline {
+      position: absolute !important;
+      left: 0.5in !important;
+      right: 0.5in !important;
+      bottom: 0.18in !important;
+      padding: 0 !important;
+      background: transparent !important;
     }
   </style>
 `;
@@ -158,7 +184,89 @@ const Templates = () => {
       control_num: "OR-2026-00001",
       name_official: "MARIA SANTOS",
       official_title: "Head, Registration Services",
+      or_number: "2026-001234",
+      date_of_payment: "2026-01-01",
+      current_sem: "2nd",
+      enrollment_from_semester: "1st",
+      enrollment_from_academic_year: "2022-2023",
     };
+
+    const sampleCollections = {
+      grades_detail: [
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          units: "3",
+          grade: "1.50",
+        },
+        {
+          course_code: "ENGG 102",
+          course_title: "Engineering Drawing",
+          units: "2",
+          grade: "1.75",
+        },
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          units: "3",
+          grade: "1.25",
+        },
+      ],
+      course_descriptions: [
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          course_credits: "3",
+          course_description:
+            "Introduction to problem solving, algorithm design, and basic programming concepts.",
+        },
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          course_credits: "3",
+          course_description:
+            "Study of limits, derivatives, and applications of differential calculus.",
+        },
+      ],
+    };
+
+    const replaceLoopBlock = (source) =>
+      source.replace(
+        /{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%}([\s\S]*?){%\s*endfor\s*%}/g,
+        (_, itemName, collectionName, block) => {
+          const items = sampleCollections[collectionName];
+          if (!Array.isArray(items) || items.length === 0) return "";
+
+          return items
+            .map((item) =>
+              block.replace(
+                /{{\s*([^}]+)\s*}}/g,
+                (match, expr) => {
+                  const normalized = String(expr || "").trim();
+
+                  if (
+                    normalized.startsWith(`${itemName}.`) ||
+                    normalized.includes(` ${itemName}.`) ||
+                    normalized.includes(`(${itemName}.`)
+                  ) {
+                    const key = normalized
+                      .split("|")[0]
+                      .trim()
+                      .replace(new RegExp(`^${itemName}\\.`), "")
+                      .split(".")
+                      .pop()
+                      .trim();
+
+                    return item[key] || "&nbsp;";
+                  }
+
+                  return match;
+                },
+              ),
+            )
+            .join("");
+        },
+      );
 
     const replaceVariable = (_, expr) => {
       const key = String(expr || "")
@@ -171,7 +279,7 @@ const Templates = () => {
       return placeholders[key] || "&nbsp;";
     };
 
-    let result = html
+    let result = replaceLoopBlock(html)
       .replace(/{%[\s\S]*?%}/g, "")
       .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable);
 
@@ -269,7 +377,7 @@ const Templates = () => {
       : "";
 
     if (needsPaperStyle) {
-      return applyPaperShell(html, dummyStyle);
+      return applyPaperShell(html, `${LETTER_PAPER_STYLE}${dummyStyle}`);
     }
 
     return html;
@@ -292,7 +400,10 @@ const Templates = () => {
     const previewHead = `${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}`;
 
     if (needsPaperStyle) {
-      return applyPaperShell(html, `${baseTag}${dummyStyle}`);
+      return applyPaperShell(
+        html,
+        `${baseTag}${LETTER_PAPER_STYLE}${dummyStyle}`,
+      );
     }
 
     const isFullDoc = html.includes("<html");
@@ -407,14 +518,7 @@ const Templates = () => {
       }
 
       if (needsPaperStyle) {
-        resetHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>${INJECTED_PAPER_STYLE}</head>
-          <body>
-            <div class="paper-shell">${resetHtml}</div>
-          </body>
-        </html>`;
+        resetHtml = applyPaperShell(resetHtml, LETTER_PAPER_STYLE);
       }
 
       doc.open();

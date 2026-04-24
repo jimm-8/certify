@@ -168,7 +168,7 @@ class EmailService:
                     <p style="text-align: center;">
                         The total amount is computed as follows:
                         <br>
-                        <strong>₱30.00 per page + ₱30.00 Documentary Stamp Tax (DST) per page</strong>
+                        <strong>Based on the certificate type, number of page(s), and Documentary Stamp Tax (DST)</strong>
                     </p>
 
                     <p style="text-align: center;">
@@ -679,8 +679,11 @@ class EmailService:
             else:
                 # Sentence case
                 reason_clean = reason_clean[0].upper() + reason_clean[1:]
-                reason_clean = reason_clean.rstrip(".") + "."
-                delay_message = f"We apologize for the delay. {reason_clean} Thank you for your understanding."
+            reason_clean = reason_clean.rstrip(".") + "."
+            delay_message = (
+                f"We apologize for the delay. {reason_clean} "
+                "Thank you for your understanding."
+            )
         else:
             delay_message = (
                 "We apologize for the delay. Your certificate request is awaiting release as the authorized signatory is currently unavailable. "

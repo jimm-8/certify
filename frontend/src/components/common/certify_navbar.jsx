@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Settings, HelpCircle, Activity, Bell } from "lucide-react";
 import authService from "../../services/authService";
 import { getTokenPayload } from "../../utils/auth";
@@ -73,7 +73,10 @@ const playCriticalAlert = () => {
     osc.type = "square";
     osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
     gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.09);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      ctx.currentTime + delay + 0.09,
+    );
     osc.start(ctx.currentTime + delay);
     osc.stop(ctx.currentTime + delay + 0.1);
   });
@@ -111,6 +114,11 @@ const getHighestDelayStage = (elapsedMs) => {
   return null;
 };
 
+const FOR_RELEASE_NOTICE_ACTIONS = [
+  "FOR_RELEASE_DELAY_ALERT",
+  "REQUEST_DELAY_NOTICE_SENT",
+];
+
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [open, setOpen] = useState(false);
@@ -131,6 +139,7 @@ const CertifyNavbar = () => {
   const [delayNoticeSending, setDelayNoticeSending] = useState(false);
   const [holdTriggering, setHoldTriggering] = useState(false);
   const [delayAlertMuted, setDelayAlertMuted] = useState(false);
+  const [delayNoticeComposerOpen, setDelayNoticeComposerOpen] = useState(false);
   const [delayNoticeReason, setDelayNoticeReason] = useState("");
   const [delayNoticeReasonError, setDelayNoticeReasonError] = useState("");
   const dropdownRef = useRef(null);
@@ -138,6 +147,7 @@ const CertifyNavbar = () => {
   const latestNotificationIdRef = useRef(0);
   const hasLoadedNotificationsRef = useRef(false);
   const criticalAlertLoopRef = useRef(null);
+  const location = useLocation();
   const navigate = useNavigate();
 
   if (!criticalAlertLoopRef.current) {
@@ -191,6 +201,7 @@ const CertifyNavbar = () => {
     ? payload.role.replace("_", " ").toUpperCase()
     : "USER";
   const isCashier = payload?.role === "cashier";
+  const suppressForReleaseNotices = location.pathname === "/payment-tagging";
   const initials = username
     .split(/[\s._-]+/)
     .filter(Boolean)
@@ -199,7 +210,7 @@ const CertifyNavbar = () => {
     .join("");
 
   useEffect(() => {
-    if (isCashier) return undefined;
+    if (isCashier || suppressForReleaseNotices) return undefined;
 
     let active = true;
 
@@ -237,7 +248,7 @@ const CertifyNavbar = () => {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [isCashier]);
+  }, [isCashier, suppressForReleaseNotices]);
 
   useEffect(() => {
     const shouldPlayLoop =
@@ -258,6 +269,7 @@ const CertifyNavbar = () => {
 
   const closeDelayAlertModal = () => {
     criticalAlertLoopRef.current?.stop();
+    setDelayNoticeComposerOpen(false);
     setDelayNoticeReason("");
     setDelayNoticeReasonError("");
     setDelayAlertModal((current) => ({ ...current, open: false }));
@@ -274,7 +286,10 @@ const CertifyNavbar = () => {
 
     const evaluateDelayAlerts = async () => {
       try {
-        const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+        const data = await requestService.getAllRequests({
+          page: 1,
+          limit: 100,
+        });
         if (!active) return;
 
         const all = Array.isArray(data) ? data : data.items || [];
@@ -357,11 +372,28 @@ const CertifyNavbar = () => {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [isCashier]);
+  }, [isCashier, suppressForReleaseNotices]);
 
-  const mergedNotifications = mergeNotifications(notifications, localNotifications);
+  useEffect(() => {
+    if (!suppressForReleaseNotices) return;
+    criticalAlertLoopRef.current?.stop();
+    setDelayNoticeComposerOpen(false);
+    setDelayAlertMuted(false);
+    setDelayAlertModal((current) => ({ ...current, open: false }));
+  }, [suppressForReleaseNotices]);
 
-  const visibleNotifications = mergedNotifications.filter(
+  const mergedNotifications = mergeNotifications(
+    notifications,
+    localNotifications,
+  );
+
+  const routeNotifications = suppressForReleaseNotices
+    ? mergedNotifications.filter(
+        (item) => !FOR_RELEASE_NOTICE_ACTIONS.includes(item.action),
+      )
+    : mergedNotifications;
+
+  const visibleNotifications = routeNotifications.filter(
     (item) => !dismissedNotificationIds.includes(item.id),
   );
 
@@ -402,6 +434,12 @@ const CertifyNavbar = () => {
       return;
     }
 
+    if (!delayNoticeComposerOpen) {
+      setDelayNoticeComposerOpen(true);
+      setDelayNoticeReasonError("");
+      return;
+    }
+
     const trimmedReason = delayNoticeReason.trim();
     if (!trimmedReason) {
       setDelayNoticeReasonError("Please enter the reason for delay.");
@@ -427,6 +465,9 @@ const CertifyNavbar = () => {
         requests: [],
         stage: delayAlertModal.stage,
       });
+      setDelayNoticeComposerOpen(false);
+      setDelayNoticeReason("");
+      setDelayNoticeReasonError("");
       const refreshed = await requestService.getAllAuditLogs({
         page: 1,
         limit: 50,
@@ -441,7 +482,9 @@ const CertifyNavbar = () => {
       setDelayAlertModal((current) => ({
         ...current,
         title: "Send Failed",
-        message: "Failed to send the delay notice. Please try again.",
+        message:
+          error?.response?.data?.detail ||
+          "Failed to send the delay notice. Please try again.",
         tone: "error",
       }));
     } finally {
@@ -475,6 +518,9 @@ const CertifyNavbar = () => {
         requests: [],
         stage: delayAlertModal.stage,
       });
+      setDelayNoticeComposerOpen(false);
+      setDelayNoticeReason("");
+      setDelayNoticeReasonError("");
     } catch (error) {
       setDelayAlertModal((current) => ({
         ...current,
@@ -529,7 +575,7 @@ const CertifyNavbar = () => {
             <div className="text-sm font-medium">{formattedDate}</div>
             <div className="text-lg font-semibold">{formattedTime}</div>
           </div>
-          {!isCashier && (
+          {!isCashier && !suppressForReleaseNotices && (
             <div className="relative" ref={notificationsRef}>
               <button
                 type="button"
@@ -758,13 +804,19 @@ const CertifyNavbar = () => {
         tone={delayAlertModal.tone}
         loading={delayNoticeSending || holdTriggering}
         confirmLabel={
-          delayAlertModal.requests.length > 0 ? "Send Delay Notice" : "Got it"
+          delayAlertModal.requests.length > 0
+            ? delayNoticeComposerOpen
+              ? "Send Delay Notice"
+              : "Compose Delay Notice"
+            : "Got it"
         }
         cancelLabel={delayAlertModal.requests.length > 0 ? "Cancel" : ""}
         showSoundToggle={delayAlertModal.requests.length > 0}
         soundMuted={delayAlertMuted}
         onConfirm={
-          delayAlertModal.requests.length > 0 ? handleSendDelayNotice : undefined
+          delayAlertModal.requests.length > 0
+            ? handleSendDelayNotice
+            : undefined
         }
         onClose={closeDelayAlertModal}
         onSoundToggle={() => {
@@ -785,33 +837,37 @@ const CertifyNavbar = () => {
                   ? "Requestor Did Not Pick Up"
                   : "Requestors Did Not Pick Up"}
             </button>
-            <div className="text-[11px] text-gray-500">
+            <div className="text-[11px] text-gray-500 text-nowrap">
               This pauses the release timer without sending a delay notice.
             </div>
-            <label className="block text-xs font-medium text-gray-600">
-              Reason for delay
-            </label>
-            <textarea
-              value={delayNoticeReason}
-              onChange={(event) => {
-                setDelayNoticeReason(event.target.value);
-                if (delayNoticeReasonError) {
-                  setDelayNoticeReasonError("");
-                }
-              }}
-              rows={4}
-              placeholder="Type the reason that will be sent to the requester."
-              className="w-full rounded-md border border-[var(--school-border)] px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[var(--school-crimson)]"
-            />
-            {delayNoticeReasonError && (
-              <div className="text-[11px] text-[var(--school-crimson)]">
-                {delayNoticeReasonError}
-              </div>
+            {delayNoticeComposerOpen && (
+              <>
+                <label className="block text-xs font-medium text-gray-600">
+                  Reason for delay
+                </label>
+                <textarea
+                  value={delayNoticeReason}
+                  onChange={(event) => {
+                    setDelayNoticeReason(event.target.value);
+                    if (delayNoticeReasonError) {
+                      setDelayNoticeReasonError("");
+                    }
+                  }}
+                  rows={4}
+                  placeholder="Type the reason that will be sent to the requester."
+                  className="w-full rounded-md border border-[var(--school-border)] px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[var(--school-crimson)]"
+                />
+                {delayNoticeReasonError && (
+                  <div className="text-[11px] text-[var(--school-crimson)]">
+                    {delayNoticeReasonError}
+                  </div>
+                )}
+                <div className="text-[11px] text-gray-500">
+                  Sending a delay notice with a custom reason will also pause the
+                  release timer.
+                </div>
+              </>
             )}
-            <div className="text-[11px] text-gray-500">
-              Sending a delay notice with a custom reason will also pause the
-              release timer.
-            </div>
           </div>
         )}
       </FeedbackDialog>

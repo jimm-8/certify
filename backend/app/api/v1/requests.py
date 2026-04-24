@@ -905,6 +905,11 @@ async def send_delay_notice(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Request is not in for releasing.",
         )
+    if not (request.requestor_email or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Requestor email is missing for this request.",
+        )
 
     reason = (payload.reason or "").strip()
     if not reason:
@@ -921,8 +926,11 @@ async def send_delay_notice(
     )
     if not was_sent:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send delay notice.",
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Delay notice email could not be sent. "
+                "Please verify the requestor email address and SMTP mail settings."
+            ),
         )
 
     return {"message": "Delay notice sent."}
@@ -1191,24 +1199,19 @@ def download_certificate(
     
     pdf_path = request.pdf_path
     if not pdf_path:
-        pdf_dir = "uploads/certificates"
-        pattern = os.path.join(pdf_dir, f"{request.reference_number}_*.pdf")
-        files = glob.glob(pattern)
-
-        if not files:
-            # Attempt on-demand generation when missing
-            try:
-                pdf_path = generate_certificate_pdf(db=db, request_id=request_id, user_name="System")
-            except HTTPException:
-                raise
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Certificate PDF not found. Please generate it first."
-                )
-
-        files.sort(key=os.path.getmtime, reverse=True)
-        pdf_path = pdf_path or files[0]
+        # When the stored PDF path is cleared (for example after payment tagging),
+        # force a fresh render so regenerated PDFs include the latest DST details.
+        try:
+            pdf_path = generate_certificate_pdf(
+                db=db, request_id=request_id, user_name="System"
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Certificate PDF not found. Please generate it first."
+            )
 
     if not os.path.exists(pdf_path):
         raise HTTPException(
