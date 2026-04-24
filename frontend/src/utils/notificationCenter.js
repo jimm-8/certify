@@ -131,6 +131,18 @@ export const saveDelayAlertStageMap = (value) => {
   window.localStorage.setItem(DELAY_ALERT_STAGE_STORAGE_KEY, JSON.stringify(value));
 };
 
+export const clearNotificationStorage = () => {
+  if (typeof window === "undefined") return;
+  [
+    LOCAL_NOTIFICATION_STORAGE_KEY,
+    DELAY_ALERT_STAGE_STORAGE_KEY,
+    NOTIFICATION_STORAGE_KEY,
+    DISMISSED_NOTIFICATION_STORAGE_KEY,
+  ].forEach((key) => {
+    window.localStorage.removeItem(key);
+  });
+};
+
 export const formatElapsedHours = (elapsedMs) => {
   const wholeHours = Math.floor(elapsedMs / (60 * 60 * 1000));
   const minutes = Math.floor((elapsedMs % (60 * 60 * 1000)) / (60 * 1000));

@@ -1,3 +1,5 @@
+import { clearNotificationStorage } from "./notificationCenter";
+
 export const decodeJwt = (token) => {
   try {
     const payload = token.split(".")[1];
@@ -42,4 +44,5 @@ export const isTokenExpired = (token) => {
 export const clearAuth = () => {
   sessionStorage.removeItem("access_token");
   localStorage.removeItem("access_token");
+  clearNotificationStorage();
 };

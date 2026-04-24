@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.services.email_service import EmailService
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import Optional
 import re
 import random
@@ -762,9 +763,24 @@ def get_all_audit_logs(
     """
     
     audit_repo = AuditLogRepository(db)
-    logs = audit_repo.query().order_by(
-        AuditLog.created_at.desc()
-    ).offset(skip).limit(limit).all()
+    logs = (
+        audit_repo.query()
+        .outerjoin(
+            CertificateRequest,
+            CertificateRequest.id == AuditLog.entity_id,
+        )
+        .filter(
+            or_(
+                AuditLog.entity_type != "certificate_request",
+                AuditLog.entity_id.is_(None),
+                CertificateRequest.id.is_not(None),
+            )
+        )
+        .order_by(AuditLog.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     
     return logs
 

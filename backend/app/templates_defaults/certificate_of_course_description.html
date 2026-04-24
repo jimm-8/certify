@@ -7,30 +7,16 @@
   <style>
     @page {
       size: 8.5in 11in;
-      margin: 0.4in 0.5in 0.4in 0.5in;
+      margin: 0.4in 0.5in;
     }
 
     body {
       margin: 0;
-      padding: 0;
+      padding: 0 0 0.4in 0;
+      /* bottom padding reserves space for footer */
       font-family: "Times New Roman", serif;
       color: #000;
       background: #e5e5e5;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-    }
-
-    .spacer-row {
-      height: 1px;
-      /* just needs to exist */
-    }
-
-    .spacer-row td {
-      min-height: 1px;
     }
 
     .paper-table {
@@ -46,12 +32,24 @@
       display: table-header-group;
     }
 
-    tfoot {
-      display: table-footer-group;
+    .footer-tagline {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      /* full viewport width, not margin-inset */
+      right: 0;
+      padding: 6px 0 14px;
+      text-align: center;
+      font-family: "Century Gothic", sans-serif;
+      font-size: 11pt;
+      background: white;
     }
 
-    tfoot td {
-      padding: 0;
+    .footer-tagline p {
+      margin: 0;
+      font-style: italic;
+      color: #d10000;
+      font-weight: bold;
     }
 
     thead td {
@@ -294,21 +292,6 @@
       font-weight: bold;
     }
 
-    .footer-tagline {
-      width: 100%;
-      padding-top: 15px;
-      text-align: center;
-      font-family: "Century Gothic", sans-serif;
-      font-size: 11pt;
-    }
-
-    .footer-tagline p {
-      margin: 0;
-      font-style: italic;
-      color: #d10000;
-      font-weight: bold;
-    }
-
     @media print {
       body {
         background: none;
@@ -412,29 +395,31 @@
             </div>
             {% endfor %}
 
-            <div class="paragraph second">
-              Furthermore, the courses completed by <strong>{{ student_honorific }} <span
-                  style="text-transform: uppercase;">{{
-                  student_name
-                  }}</span></strong> adhere to the academic standards set by Batangas State University, The National
-              Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
-              Higher Education (CHED). These courses may be considered for equivalency, accreditation, or credit
-              transfer, to subject to the evaluation and approval of the receiving institution.
-            </div>
+            <div style="break-inside: avoid; page-break-inside: avoid;">
+              <div class="paragraph second">
+                Furthermore, the courses completed by <strong>{{ student_honorific }} <span
+                    style="text-transform: uppercase;">{{
+                    student_name
+                    }}</span></strong> adhere to the academic standards set by Batangas State University, The National
+                Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
+                Higher Education (CHED). These courses may be considered for equivalency, accreditation, or credit
+                transfer, to subject to the evaluation and approval of the receiving institution.
+              </div>
 
-            <div class="paragraph">
-              This certification is issued upon request of <strong>{{ student_honorific }}
-                <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname
-                  }}</span></strong> on
-              this
-              <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
-                }}</span>
-              day of
-              <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
-              <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
-              for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower
-                }}</span>
-              purposes only.
+              <div class="paragraph">
+                This certification is issued upon request of <strong>{{ student_honorific }}
+                  <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname
+                    }}</span></strong> on
+                this
+                <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+                  }}</span>
+                day of
+                <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+                <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
+                for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower
+                  }}</span>
+                purposes only.
+              </div>
             </div>
           </div>
 
@@ -478,20 +463,12 @@
           </div>
         </td>
       </tr>
-      <tr class="spacer-row" style="height: 100%;">
-        <td></td>
-      </tr>
     </tbody>
-    <tfoot>
-      <tr>
-        <td>
-          <div class="footer-tagline">
-            <p>Leading Innovations, Transforming Lives, Building the Nation</p>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
   </table>
+
+  <div class="footer-tagline">
+    <p>Leading Innovations, Transforming Lives, Building the Nation</p>
+  </div>
 
   <script>
     function getOrdinalSuffix(day) {
