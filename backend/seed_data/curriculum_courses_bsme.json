@@ -3,79 +3,671 @@
   "curriculum_name": "BSME Curriculum",
   "academic_year": "2023-2024",
   "courses": [
-    { "course_code": "MATH 401", "course_title": "Differential Calculus", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "SCI 401", "course_title": "General Chemistry", "course_description": "", "units": 4, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 401", "course_title": "Introduction to Engineering", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "GEd 102", "course_title": "Mathematics in the Modern World", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "GEd 101", "course_title": "Understanding the Self", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "GEd 105", "course_title": "Readings in Philippine History", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "GEd 106", "course_title": "Purposive Communication", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "PATHFit 1", "course_title": "Movement Competency Training", "course_description": "", "units": 2, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "NSTP 111", "course_title": "National Service Training Program 1", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "MATH 402", "course_title": "Integral Calculus", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "SCI 403", "course_title": "Physics 1", "course_description": "", "units": 4, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ENGG 402", "course_title": "Engineering Drawing", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "CpE 401", "course_title": "Computer Programming 1", "course_description": "", "units": 1, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "GEd 104", "course_title": "The Contemporary World", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "GEd 108", "course_title": "Art Appreciation", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "GEd 109", "course_title": "Science, Technology and Society", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "PATHFit 2", "course_title": "Exercise-based Fitness Activities", "course_description": "", "units": 2, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "NSTP 121", "course_title": "National Service Training Program 2", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "SCI 402", "course_title": "Modern Biology", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "GEd 103", "course_title": "Life and Works of Rizal", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "GEd 107", "course_title": "Ethics", "course_description": "", "units": 3, "year_level": 1, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "MATH 403", "course_title": "Engineering Data Analysis", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "MATH 404", "course_title": "Differential Equations", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 403", "course_title": "Computer Aided Design", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 407", "course_title": "Statics of Rigid Bodies", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 401", "course_title": "ME Orientation", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 402", "course_title": "Thermodynamics 1", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 403", "course_title": "Workshop Theory and Practice", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "EE 419", "course_title": "Basic Electrical Engineering", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "PATHFit 3", "course_title": "Traditional and Recreational Games", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "Fili 101", "course_title": "Kontekstwalisadong Komunikasyon sa Filipino", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 408", "course_title": "Dynamics of Rigid Bodies", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ENGG 418", "course_title": "Mechanics of Deformable Bodies", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 404", "course_title": "Advanced Mathematics for ME", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 405", "course_title": "Thermodynamics 2", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 406", "course_title": "Fluid Mechanics", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 407", "course_title": "Computer Applications for ME", "course_description": "", "units": 1, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 408", "course_title": "Machine Shop Theory and Practice", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "EE 422", "course_title": "DC and AC Machinery", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "PATHFit 4", "course_title": "Team Sports (Basketball and Volleyball)", "course_description": "", "units": 2, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "Fili 102", "course_title": "Filipino sa Iba't Ibang Disiplina", "course_description": "", "units": 3, "year_level": 2, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ENGG 416", "course_title": "Research Methods", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 409", "course_title": "Heat Transfer", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 410", "course_title": "Combustion Engineering", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 411", "course_title": "Fluid Machinery", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 412", "course_title": "Machine Elements", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 413", "course_title": "Materials Engineering and Testing", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 414", "course_title": "ME Elective 1", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 415", "course_title": "ME Laboratory 1", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 414", "course_title": "Numerical Methods", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "Litr 102", "course_title": "ASEAN Literature", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 416", "course_title": "Vibration Engineering", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 417", "course_title": "Refrigeration Systems", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 418", "course_title": "Machine Design 1", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 419", "course_title": "ME Elective 2", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ECE 422", "course_title": "Basic Electronics", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 420", "course_title": "ME Laboratory 2", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ENGG 404", "course_title": "Engineering Economics", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 421", "course_title": "ME Laws, Ethics, Contracts, Codes and Standards", "course_description": "", "units": 2, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 422", "course_title": "ME Project Study 1", "course_description": "", "units": 1, "year_level": 3, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 423", "course_title": "Airconditioning and Ventilation Systems", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "ENGG 411", "course_title": "Basic Occupational Safety and Health", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "ME 424", "course_title": "Machine Design 2", "course_description": "", "units": 3, "year_level": 3, "semester_offered": "Midterm", "program": "BSME" },
-    { "course_code": "ENGG 417", "course_title": "On-the-Job Training", "course_description": "", "units": 4, "year_level": 4, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 413", "course_title": "Environmental Science and Engineering", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ME 425", "course_title": "Power Plant Design with Renewable Energy", "course_description": "", "units": 5, "year_level": 4, "semester_offered": "1st", "program": "BSME" },
-    { "course_code": "ENGG 405", "course_title": "Technopreneurship", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 426", "course_title": "Industrial Plant Engineering", "course_description": "", "units": 4, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 427", "course_title": "ME Project Study 2", "course_description": "", "units": 1, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 428", "course_title": "Manufacturing and Industrial Processes with Plant Visits", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 429", "course_title": "ME Laboratory 3", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ENGG 406", "course_title": "Engineering Management", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ME 430", "course_title": "ME Practice with Comprehensive Examination", "course_description": "", "units": 2, "year_level": 4, "semester_offered": "2nd", "program": "BSME" },
-    { "course_code": "ECE 425", "course_title": "Control System Engineering", "course_description": "", "units": 3, "year_level": 4, "semester_offered": "2nd", "program": "BSME" }
+    {
+      "course_code": "MATH 401",
+      "course_title": "Differential Calculus",
+      "course_description": "This course explores the concepts of limits, continuity, and derivatives, focusing on their applications in solving rates of change in engineering problems.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "SCI 401",
+      "course_title": "General Chemistry",
+      "course_description": "This course covers fundamental chemical principles, including atomic structure and stoichiometry, required for understanding engineering materials.",
+      "units": 4,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 401",
+      "course_title": "Introduction to Engineering",
+      "course_description": "This course provides an overview of the engineering profession, focusing on professional ethics and basic problem-solving methodologies.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 102",
+      "course_title": "Mathematics in the Modern World",
+      "course_description": "This course examines the nature of mathematics as a tool for analyzing patterns and managing resources in various modern-day fields.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 101",
+      "course_title": "Understanding the Self",
+      "course_description": "This course involves an interdisciplinary exploration of identity and the various factors that influence personal development.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 105",
+      "course_title": "Readings in Philippine History",
+      "course_description": "This course analyzes Philippine history through primary sources to develop critical thinking regarding the nation's social and political evolution.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 106",
+      "course_title": "Purposive Communication",
+      "course_description": "This course develops effective communication strategies for diverse audiences in local and global professional contexts.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "PATHFit 1",
+      "course_title": "Movement Competency Training",
+      "course_description": "This course introduces the foundations of physical literacy and body mechanics to improve overall movement patterns.",
+      "units": 2,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "NSTP 111",
+      "course_title": "National Service Training Program 1",
+      "course_description": "This course emphasizes civic education and national defense preparedness to enhance the youth's role in community welfare.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "MATH 402",
+      "course_title": "Integral Calculus",
+      "course_description": "This course presents the concepts of integration and anti-derivatives, with applications in calculating areas, volumes, and physical work.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "SCI 403",
+      "course_title": "Physics 1",
+      "course_description": "This course investigates classical mechanics, heat, and sound, focusing on the application of Newton's laws and energy principles.",
+      "units": 4,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 402",
+      "course_title": "Engineering Drawing",
+      "course_description": "This course demonstrates the fundamentals of orthographic projections and manual technical sketching based on engineering standards.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "CpE 401",
+      "course_title": "Computer Programming 1",
+      "course_description": "This course introduces logic formulation and the use of high-level programming languages to solve basic engineering problems.",
+      "units": 1,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 104",
+      "course_title": "The Contemporary World",
+      "course_description": "This course reviews the phenomenon of globalization and its multifaceted impact on economic and social structures.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 108",
+      "course_title": "Art Appreciation",
+      "course_description": "This course builds the skills required to analyze, critique, and appreciate various forms of visual and performing arts.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 109",
+      "course_title": "Science, Technology and Society",
+      "course_description": "This course explores the interaction between scientific advancements and the social contexts that influence technological progress.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "PATHFit 2",
+      "course_title": "Exercise-based Fitness Activities",
+      "course_description": "This course focuses on physical exercises aimed at improving cardiovascular health and overall muscular strength.",
+      "units": 2,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "NSTP 121",
+      "course_title": "National Service Training Program 2",
+      "course_description": "This course applies the practical implementation of community service projects and civic leadership initiatives.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "SCI 402",
+      "course_title": "Modern Biology",
+      "course_description": "This course highlights modern biological concepts, focusing on cell biology, genetics, and their relevance to the environment.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 103",
+      "course_title": "Life and Works of Rizal",
+      "course_description": "This course delves into the life and writings of Jose Rizal and their influence on Philippine nationalism and identity.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "GEd 107",
+      "course_title": "Ethics",
+      "course_description": "This course discusses the moral principles and ethical frameworks that govern human behavior and professional decision-making.",
+      "units": 3,
+      "year_level": 1,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "MATH 403",
+      "course_title": "Engineering Data Analysis",
+      "course_description": "This course employs statistical methods and probability distributions used to analyze data in engineering research.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "MATH 404",
+      "course_title": "Differential Equations",
+      "course_description": "This course explains methods for solving first and higher-order differential equations used in engineering modeling.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 403",
+      "course_title": "Computer Aided Design",
+      "course_description": "This course facilitates the creation of precise 2D and 3D engineering models using industry-standard CAD software.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 407",
+      "course_title": "Statics of Rigid Bodies",
+      "course_description": "This course analyzes force systems acting on structures in equilibrium and the properties of areas.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 401",
+      "course_title": "ME Orientation",
+      "course_description": "This course provides an introduction to the mechanical engineering profession, career specializations, and academic requirements.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 402",
+      "course_title": "Thermodynamics 1",
+      "course_description": "This course covers the fundamental principles of energy, heat, and work, and the properties of pure substances.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 403",
+      "course_title": "Workshop Theory and Practice",
+      "course_description": "This course provides practical use of hand tools and basic fabrication techniques in a mechanical workshop environment.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "EE 419",
+      "course_title": "Basic Electrical Engineering",
+      "course_description": "This course outlines fundamental electrical circuits, laws, and components relevant to mechanical engineering applications.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "PATHFit 3",
+      "course_title": "Traditional and Recreational Games",
+      "course_description": "This course promotes physical health through the practice of traditional Filipino and recreational sports.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "Fili 101",
+      "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+      "course_description": "This course refines advanced communication skills in the Filipino language adapted for various professional contexts.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 408",
+      "course_title": "Dynamics of Rigid Bodies",
+      "course_description": "This course studies the motion of bodies under the action of forces, involving acceleration, work, and energy.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 418",
+      "course_title": "Mechanics of Deformable Bodies",
+      "course_description": "This course focuses on the study of stress, strain, and material deformation under different mechanical loading conditions.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 404",
+      "course_title": "Advanced Mathematics for ME",
+      "course_description": "This course integrates Laplace transforms, Fourier series, and complex variables for solving mechanical engineering problems.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 405",
+      "course_title": "Thermodynamics 2",
+      "course_description": "This course evaluates the analysis of power and refrigeration cycles, gas mixtures, and psychrometric processes.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 406",
+      "course_title": "Fluid Mechanics",
+      "course_description": "This course investigates fluid properties, fluid statics, and the governing principles of fluid flow and dynamics.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 407",
+      "course_title": "Computer Applications for ME",
+      "course_description": "This course applies specialized software tools for numerical modeling in mechanical engineering.",
+      "units": 1,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 408",
+      "course_title": "Machine Shop Theory and Practice",
+      "course_description": "This course involves advanced machining operations using lathes, milling machines, and other shop equipment.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "EE 422",
+      "course_title": "DC and AC Machinery",
+      "course_description": "This course describes the operating principles and characteristics of direct current and alternating current motors and generators.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "PATHFit 4",
+      "course_title": "Team Sports (Basketball and Volleyball)",
+      "course_description": "This course covers the rules, strategies, and physical training involved in competitive team sports.",
+      "units": 2,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "Fili 102",
+      "course_title": "Filipino sa Iba't Ibang Disiplina",
+      "course_description": "This course promotes the use of the Filipino language in academic research and discipline-specific professional communication.",
+      "units": 3,
+      "year_level": 2,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 416",
+      "course_title": "Research Methods",
+      "course_description": "This course outlines the principles of scientific inquiry, data collection techniques, and technical research writing.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 409",
+      "course_title": "Heat Transfer",
+      "course_description": "This course examines the fundamental modes of heat energy exchange, including conduction, convection, and radiation.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 410",
+      "course_title": "Combustion Engineering",
+      "course_description": "This course studies fuel properties, chemical kinetics, and the combustion processes occurring in internal engines.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 411",
+      "course_title": "Fluid Machinery",
+      "course_description": "This course focuses on the design, selection, and operation of pumps, fans, blowers, and fluid turbines.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 412",
+      "course_title": "Machine Elements",
+      "course_description": "This course deals with the study and design of mechanical components such as gears, bearings, shafts, and belts.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 413",
+      "course_title": "Materials Engineering and Testing",
+      "course_description": "This course details the properties of engineering materials and the standardized methods used for strength and quality testing.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 414",
+      "course_title": "ME Elective 1",
+      "course_description": "This course explores specialized topics in mechanical engineering, allowing students to focus on specific industry applications.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 415",
+      "course_title": "ME Laboratory 1",
+      "course_description": "This course provides experimental verification techniques for the principles of thermodynamics and fluid mechanics.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 414",
+      "course_title": "Numerical Methods",
+      "course_description": "This course introduces mathematical algorithms and computational tools used to solve complex engineering equations.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "Litr 102",
+      "course_title": "ASEAN Literature",
+      "course_description": "This course examines the literary works of Southeast Asian nations and their cultural and historical significance.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 416",
+      "course_title": "Vibration Engineering",
+      "course_description": "This course analyzes oscillatory motion in machines and techniques for vibration isolation and control.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 417",
+      "course_title": "Refrigeration Systems",
+      "course_description": "This course covers the design and analysis of vapor-compression cycles and industrial cooling equipment.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 418",
+      "course_title": "Machine Design 1",
+      "course_description": "This course teaches the design of individual machine components considering fatigue, stress, and material selection.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 419",
+      "course_title": "ME Elective 2",
+      "course_description": "This course explores advanced specialized applications in mechanical engineering based on current industry trends.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ECE 422",
+      "course_title": "Basic Electronics",
+      "course_description": "This course introduces the fundamentals of semiconductor devices, amplifiers, and basic electronic circuit analysis.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 420",
+      "course_title": "ME Laboratory 2",
+      "course_description": "This course features hands-on experiments involving heat transfer apparatus and internal combustion engines.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 404",
+      "course_title": "Engineering Economics",
+      "course_description": "This course provides financial analysis of engineering projects, including the time value of money and cost-benefit analysis.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 421",
+      "course_title": "ME Laws, Ethics, Contracts, Codes and Standards",
+      "course_description": "This course explores the legal aspects of practice, professional ethics, and building codes relevant to mechanical engineering.",
+      "units": 2,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 422",
+      "course_title": "ME Project Study 1",
+      "course_description": "This course initiates the conceptualization and proposal stage of the mechanical engineering capstone project.",
+      "units": 1,
+      "year_level": 3,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 423",
+      "course_title": "Airconditioning and Ventilation Systems",
+      "course_description": "This course details the design of HVAC systems for human comfort and controlled industrial environments.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 411",
+      "course_title": "Basic Occupational Safety and Health",
+      "course_description": "This course identifies the principles of industrial safety, hazard identification, and workplace accident prevention.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 424",
+      "course_title": "Machine Design 2",
+      "course_description": "This course focuses on the design of integrated mechanical systems and the analysis of complex assemblies.",
+      "units": 3,
+      "year_level": 3,
+      "semester_offered": "Midterm",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 417",
+      "course_title": "On-the-Job Training",
+      "course_description": "This course provides a supervised industry internship aimed at gaining practical mechanical engineering experience.",
+      "units": 4,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 413",
+      "course_title": "Environmental Science and Engineering",
+      "course_description": "This course evaluates the impact of engineering on ecosystems and methods for sustainable waste and resource management.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 425",
+      "course_title": "Power Plant Design with Renewable Energy",
+      "course_description": "This course demonstrates the engineering design of traditional and renewable energy systems for power generation.",
+      "units": 5,
+      "year_level": 4,
+      "semester_offered": "1st",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 405",
+      "course_title": "Technopreneurship",
+      "course_description": "This course explores the fusion of technology and entrepreneurship for the creation of innovative business ventures.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 426",
+      "course_title": "Industrial Plant Engineering",
+      "course_description": "This course covers the design and layout of industrial facilities, including material handling and piping systems.",
+      "units": 4,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 427",
+      "course_title": "ME Project Study 2",
+      "course_description": "This course conducts the implementation, testing, and final presentation of the engineering capstone project.",
+      "units": 1,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 428",
+      "course_title": "Manufacturing and Industrial Processes with Plant Visits",
+      "course_description": "This course introduces modern manufacturing techniques through classroom study and observation of real-world industrial operations.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 429",
+      "course_title": "ME Laboratory 3",
+      "course_description": "This course performs experiments focused on power plant equipment and industrial instrumentation systems.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ENGG 406",
+      "course_title": "Engineering Management",
+      "course_description": "This course outlines the principles of planning, organizing, and leading engineering projects and technical personnel.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ME 430",
+      "course_title": "ME Practice with Comprehensive Examination",
+      "course_description": "This course integrates all mechanical engineering knowledge in preparation for professional licensure.",
+      "units": 2,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    },
+    {
+      "course_code": "ECE 425",
+      "course_title": "Control System Engineering",
+      "course_description": "This course provides mathematical modeling of feedback control systems and methods for stability analysis.",
+      "units": 3,
+      "year_level": 4,
+      "semester_offered": "2nd",
+      "program": "BSME"
+    }
   ]
 }

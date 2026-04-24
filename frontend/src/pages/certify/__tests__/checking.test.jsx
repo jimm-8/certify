@@ -15,7 +15,17 @@ vi.mock("../../../services/requestService", () => ({
 }));
 
 vi.mock("../../../components/common/requestModal", () => ({
-  default: () => null,
+  default: ({ request, onApprove, onClose }) =>
+    request ? (
+      <div>
+        <button type="button" onClick={() => onApprove?.(request)}>
+          Modal Approve
+        </button>
+        <button type="button" onClick={() => onClose?.()}>
+          Modal Close
+        </button>
+      </div>
+    ) : null,
 }));
 
 describe("Checking page", () => {
@@ -85,5 +95,58 @@ describe("Checking page", () => {
       "PROCESSING",
       "Request moved to processing",
     );
+  });
+
+  it("closes the request modal after approval and shows loading then submitted feedback", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    let resolveUpdate;
+    requestService.updateStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+
+    render(<Checking />);
+
+    await user.click(await screen.findByText("Ada"));
+    await user.click(await screen.findByRole("button", { name: /modal approve/i }));
+
+    expect(
+      screen.queryByRole("button", { name: /modal approve/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(/please wait while the certificate request is being submitted/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/working\.\.\./i)).toBeInTheDocument();
+
+    resolveUpdate({});
+
+    await waitFor(() => {
+      expect(requestService.updateStatus).toHaveBeenCalledWith(
+        1,
+        "PROCESSING",
+        "Request moved to processing",
+      );
+    });
+
+    expect(
+      await screen.findByText(/certificate request submitted successfully/i),
+    ).toBeInTheDocument();
   });
 });

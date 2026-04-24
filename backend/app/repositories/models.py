@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+
+from sqlalchemy import case, or_
 from sqlalchemy.orm import Session
 
 from app.models.academic_summary import AcademicSummary
@@ -36,6 +39,31 @@ from app.models.user import User
 from app.models.user_role import UserRole
 
 from app.repositories.base import BaseRepository
+
+
+NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
+
+
+def _name_tokens(value: str) -> list[str]:
+    tokens = [token.lower() for token in re.findall(r"[A-Za-z]+", str(value or ""))]
+    return [token for token in tokens if token not in NAME_SUFFIXES]
+
+
+def _student_name_variants(student: Student) -> list[list[str]]:
+    first = _name_tokens(getattr(student, "first_name", ""))
+    middle = _name_tokens(getattr(student, "middle_name", ""))
+    last = _name_tokens(getattr(student, "last_name", ""))
+    variants = []
+
+    normal = first + middle + last
+    if normal:
+        variants.append(normal)
+
+    reversed_name = last + first + middle
+    if reversed_name:
+        variants.append(reversed_name)
+
+    return variants
 
 
 class AcademicSummaryRepository(BaseRepository[AcademicSummary]):
@@ -255,8 +283,33 @@ class PaymentRepository(BaseRepository[Payment]):
         super().__init__(db, Payment)
 
     def get_by_reference(self, reference_number: str):
+        ref = str(reference_number or "").strip()
+        if not ref:
+            return None
+
+        labeled_purpose = f"% {ref} - %"
+
         return (
-            self.query().filter(Payment.purpose.ilike(f"%{reference_number}%")).first()
+            self.query()
+            .filter(
+                or_(
+                    Payment.purpose == ref,
+                    Payment.purpose.ilike(labeled_purpose),
+                    Payment.purpose.ilike(f"%{ref}%"),
+                )
+            )
+            .order_by(
+                case(
+                    (Payment.purpose == ref, 0),
+                    (Payment.purpose.ilike(labeled_purpose), 1),
+                    else_=2,
+                ),
+                Payment.date_of_payment.desc(),
+                Payment.paid_at.desc(),
+                Payment.created_at.desc(),
+                Payment.id.desc(),
+            )
+            .first()
         )
 
 
@@ -301,6 +354,73 @@ class StudentRepository(BaseRepository[Student]):
 
     def get_by_sr_code(self, sr_code: str):
         return self.query().filter(Student.sr_code == sr_code).first()
+
+    def get_by_student_name(self, student_name: str):
+        raw_name = str(student_name or "").strip()
+        tokens = _name_tokens(raw_name)
+        if len(tokens) < 2:
+            return None
+
+        if "," in raw_name:
+            left, right = raw_name.split(",", 1)
+            left_tokens = _name_tokens(left)
+            right_tokens = _name_tokens(right)
+            first_token = right_tokens[0] if right_tokens else tokens[0]
+            last_token = left_tokens[-1] if left_tokens else tokens[-1]
+        else:
+            first_token = tokens[0]
+            last_token = tokens[-1]
+
+        candidates = (
+            self.query()
+            .filter(
+                or_(
+                    Student.first_name.ilike(first_token),
+                    Student.last_name.ilike(last_token),
+                )
+            )
+            .all()
+        )
+        if not candidates:
+            return None
+
+        first_name_tokens = _name_tokens(first_token)
+        last_name_tokens = _name_tokens(last_token)
+        first_name_token = first_name_tokens[0] if first_name_tokens else ""
+        last_name_token = last_name_tokens[0] if last_name_tokens else ""
+        input_token_set = set(tokens)
+        scored: list[tuple[int, Student]] = []
+
+        for student in candidates:
+            best_score = 0
+            student_first_tokens = _name_tokens(getattr(student, "first_name", ""))
+            student_last_tokens = _name_tokens(getattr(student, "last_name", ""))
+
+            for variant in _student_name_variants(student):
+                overlap = len(input_token_set & set(variant))
+                if overlap < 2:
+                    continue
+
+                score = overlap * 10
+                if tokens == variant[: len(tokens)]:
+                    score += 20
+                if first_name_token and first_name_token in student_first_tokens:
+                    score += 8
+                if last_name_token and last_name_token in student_last_tokens:
+                    score += 8
+
+                best_score = max(best_score, score)
+
+            if best_score > 0:
+                scored.append((best_score, student))
+
+        if not scored:
+            return None
+
+        scored.sort(key=lambda item: (-item[0], item[1].id))
+        if len(scored) > 1 and scored[0][0] == scored[1][0]:
+            return None
+        return scored[0][1]
 
 
 class StudentAddressRepository(BaseRepository[StudentAddress]):

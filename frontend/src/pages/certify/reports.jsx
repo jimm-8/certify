@@ -35,6 +35,15 @@ const Reports = () => {
     tone: "default",
   });
 
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
+
   useEffect(() => {
     if (!data || !certScatterRef.current) return;
 
@@ -354,7 +363,10 @@ const Reports = () => {
       })
       .catch((err) => {
         if (!active) return;
-        setError(err.response?.data?.detail || "Failed to load reports.");
+        const detail =
+          err.response?.data?.detail || "Failed to load reports.";
+        setError(detail);
+        showFeedback("Reports Load Failed", detail, "error");
       })
       .finally(() => {
         if (!active) return;
@@ -497,14 +509,13 @@ const Reports = () => {
   const handleDownloadSummary = async () => {
     try {
       const blob = await reportService.downloadSummary(period);
-      downloadBlob(blob, `certify_summary_${period}.csv`);
+      downloadBlob(blob, `certify_summary_${period}.xlsx`);
     } catch (err) {
-      setFeedbackModal({
-        open: true,
-        title: "Download Failed",
-        message: "Failed to download summary report.",
-        tone: "error",
-      });
+      showFeedback(
+        "Download Failed",
+        "Failed to download summary report.",
+        "error",
+      );
     }
   };
 
@@ -568,15 +579,9 @@ const Reports = () => {
         </>
       )}
 
-      {!loading && error && (
-        <div className="bg-white rounded-md border border-red-200 shadow-sm p-6 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
       {!loading && !error && data && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
             {/* TOTAL REQUESTS */}
             <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 cursor-pointer hover:shadow-md transition">
               <div className="flex items-center justify-between">
@@ -647,7 +652,30 @@ const Reports = () => {
               </div>
             </div>
 
-            {/* ✅ REJECTION RATE (NEW KPI) */}
+            {/* AVG PDF GENERATION TIME */}
+            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 cursor-pointer hover:shadow-md transition">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BsBarChart className="text-gray-400" />
+                  <div className="text-xs uppercase tracking-wide text-gray-400">
+                    Avg PDF Generation
+                  </div>
+                </div>
+                <span className="text-[11px] text-sky-600 font-medium">
+                  {data.descriptive.pdf_generation_samples ?? 0} samples
+                </span>
+              </div>
+
+              <div className="text-2xl font-semibold text-gray-800 mt-1 ml-2">
+                {data.descriptive.avg_pdf_generation_time_label || "0 ms"}
+              </div>
+
+              <div className="text-[11px] text-gray-500 mt-1 ml-2">
+                Average certificate PDF render time
+              </div>
+            </div>
+
+            {/* REJECTION RATE */}
             <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 cursor-pointer hover:shadow-md transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -671,7 +699,7 @@ const Reports = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm font-semibold text-gray-800">
@@ -736,7 +764,7 @@ const Reports = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* AGING BUCKETS - AREA CHART */}
             <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3">
               <div className="flex items-center justify-between mb-4">
@@ -766,7 +794,7 @@ const Reports = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* PROGRAMS */}
             <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3">
               <div className="flex items-center justify-between mb-4">

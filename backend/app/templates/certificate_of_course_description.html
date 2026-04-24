@@ -12,7 +12,8 @@
 
     body {
       margin: 0;
-      padding: 0;
+      padding: 0 0 0.4in 0;
+      /* bottom padding reserves space for footer */
       font-family: "Times New Roman", serif;
       color: #000;
       background: #e5e5e5;
@@ -20,18 +21,35 @@
 
     .paper-table {
       width: 100%;
+      min-height: calc(11in - 0.8in);
+      /* 11in page - 0.4in top - 0.4in bottom */
       border-collapse: collapse;
       background: #fff;
       table-layout: fixed;
-      /* Ensures consistent layout across pages */
     }
 
     thead {
       display: table-header-group;
     }
 
-    tfoot {
-      display: table-footer-group;
+    .footer-tagline {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      /* full viewport width, not margin-inset */
+      right: 0;
+      padding: 6px 0 14px;
+      text-align: center;
+      font-family: "Century Gothic", sans-serif;
+      font-size: 11pt;
+      background: white;
+    }
+
+    .footer-tagline p {
+      margin: 0;
+      font-style: italic;
+      color: #d10000;
+      font-weight: bold;
     }
 
     thead td {
@@ -148,9 +166,13 @@
       text-indent: 0.5in;
     }
 
+    .second {
+      margin-top: 10px;
+    }
+
     /* COURSE DESCRIPTION BLOCKS */
     .course-block-wrap {
-      margin-top: 20px;
+      margin-top: 10px;
       page-break-inside: avoid;
       /* Prevents a single course from splitting across pages */
     }
@@ -162,7 +184,7 @@
     }
 
     .course-table td {
-      padding: 2px 0;
+      padding: 0;
       vertical-align: top;
     }
 
@@ -178,7 +200,7 @@
 
     /* SIGNATURE & FOOTER */
     .signature-section {
-      margin-top: 60px;
+      margin-top: 15px;
       page-break-inside: avoid;
     }
 
@@ -191,7 +213,7 @@
     /* FOOTER ELEMENTS */
     .footer-container {
       position: relative;
-      padding-top: 20px;
+      padding-top: 0px;
     }
 
     .dst {
@@ -247,11 +269,10 @@
       padding-top: 2px;
     }
 
-    .qr-container {
+    .qr {
       position: absolute;
       left: 0.4in;
-      bottom: 60px;
-      top: 1.15in;
+      margin-top: 15px;
       /* Adjusted to align with text */
     }
 
@@ -268,21 +289,6 @@
       margin-left: 1.2in;
       margin-top: 5px;
       text-align: left;
-      font-weight: bold;
-    }
-
-    .footer-tagline {
-      width: 100%;
-      padding-top: 15px;
-      text-align: center;
-      font-family: "Century Gothic", sans-serif;
-      font-size: 11pt;
-    }
-
-    .footer-tagline p {
-      margin: 0;
-      font-style: italic;
-      color: #d10000;
       font-weight: bold;
     }
 
@@ -307,7 +313,7 @@
           <div class="header-wrapper">
             <div class="doc-meta">
               <div>
-                <p>BatStateU-CE-REG-04</p>
+                <p>BatStateU-CE-REG-03</p>
               </div>
               <div>
                 <p>Effectivity Date: February 23, 2026</p>
@@ -389,28 +395,31 @@
             </div>
             {% endfor %}
 
-            <div class="paragraph">
-              Furthermore, the courses completed by <strong>{{ student_honorific }} <span
-                  style="text-transform: uppercase;">{{
-                  student_name
-                  }}</span></strong> adhere to the academic standards set by Batangas State University, The National
-              Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
-              Higher Education (CHED). These courses may be considered for equivalency, accreditation, or credit
-              transfer, to subject to the evaluation and approval of the receiving institution.
-            </div>
+            <div style="break-inside: avoid; page-break-inside: avoid;">
+              <div class="paragraph second">
+                Furthermore, the courses completed by <strong>{{ student_honorific }} <span
+                    style="text-transform: uppercase;">{{
+                    student_name
+                    }}</span></strong> adhere to the academic standards set by Batangas State University, The National
+                Engineering University, in compliance with the policies and guidelines prescribed by the Commission on
+                Higher Education (CHED). These courses may be considered for equivalency, accreditation, or credit
+                transfer, to subject to the evaluation and approval of the receiving institution.
+              </div>
 
-            <div class="paragraph">
-              This certification is issued upon request of <strong>{{ student_honorific }}</strong>
-              <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
-              this
-              <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
-                }}</span>
-              day of
-              <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
-              <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
-              for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower
-                }}</span>
-              purposes only.
+              <div class="paragraph">
+                This certification is issued upon request of <strong>{{ student_honorific }}
+                  <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname
+                    }}</span></strong> on
+                this
+                <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+                  }}</span>
+                day of
+                <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+                <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>
+                for <span class="f f-medium{% if not request_purpose %} blank{% endif %}">{{ request_purpose|lower
+                  }}</span>
+                purposes only.
+              </div>
             </div>
           </div>
 
@@ -426,47 +435,40 @@
               </div>
             </div>
           </div>
+          <div class="dst">
+            <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+            <div class="dst-row">
+              <div class="gor">
+                <span class="value">{{ or_number }}</span>
+                <span class="gor-label">(GOR SERIAL NUMBER)</span>
+              </div>
+              <div class="date">
+                <span id="payment-date" class="value">{{ date_of_payment }}</span>
+                <span class="date-label">(DATE OF PAYMENT)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="qr-container">
+            <img src="qr_bsu.png" class="qr" alt="QR Code">
+          </div>
+
+          <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
+            alterations</div>
+
+          <div class="ref-codes">
+            <div>{{ campus_certCode }}</div>
+            <div>{{ control_num }}</div>
+          </div>
           </div>
         </td>
       </tr>
     </tbody>
-    <tfoot>
-      <tr>
-        <td>
-          <div class="footer-container">
-            <div class="dst">
-              <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
-              <div class="dst-row">
-                <div class="gor">
-                  <span class="value">{{ or_number }}</span>
-                  <span class="gor-label">(GOR SERIAL NUMBER)</span>
-                </div>
-                <div class="date">
-                  <span id="payment-date" class="value">{{ date_of_payment }}</span>
-                  <span class="date-label">(DATE OF PAYMENT)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="qr-container">
-              <img src="qr_bsu.png" class="qr" alt="QR Code">
-            </div>
-
-            <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
-              alterations</div>
-
-            <div class="ref-codes">
-              <div>{{ campus_certCode }}</div>
-              <div>{{ control_num }}</div>
-            </div>
-            <div class="footer-tagline">
-              <p>Leading Innovations, Transforming Lives, Building the Nation</p>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
   </table>
+
+  <div class="footer-tagline">
+    <p>Leading Innovations, Transforming Lives, Building the Nation</p>
+  </div>
 
   <script>
     function getOrdinalSuffix(day) {

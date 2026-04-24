@@ -1,14 +1,19 @@
+<!doctype html>
+<html>
+
+<head>
 <meta charset="UTF-8">
 <title>Certificate of Grades</title>
 <style>
   @page {
     size: 8.5in 11in;
-    margin: 0.4in 0.5in;
+    margin: 0.4in 0.5in 0.2in 0.5in;
   }
 
   body {
     margin: 0;
-    padding: 0;
+    padding: 0 0 0.4in 0;
+    /* bottom padding reserves space for footer */
     font-family: "Times New Roman", serif;
     color: #000;
     background: #e5e5e5;
@@ -16,6 +21,7 @@
 
   .paper-table {
     width: 100%;
+    min-height: calc(11in - 0.6in);
     border-collapse: collapse;
     background: #fff;
     table-layout: fixed;
@@ -140,20 +146,20 @@
   /* GRADES TABLE */
   .grade-table {
     width: 100%;
-    margin: 20px 0;
+    margin: 10px 0;
     border-collapse: collapse;
     border: 1px solid #000;
   }
 
   .grade-table th,
   .grade-table td {
-    padding: 5px;
+    padding: 3px;
     border: 1px solid #000;
   }
 
   /* SIGNATURE & FOOTER */
   .signature-section {
-    margin-top: 60px;
+    margin-top: 5px;
     page-break-inside: avoid;
   }
 
@@ -166,7 +172,7 @@
   /* FOOTER ELEMENTS */
   .footer-container {
     position: relative;
-    padding-top: 20px;
+    padding-top: 5px;
   }
 
   .dst {
@@ -176,7 +182,7 @@
     width: 188.98px;
     height: 75.59px;
     box-sizing: border-box;
-    margin-left: 0.7in;
+    margin-left: 0.3in;
   }
 
   .dst-title {
@@ -188,7 +194,7 @@
   .dst-row {
     display: flex;
     justify-content: center;
-    margin-top: 15px;
+    margin-top: 12px;
     gap: 12px;
     /* space BETWEEN the two fields */
   }
@@ -223,14 +229,14 @@
 
   .qr-container {
     position: absolute;
-    left: 0.4in;
+    left: 0;
     bottom: 60px;
     top: 1.15in;
     /* Adjusted to align with text */
   }
 
   .footer-seal {
-    margin-left: 1.2in;
+    margin-left: 0.8in;
     margin-top: 10px;
     font-size: 11pt;
     font-style: italic;
@@ -239,18 +245,23 @@
 
   .ref-codes {
     font-size: 11pt;
-    margin-left: 1.2in;
+    margin-left: 0.8in;
     margin-top: 5px;
     text-align: left;
     font-weight: bold;
   }
 
   .footer-tagline {
-    width: 100%;
-    padding-top: 15px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    /* full viewport width, not margin-inset */
+    right: 0;
+    padding: 6px 0 14px;
     text-align: center;
     font-family: "Century Gothic", sans-serif;
     font-size: 11pt;
+    background: white;
   }
 
   .footer-tagline p {
@@ -271,6 +282,10 @@
   }
 </style>
 
+</head>
+
+<body>
+
 <table class="paper-table">
   <thead>
     <tr>
@@ -278,7 +293,7 @@
         <div class="header-wrapper">
           <div class="doc-meta">
             <div>
-              <p>BatStateU-CE-REG-04</p>
+              <p>BatStateU-CE-REG-03</p>
             </div>
             <div>
               <p>Effectivity Date: February 23, 2026</p>
@@ -359,8 +374,9 @@
           </table>
 
           <div class="paragraph">
-            This certification is issued upon request of <strong>{{ student_honorific }}</strong>
-            <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
+            This certification is issued upon request of <strong>{{ student_honorific }}
+              <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname
+                }}</span></strong> on
             this
             <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
               }}</span>
@@ -381,48 +397,41 @@
               {{ official_title }}
             </div>
           </div>
+          <div class="footer-container">
+            <div class="dst">
+              <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+              <div class="dst-row">
+                <div class="gor">
+                  <span class="value">{{ or_number }}</span>
+                  <span class="gor-label">(GOR SERIAL NUMBER)</span>
+                </div>
+                <div class="date">
+                  <span id="payment-date" class="value">{{ date_of_payment }}</span>
+                  <span class="date-label">(DATE OF PAYMENT)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="qr-container">
+              <img src="qr_bsu.png" class="qr" alt="QR Code">
+            </div>
+
+            <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
+              alterations</div>
+
+            <div class="ref-codes">
+              <div>{{ campus_certCode }}</div>
+              <div>{{ control_num }}</div>
+            </div>
+          </div>
         </div>
       </td>
     </tr>
   </tbody>
-
-  <tfoot>
-    <tr>
-      <td>
-        <div class="footer-container">
-          <div class="dst">
-            <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
-            <div class="dst-row">
-              <div class="gor">
-                <span class="value">{{ or_number }}</span>
-                <span class="gor-label">(GOR SERIAL NUMBER)</span>
-              </div>
-              <div class="date">
-                <span id="payment-date" class="value">{{ date_of_payment }}</span>
-                <span class="date-label">(DATE OF PAYMENT)</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="qr-container">
-            <img src="qr_bsu.png" class="qr" alt="QR Code">
-          </div>
-
-          <div class="footer-seal">Not valid without the official university dry seal<br> or if contains erasures or
-            alterations</div>
-
-          <div class="ref-codes">
-            <div>{{ campus_certCode }}</div>
-            <div>{{ control_num }}</div>
-          </div>
-          <div class="footer-tagline">
-            <p>Leading Innovations, Transforming Lives, Building the Nation</p>
-          </div>
-        </div>
-      </td>
-    </tr>
-  </tfoot>
 </table>
+<div class="footer-tagline">
+  <p>Leading Innovations, Transforming Lives, Building the Nation</p>
+</div>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -452,3 +461,7 @@
     }
   }
 </script>
+
+</body>
+
+</html>

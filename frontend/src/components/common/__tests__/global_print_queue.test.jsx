@@ -119,4 +119,14 @@ describe("GlobalPrintQueue", () => {
       JSON.stringify({ x: 280, y: 230 }),
     );
   });
+
+  it("renders the print progress bar", async () => {
+    requestService.getAllRequests.mockResolvedValue([]);
+
+    render(<GlobalPrintQueue />);
+
+    await screen.findByText(/Queue is clear/i);
+    expect(screen.getByRole("progressbar", { name: /print job progress/i }))
+      .toHaveAttribute("aria-valuenow", "100");
+  });
 });

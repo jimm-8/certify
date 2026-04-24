@@ -11,6 +11,16 @@ const settingsService = {
     });
     return response.data;
   },
+  getSigningAvailability: async () => {
+    const response = await api.get("/settings/signing-availability");
+    return response.data;
+  },
+  updateSigningAvailability: async (signingAvailable) => {
+    const response = await api.put("/settings/signing-availability", {
+      signing_available: signingAvailable,
+    });
+    return response.data;
+  },
 };
 
 export default settingsService;

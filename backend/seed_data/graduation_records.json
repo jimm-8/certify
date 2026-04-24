@@ -1,5 +1,18 @@
 [
   {
+    "sr_code": "22-07058",
+    "student_name": "Jim Mariel Castillo",
+    "is_graduated": false,
+    "status": "candidate",
+    "proposed_graduation_date": "2026-07-30",
+    "program": "BSCpE",
+    "date_of_graduation": "",
+    "board_resolution_number": "11, s. 2026",
+    "semester": "2nd",
+    "academic_year": "2025-2026",
+    "latin_honors": ""
+  },
+  {
     "sr_code": "21-00472",
     "student_name": "Janine May Aguisanda",
     "is_graduated": true,
@@ -9,6 +22,7 @@
     "date_of_graduation": "2025-07-25",
     "board_resolution_number": "112, s. 2025",
     "semester": "2nd",
-    "academic_year": "2024-2025"
+    "academic_year": "2024-2025",
+    "latin_honors": "Cum Laude"
   }
 ]

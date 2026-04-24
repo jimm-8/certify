@@ -5,13 +5,23 @@ import { LayoutGrid, Inbox, PackageCheck, History } from "lucide-react";
 import { LuRefreshCw } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { getTokenPayload } from "../../utils/auth";
+import settingsService from "../../services/settingsService";
 
 const tabs = [
-  { label: "Dashboard", icon: <LayoutGrid size={15} /> },
-  { label: "Received Request", icon: <Inbox size={15} /> },
-  { label: "Under Processing", icon: <LuRefreshCw size={15} /> },
-  { label: "For Release", icon: <PackageCheck size={15} /> },
-  { label: "History", icon: <History size={15} /> },
+  { key: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} /> },
+  { key: "received", label: "Received Request", icon: <Inbox size={15} /> },
+  {
+    key: "processing",
+    label: "Under Processing",
+    icon: <LuRefreshCw size={15} />,
+  },
+  { key: "ready", label: "For Release", icon: <PackageCheck size={15} /> },
+  {
+    key: "history",
+    label: "History",
+    icon: <History size={15} />,
+    showBadge: false,
+  },
 ];
 
 const baseMenuItems = [
@@ -75,13 +85,15 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
   );
 };
 
-const CertifyHeader = ({ onTabChange }) => {
-  const [activeTab, setActiveTab] = useState(0);
+const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [signingAvailable, setSigningAvailable] = useState(true);
+  const [signingLoading, setSigningLoading] = useState(false);
   const buttonRef = useRef(null);
   const portalRef = useRef(null);
   const role = getTokenPayload()?.role;
   const navigate = useNavigate();
+  const canManageSigning = role !== "cashier";
 
   const baseItems = baseMenuItems.map((item) => {
     if (item.label === "Reports") {
@@ -122,7 +134,6 @@ const CertifyHeader = ({ onTabChange }) => {
   ];
 
   const handleTabClick = (index) => {
-    setActiveTab(index);
     setDropdownOpen(false);
     if (onTabChange) onTabChange(index);
   };
@@ -142,9 +153,34 @@ const CertifyHeader = ({ onTabChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!canManageSigning) return;
+
+    let active = true;
+    settingsService
+      .getSigningAvailability()
+      .then((data) => {
+        if (!active) return;
+        setSigningAvailable(Boolean(data?.signing_available));
+      })
+      .catch((error) => {
+        console.error("Failed to load signing availability:", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageSigning]);
+
+  const getTabCount = (tab) => {
+    if (!tab.key || tab.showBadge === false) return null;
+    const count = tabCounts[tab.key];
+    return typeof count === "number" ? count : null;
+  };
+
   return (
     <div className="mt-3">
-      <div className="bg-white rounded-md border h-10 border-gray-200 shadow-sm flex items-stretch overflow-x-auto">
+      <div className="flex h-10 items-stretch overflow-x-auto rounded-md border border-[var(--school-border)] bg-white shadow-sm">
         {/* Tabs */}
         <div className="flex items-stretch">
           {tabs.map((tab, index) => (
@@ -154,12 +190,23 @@ const CertifyHeader = ({ onTabChange }) => {
                 className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all duration-200
                   ${
                     activeTab === index
-                      ? "border-[#ee1133] text-[#ee1133]"
-                      : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+                      ? "border-[var(--school-crimson)] bg-[var(--school-ivory)]/60 text-[var(--school-crimson)]"
+                      : "border-transparent text-gray-500 hover:border-[var(--school-crimson)] hover:text-[var(--school-ink)]"
                   }`}
               >
                 {tab.icon}
-                {tab.label}
+                <span>{tab.label}</span>
+                {typeof getTabCount(tab) === "number" && (
+                  <span
+                    className={`inline-flex min-w-[1.35rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+                      activeTab === index
+                        ? "bg-[var(--school-crimson)] text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {getTabCount(tab)}
+                  </span>
+                )}
               </button>
 
               {index < tabs.length - 1 && (
@@ -173,19 +220,76 @@ const CertifyHeader = ({ onTabChange }) => {
           <div className="relative flex items-center" ref={buttonRef}>
             <button
               onClick={() => {
-                setActiveTab(null);
                 setDropdownOpen((prev) => !prev);
               }}
               className={`p-2 rounded-md transition-colors flex-shrink-0 ${
                 dropdownOpen
-                  ? "text-[#ee1133]"
-                  : "text-gray-400 hover:text-[#ee1133]"
+                  ? "text-[var(--school-crimson)]"
+                  : "text-gray-400 hover:text-[var(--school-crimson)]"
               }`}
             >
               <BsThreeDotsVertical size={16} />
             </button>
           </div>
         </>
+        {canManageSigning && (
+          <>
+            <div className="ml-auto flex items-center gap-3 px-4">
+              <label
+                htmlFor="signing-availability-toggle"
+                className="text-xs font-medium text-gray-600"
+              >
+                Available for signing
+              </label>
+              <button
+                id="signing-availability-toggle"
+                type="button"
+                onClick={async () => {
+                  const nextValue = !signingAvailable;
+                  setSigningLoading(true);
+                  try {
+                    const response =
+                      await settingsService.updateSigningAvailability(
+                        nextValue,
+                      );
+                    setSigningAvailable(Boolean(response?.signing_available));
+                  } catch (error) {
+                    console.error(
+                      "Failed to update signing availability:",
+                      error,
+                    );
+                    window.alert("Failed to update signing availability.");
+                  } finally {
+                    setSigningLoading(false);
+                  }
+                }}
+                disabled={signingLoading}
+                aria-pressed={signingAvailable}
+                aria-label={
+                  signingAvailable
+                    ? "Set not available for signing"
+                    : "Set available for signing"
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  signingAvailable ? "bg-[#0071ae]" : "bg-gray-300"
+                } ${signingLoading ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    signingAvailable ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="text-[11px] text-gray-400">
+                {signingLoading
+                  ? "Updating..."
+                  : signingAvailable
+                    ? "On"
+                    : "Off"}
+              </span>
+            </div>
+          </>
+        )}
       </div>
       {dropdownOpen && (
         <DropdownPortal

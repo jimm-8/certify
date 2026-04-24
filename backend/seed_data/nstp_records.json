@@ -1,5 +1,11 @@
 [
   {
+    "sr_code": "22-07058",
+    "component": "ROTC",
+    "serial_number": "BSU-AL-ROTC-2022-92037",
+    "date_completed": "2022-05-10"
+  },
+  {
     "sr_code": "21-00472",
     "component": "CWTS",
     "serial_number": "BSU-AL-CWTS-2022-92038",

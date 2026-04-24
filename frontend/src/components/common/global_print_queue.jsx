@@ -373,6 +373,34 @@ const GlobalPrintQueue = () => {
           <div className="border-t border-gray-100 px-4 pb-4 pt-2">
             <p className={`text-[11px] ${detailTone}`}>{detail}</p>
 
+            <div className="mt-3">
+              <div className="mb-1.5 flex items-center justify-between text-[10px] text-gray-400">
+                <span>Batch progress</span>
+                <span>{percent}%</span>
+              </div>
+              <div
+                className="h-2 overflow-hidden rounded-full bg-gray-100"
+                aria-label="Print job progress"
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={percent}
+                role="progressbar"
+              >
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isError
+                      ? "bg-red-500"
+                      : isDone || isQueueClear
+                        ? "bg-green-500"
+                        : active
+                          ? "bg-[#ee1133]"
+                          : "bg-amber-500"
+                  }`}
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-gray-50 px-2 py-2">
                 <div className="text-[10px] uppercase tracking-wide text-gray-400">

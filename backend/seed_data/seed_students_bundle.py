@@ -31,6 +31,16 @@ def load_json(path):
         return json.load(f)
 
 
+def normalize_year_level(value):
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    text = str(value).strip()
+    digits = "".join(ch for ch in text if ch.isdigit())
+    return int(digits) if digits else None
+
+
 def main():
     data = {k: load_json(v) for k, v in FILES.items()}
 
@@ -52,25 +62,64 @@ def main():
                 cur.execute("SELECT id, name FROM campuses")
                 campus_map = {row[1].strip().lower(): row[0] for row in cur.fetchall()}
 
+                cur.execute(
+                    """
+                    SELECT c.id, p.code, c.name, c.academic_year
+                    FROM curriculums c
+                    JOIN programs p ON p.id = c.program_id
+                    """
+                )
+                curriculum_lookup = {}
+                for curriculum_id, program_code, curriculum_name, academic_year in cur.fetchall():
+                    code_key = (program_code or "").strip().lower()
+                    name_key = (curriculum_name or "").strip().lower()
+                    year_key = (academic_year or "").strip()
+                    if code_key and name_key:
+                        curriculum_lookup[("name", code_key, name_key)] = curriculum_id
+                    if code_key and year_key:
+                        curriculum_lookup[("year", code_key, year_key)] = curriculum_id
+
                 # Students
                 for s in data["students"]:
                     program_code = (s.get("program_code") or "").strip().lower()
                     campus_name = (s.get("campus_name") or "").strip().lower()
                     program_id = program_map.get(program_code)
                     campus_id = campus_map.get(campus_name) if campus_name else None
+                    curriculum_id = s.get("curriculum_id")
+                    curriculum_name = (s.get("curriculum_name") or "").strip().lower()
+                    curriculum_year = (s.get("curriculum_academic_year") or "").strip()
 
                     if not program_id:
                         raise ValueError(f"Program not found for code: {s.get('program_code')}")
+
+                    if not curriculum_id and curriculum_name:
+                        curriculum_id = curriculum_lookup.get(("name", program_code, curriculum_name))
+                    if not curriculum_id and curriculum_year:
+                        curriculum_id = curriculum_lookup.get(("year", program_code, curriculum_year))
 
                     cur.execute(
                         """
                         INSERT INTO students (
                             sr_code, first_name, middle_name, last_name, suffix,
-                            gender, birthdate, nationality, program_id, campus_id,
+                            gender, birthdate, nationality, program_id, campus_id, curriculum_id,
                             major, year_level, email, contact_number
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (sr_code) DO NOTHING
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (sr_code) DO UPDATE SET
+                            first_name = EXCLUDED.first_name,
+                            middle_name = EXCLUDED.middle_name,
+                            last_name = EXCLUDED.last_name,
+                            suffix = EXCLUDED.suffix,
+                            gender = EXCLUDED.gender,
+                            birthdate = EXCLUDED.birthdate,
+                            nationality = EXCLUDED.nationality,
+                            program_id = EXCLUDED.program_id,
+                            campus_id = EXCLUDED.campus_id,
+                            curriculum_id = COALESCE(EXCLUDED.curriculum_id, students.curriculum_id),
+                            major = EXCLUDED.major,
+                            year_level = EXCLUDED.year_level,
+                            email = EXCLUDED.email,
+                            contact_number = EXCLUDED.contact_number
                         """,
                         (
                             s.get("sr_code"),
@@ -83,6 +132,7 @@ def main():
                             s.get("nationality"),
                             program_id,
                             campus_id,
+                            curriculum_id,
                             s.get("major"),
                             s.get("year_level"),
                             s.get("email"),
@@ -99,6 +149,7 @@ def main():
                     if not sid:
                         raise ValueError(f"Student not found for address sr_code: {a.get('sr_code')}")
 
+                    cur.execute("DELETE FROM student_address WHERE student_id = %s", (sid,))
                     cur.execute(
                         """
                         INSERT INTO student_address (
@@ -116,7 +167,12 @@ def main():
                         ),
                     )
 
+                # Clear dependent history first so reruns can rebuild from scratch.
+                cur.execute("DELETE FROM grades")
+                cur.execute("DELETE FROM student_courses")
+
                 # Enrollments
+                cur.execute("DELETE FROM enrollments")
                 for e in data["enrollments"]:
                     cur.execute(
                         """
@@ -130,7 +186,7 @@ def main():
                             e.get("sr_code"),
                             e.get("academic_year"),
                             e.get("semester"),
-                            e.get("year_level"),
+                            normalize_year_level(e.get("year_level")),
                             e.get("total_units"),
                             e.get("date_enrolled"),
                             e.get("status"),
@@ -138,6 +194,7 @@ def main():
                     )
 
                 # Academic Summary
+                cur.execute("DELETE FROM academic_summary")
                 for a in data["academic_summary"]:
                     cur.execute(
                         """
@@ -159,6 +216,7 @@ def main():
                     )
 
                 # Graduation Records
+                cur.execute("DELETE FROM graduation_records")
                 for g in data["graduation_records"]:
                     cur.execute(
                         """
@@ -184,6 +242,7 @@ def main():
                     )
 
                 # NSTP Records
+                cur.execute("DELETE FROM nstp_records")
                 for n in data["nstp_records"]:
                     cur.execute(
                         """
@@ -201,6 +260,7 @@ def main():
                     )
 
                 # Student ID Records
+                cur.execute("DELETE FROM student_id_records")
                 for s in data["student_id_records"]:
                     cur.execute(
                         """

@@ -260,14 +260,21 @@ class CertificateEngine:
                 return not bool(payload.get("is_graduated"))
             return False
 
-        if key in {
-            "CERTIFICATE_OF_GRADUATION",
-            "CERTIFICATE_OF_ENROLLMENT",
-            "CERTIFICATE_OF_ENGLISH_MEDIUM",
-            "CERTIFICATE_OF_ID_ISSUANCE",
-        }:
+        def _is_currently_enrolled_from_data(payload: dict) -> bool:
+            return bool(payload.get("is_currently_enrolled"))
+
+        if key == "CERTIFICATE_OF_GRADUATION":
             is_candidate = _is_candidate_from_data(data)
             preferred = f"{key}_V1" if is_candidate else f"{key}_V2"
+        elif key == "CERTIFICATE_OF_ENROLLMENT":
+            is_currently_enrolled = _is_currently_enrolled_from_data(data)
+            preferred = f"{key}_V1" if is_currently_enrolled else f"{key}_V2"
+        elif key == "CERTIFICATE_OF_ENGLISH_MEDIUM":
+            is_candidate = _is_candidate_from_data(data)
+            preferred = f"{key}_V1" if is_candidate else f"{key}_V2"
+        elif key == "CERTIFICATE_OF_ID_ISSUANCE":
+            is_currently_enrolled = _is_currently_enrolled_from_data(data)
+            preferred = f"{key}_V1" if is_currently_enrolled else f"{key}_V2"
         else:
             is_graduated = bool(data.get("year_graduated") or data.get("is_graduated"))
             preferred = f"{key}_V2" if is_graduated else f"{key}_V1"

@@ -22,18 +22,21 @@ const INJECTED_PAPER_STYLE = `
     body { 
       background-color: #e5e7eb !important; 
       display: flex; 
+      align-items: flex-start;
       justify-content: center; 
       margin: 0; 
+      padding: 24px 0 40px;
+      box-sizing: border-box;
     }
     .paper-shell {
       background-color: white !important;
-      width: 216mm; 
-      min-height: 330mm; 
-      padding: 10mm;
+      width: 8.5in;
+      min-height: 11in;
+      padding: 0;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       box-sizing: border-box;
-      margin-top: -30px;
-      margin-bottom: 40px;
+      margin: 0 auto;
+      overflow: hidden;
     }
     .paper-shell:focus {
       outline: none;
@@ -41,58 +44,67 @@ const INJECTED_PAPER_STYLE = `
   </style>
 `;
 
-const DUMMY_FILL_STYLE = `
+const LETTER_PAPER_STYLE = `
   <style>
-    /* Remove underline borders used for fillable fields */
-    .blank,
-    .f.blank,
-    .fill-cert,
-    .line,
-    .underline,
-    [class*="line"],
-    [class*="underline"] {
-      border-bottom: none !important;
-      text-decoration: none !important;
+    .paper-shell {
+      position: relative;
+      padding: 0.4in 0.5in;
+      min-height: 11in;
     }
-
-    /* Catch inline styles like style="border-bottom: 1px solid" */
-    *[style*="border-bottom"] {
-      border-bottom: none !important;
+    .paper-shell .paper-table {
+      width: 100% !important;
+      min-height: calc(11in - 0.8in) !important;
+      background: #fff !important;
     }
-
-    /* Optional: if using HR as lines */
-    hr {
-      border: none !important;
+    .paper-shell .footer-tagline {
+      position: absolute !important;
+      left: 0.5in !important;
+      right: 0.5in !important;
+      bottom: 0.18in !important;
+      padding: 0 !important;
+      background: transparent !important;
     }
   </style>
+`;
+
+const DUMMY_FILL_STYLE = `
+<style>
+.blank,
+.fill-cert,
+.underline,
+.line {
+  border-bottom: none !important;
+  text-decoration: none !important;
+}
+
+hr {
+  border: none !important;
+}
+</style>
 `;
 
 const DUMMY_SIGNATURE_STYLE = `
-  <style>
-    .signature-block,
-    .signature,
-    [class*="signature"] {
-      display: block;
-      width: 100%;
-      text-align: right;
-    }
-    .signature-img, [class*="sig-img"], img.signature {
-      content: url('');
-      display: inline-block;
-      width: 120px;
-      height: 48px;
-      background: repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 4px,
-        rgba(30,80,200,0.15) 4px,
-        rgba(30,80,200,0.15) 5px
-      );
-      border-bottom: 2px solid #1e40af;
-      border-radius: 2px;
-    }
-  </style>
+<style>
+img.signature-img,
+img.signature,
+img[alt*="sign" i] {
+  width: 160px;
+  height: 50px;
+  border-bottom: 2px solid #1e40af;
+}
+</style>
 `;
+
+const HIDDEN_TEMPLATE_NAMES = new Set([
+  "certification authentication and verification",
+]);
+
+const normalizeTemplateName = (name) =>
+  String(name || "")
+    .replace(/\.html$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase();
 
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
@@ -104,11 +116,15 @@ const Templates = () => {
   const [saving, setSaving] = useState(false);
   const [saveTarget, setSaveTarget] = useState("template");
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [useDummyData, setUseDummyData] = useState(true);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
   const iframeRef = useRef(null);
   const navigate = useNavigate();
   const initializedRef = useRef(false);
@@ -116,6 +132,15 @@ const Templates = () => {
   const apiBase =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
   const assetsBase = `${apiBase}/templates/assets/`;
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const normalizeAssetLinks = (html) => {
     if (!html) return html;
@@ -131,6 +156,7 @@ const Templates = () => {
 
   const applyDummyTemplateData = (html) => {
     if (!html) return html;
+
     const placeholders = {
       student_name: "JUAN DELA CRUZ",
       student_honorific: "Mr.",
@@ -155,49 +181,179 @@ const Templates = () => {
       course_name: "Sample Curriculum",
       curriculum_acad_year: "2022-2023",
       campus_certCode: "BSU-MAIN",
-      or_number: "OR-2026-00001",
+      control_num: "OR-2026-00001",
       name_official: "MARIA SANTOS",
       official_title: "Head, Registration Services",
+      or_number: "2026-001234",
+      date_of_payment: "2026-01-01",
+      current_sem: "2nd",
+      enrollment_from_semester: "1st",
+      enrollment_from_academic_year: "2022-2023",
     };
 
-    const replaceVariable = (match, expr) => {
+    const sampleCollections = {
+      grades_detail: [
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          units: "3",
+          grade: "1.50",
+        },
+        {
+          course_code: "ENGG 102",
+          course_title: "Engineering Drawing",
+          units: "2",
+          grade: "1.75",
+        },
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          units: "3",
+          grade: "1.25",
+        },
+      ],
+      course_descriptions: [
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          course_credits: "3",
+          course_description:
+            "Introduction to problem solving, algorithm design, and basic programming concepts.",
+        },
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          course_credits: "3",
+          course_description:
+            "Study of limits, derivatives, and applications of differential calculus.",
+        },
+      ],
+    };
+
+    const replaceLoopBlock = (source) =>
+      source.replace(
+        /{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%}([\s\S]*?){%\s*endfor\s*%}/g,
+        (_, itemName, collectionName, block) => {
+          const items = sampleCollections[collectionName];
+          if (!Array.isArray(items) || items.length === 0) return "";
+
+          return items
+            .map((item) =>
+              block.replace(
+                /{{\s*([^}]+)\s*}}/g,
+                (match, expr) => {
+                  const normalized = String(expr || "").trim();
+
+                  if (
+                    normalized.startsWith(`${itemName}.`) ||
+                    normalized.includes(` ${itemName}.`) ||
+                    normalized.includes(`(${itemName}.`)
+                  ) {
+                    const key = normalized
+                      .split("|")[0]
+                      .trim()
+                      .replace(new RegExp(`^${itemName}\\.`), "")
+                      .split(".")
+                      .pop()
+                      .trim();
+
+                    return item[key] || "&nbsp;";
+                  }
+
+                  return match;
+                },
+              ),
+            )
+            .join("");
+        },
+      );
+
+    const replaceVariable = (_, expr) => {
       const key = String(expr || "")
         .trim()
         .split("|")[0]
         .split(".")
         .pop()
         .trim();
-      return placeholders[key] || "Sample";
+
+      return placeholders[key] || "&nbsp;";
     };
 
-    let result = html
+    let result = replaceLoopBlock(html)
       .replace(/{%[\s\S]*?%}/g, "")
-      .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable)
-      .replace(/\b(blank|fill-cert|underline|line)\b/g, "");
+      .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable);
 
-    // Replace signature images via DOM parsing
     const parser = new DOMParser();
     const doc = parser.parseFromString(result, "text/html");
-    const dummySigSrc = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='50'%3E%3Cpath d='M10 35 C30 10, 50 40, 70 20 C90 5, 110 38, 150 25' stroke='%231e3a8a' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E`;
+
+    // Safe class cleanup
+    doc
+      .querySelectorAll(".blank, .fill-cert, .underline, .line")
+      .forEach((el) => {
+        el.classList.remove("blank", "fill-cert", "underline", "line");
+      });
+
+    // Dummy signature
+    const dummySig = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='50'%3E%3Cpath d='M10 35 C30 10, 50 40, 70 20 C90 5, 110 38, 150 25' stroke='%231e3a8a' stroke-width='2.5' fill='none'/%3E%3C/svg%3E`;
 
     doc.querySelectorAll("img").forEach((img) => {
+      const cls = (img.className || "").toLowerCase();
+      const alt = (img.alt || "").toLowerCase();
       const src = img.getAttribute("src") || "";
-      const cls = img.getAttribute("class") || "";
-      const alt = img.getAttribute("alt") || "";
-      if (
-        src.includes("sign") ||
-        cls.toLowerCase().includes("sign") ||
-        alt.toLowerCase().includes("sign") ||
-        !src ||
-        src === "#"
-      ) {
-        img.setAttribute("src", dummySigSrc);
+
+      if (cls.includes("sign") || alt.includes("sign") || !src || src === "#") {
+        img.src = dummySig;
         img.style.width = "160px";
         img.style.height = "50px";
       }
     });
 
-    return doc.body.innerHTML;
+    const isFullDoc = /<html[\s>]/i.test(html);
+    return isFullDoc ? doc.documentElement.outerHTML : doc.body.innerHTML;
+  };
+
+  const applyPaperShell = (html, extraHead = "") => {
+    if (!html) return html;
+
+    const isFullDoc = /<html[\s>]/i.test(html);
+
+    if (isFullDoc) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const headMarkup = `${INJECTED_PAPER_STYLE}${extraHead}`;
+      const existingShell = doc.body.querySelector(":scope > .paper-shell");
+
+      if (!existingShell) {
+        const shell = doc.createElement("div");
+        shell.className = "paper-shell";
+
+        while (doc.body.firstChild) {
+          shell.appendChild(doc.body.firstChild);
+        }
+
+        doc.body.appendChild(shell);
+      }
+
+      if (doc.head) {
+        doc.head.insertAdjacentHTML("beforeend", headMarkup);
+      } else {
+        const head = doc.createElement("head");
+        head.innerHTML = headMarkup;
+        doc.documentElement.insertBefore(head, doc.body);
+      }
+
+      return doc.documentElement.outerHTML;
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>${INJECTED_PAPER_STYLE}${extraHead}</head>
+        <body>
+          <div class="paper-shell">${html}</div>
+        </body>
+      </html>
+    `;
   };
 
   const needsPaperStyle = useMemo(() => {
@@ -209,7 +365,9 @@ const Templates = () => {
 
   const editorHtml = useMemo(() => {
     if (!content) return "";
+
     let html = normalizeAssetLinks(content);
+
     if (useDummyData) {
       html = applyDummyTemplateData(html);
     }
@@ -217,17 +375,18 @@ const Templates = () => {
     const dummyStyle = useDummyData
       ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
       : "";
+
     if (needsPaperStyle) {
-      // Inject the style and wrap the content
-      html = `<!DOCTYPE html><html><head>${INJECTED_PAPER_STYLE}${dummyStyle}</head><body><div class="paper-shell">${html}</div></body></html>`;
+      return applyPaperShell(html, `${LETTER_PAPER_STYLE}${dummyStyle}`);
     }
+
     return html;
   }, [content, needsPaperStyle, useDummyData]);
 
   const previewHtml = useMemo(() => {
     if (!content) return "";
-    const baseTag = `<base href="${assetsBase}">`;
-    let html = content;
+
+    let html = normalizeAssetLinks(content);
 
     if (useDummyData) {
       html = applyDummyTemplateData(html);
@@ -236,23 +395,33 @@ const Templates = () => {
     const dummyStyle = useDummyData
       ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
       : "";
+
+    const baseTag = `<base href="${assetsBase}">`;
+    const previewHead = `${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}`;
+
     if (needsPaperStyle) {
-      html = `<div class="paper-shell">${html}</div>`;
-      const fullHtml = html.includes("<head>")
-        ? html.replace(
-            "<head>",
-            `<head>${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}`,
-          )
-        : `<!DOCTYPE html><html><head>${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}</head><body>${html}</body></html>`;
-      return normalizeAssetLinks(fullHtml);
+      return applyPaperShell(
+        html,
+        `${baseTag}${LETTER_PAPER_STYLE}${dummyStyle}`,
+      );
     }
 
-    // Fallback for other templates
-    const withBase = html.includes("<head>")
-      ? html.replace("<head>", `<head>${baseTag}${dummyStyle}`)
-      : `<!doctype html><html><head>${baseTag}${dummyStyle}</head><body>${html}</body></html>`;
-    return normalizeAssetLinks(withBase);
-  }, [content, assetsBase, needsPaperStyle, useDummyData]);
+    const isFullDoc = html.includes("<html");
+
+    if (isFullDoc) {
+      return html.replace("<head>", `<head>${previewHead}`);
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>${previewHead}</head>
+        <body>
+          <div class="paper-shell">${html}</div>
+        </body>
+      </html>
+    `;
+  }, [content, useDummyData, assetsBase, needsPaperStyle]);
 
   // const editorHtml = useMemo(() => {
   //   if (!content) return "";
@@ -266,13 +435,19 @@ const Templates = () => {
       try {
         setLoading(true);
         const data = await templateService.listTemplates();
-        const list = data?.templates || [];
+        const list = (data?.templates || []).filter(
+          (name) => !HIDDEN_TEMPLATE_NAMES.has(normalizeTemplateName(name)),
+        );
         setTemplates(list);
         if (list.length) {
           setSelected(list[0]);
         }
       } catch (err) {
-        setError("Failed to load templates.");
+        showFeedback(
+          "Load Failed",
+          "Failed to load templates.",
+          "error",
+        );
       } finally {
         setLoading(false);
       }
@@ -289,9 +464,12 @@ const Templates = () => {
         const html = data.content || "";
         setContent(html);
         setOriginalContent(html);
-        setError("");
       } catch (err) {
-        setError("Failed to load template content.");
+        showFeedback(
+          "Template Load Failed",
+          "Failed to load template content.",
+          "error",
+        );
       } finally {
         setLoading(false);
       }
@@ -312,10 +490,16 @@ const Templates = () => {
       await templateService.updateTemplate(selected, fileContent);
       setContent(fileContent);
       setOriginalContent(fileContent);
-      setError("");
+      showFeedback(
+        "Template Reset",
+        "The template was restored to its default content.",
+        "success",
+      );
     } catch (err) {
-      setError(
+      showFeedback(
+        "Reset Failed",
         "Failed to reload default template. Ensure backend has templates_defaults.",
+        "error",
       );
       return;
     } finally {
@@ -334,14 +518,7 @@ const Templates = () => {
       }
 
       if (needsPaperStyle) {
-        resetHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>${INJECTED_PAPER_STYLE}</head>
-          <body>
-            <div class="paper-shell">${resetHtml}</div>
-          </body>
-        </html>`;
+        resetHtml = applyPaperShell(resetHtml, LETTER_PAPER_STYLE);
       }
 
       doc.open();
@@ -364,8 +541,11 @@ const Templates = () => {
 
       if (viewMode === "visual" && iframeRef.current?.contentDocument) {
         if (useDummyData) {
-          setError("Disable dummy data before saving from Visual editor.");
-          setSaving(false);
+          showFeedback(
+            "Save Blocked",
+            "Disable sample data before saving from the Visual editor.",
+            "warning",
+          );
           return;
         }
         const doc = iframeRef.current.contentDocument;
@@ -387,14 +567,15 @@ const Templates = () => {
         target: saveTarget === "default" ? "defaults" : undefined,
       });
       if (viewMode !== "visual") setContent(nextContent);
-      setSuccess(
+      showFeedback(
+        "Save Successful",
         saveTarget === "default"
           ? "Default template saved."
           : "Template saved.",
+        "success",
       );
-      setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
-      setError("Failed to save template.");
+      showFeedback("Save Failed", "Failed to save template.", "error");
     } finally {
       setSaving(false);
     }
@@ -541,13 +722,6 @@ const Templates = () => {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="mb-3 text-xs text-red-600">{String(error)}</div>
-        )}
-        {success && (
-          <div className="mb-3 text-xs text-green-600">{success}</div>
-        )}
 
         <div className="grid grid-cols-1 gap-6">
           {/* Editor */}
@@ -746,6 +920,15 @@ const Templates = () => {
           await handleResetToDefault();
         }}
         onClose={() => setConfirmResetOpen(false)}
+      />
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
       />
     </div>
   );

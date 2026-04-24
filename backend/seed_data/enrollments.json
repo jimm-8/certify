@@ -1,18 +1,126 @@
 [
   {
+    "sr_code": "25-05148",
+    "academic_year": "2025-2026",
+    "semester": "1st",
+    "year_level": "1st",
+    "total_units": 25,
+    "date_enrolled": "2025-07-20",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "25-05148",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "year_level": "1st",
+    "total_units": 23,
+    "date_enrolled": "2026-01-10",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2022-2023",
+    "semester": "1st",
+    "year_level": "1st",
+    "total_units": 25,
+    "date_enrolled": "2022-07-08",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2022-2023",
+    "semester": "2nd",
+    "year_level": "1st",
+    "total_units": 23,
+    "date_enrolled": "2023-01-15",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2022-2023",
+    "semester": "Midterm",
+    "year_level": "1st",
+    "total_units": 9,
+    "date_enrolled": "2023-06-08",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2023-2024",
+    "semester": "1st",
+    "year_level": "2nd",
+    "total_units": 22,
+    "date_enrolled": "2023-08-15",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "year_level": "2nd",
+    "total_units": 25,
+    "date_enrolled": "2024-01-12",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2024-2025",
+    "semester": "1st",
+    "year_level": "3rd",
+    "total_units": 22,
+    "date_enrolled": "2024-07-20",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "year_level": "3rd",
+    "total_units": 20,
+    "date_enrolled": "2025-01-16",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2024-2025",
+    "semester": "Midterm",
+    "year_level": "3rd",
+    "total_units": 8,
+    "date_enrolled": "2025-06-16",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2025-2026",
+    "semester": "1st",
+    "year_level": "4th",
+    "total_units": 20,
+    "date_enrolled": "2025-07-20",
+    "status": "enrolled"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "year_level": "4th",
+    "total_units": 9,
+    "date_enrolled": "2026-01-10",
+    "status": "enrolled"
+  },
+  {
     "sr_code": "21-00472",
     "academic_year": "2021-2022",
     "semester": "1st",
-    "year_level": 1,
+    "year_level": "1st",
     "total_units": 25,
-    "date_enrolled": "2021-07-08",
+    "date_enrolled": "2021-08-10",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2021-2022",
     "semester": "2nd",
-    "year_level": 1,
+    "year_level": "1st",
     "total_units": 23,
     "date_enrolled": "2022-01-15",
     "status": "enrolled"
@@ -21,25 +129,25 @@
     "sr_code": "21-00472",
     "academic_year": "2021-2022",
     "semester": "Midterm",
-    "year_level": 1,
+    "year_level": "1st",
     "total_units": 9,
-    "date_enrolled": "2022-06-08",
+    "date_enrolled": "2022-06-05",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2022-2023",
     "semester": "1st",
-    "year_level": 2,
+    "year_level": "2nd",
     "total_units": 26,
-    "date_enrolled": "2022-08-15",
+    "date_enrolled": "2022-08-10",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2022-2023",
     "semester": "2nd",
-    "year_level": 2,
+    "year_level": "2nd",
     "total_units": 26,
     "date_enrolled": "2023-01-12",
     "status": "enrolled"
@@ -48,16 +156,16 @@
     "sr_code": "21-00472",
     "academic_year": "2023-2024",
     "semester": "1st",
-    "year_level": 3,
+    "year_level": "3rd",
     "total_units": 27,
-    "date_enrolled": "2023-07-20",
+    "date_enrolled": "2023-08-10",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2023-2024",
     "semester": "2nd",
-    "year_level": 3,
+    "year_level": "3rd",
     "total_units": 24,
     "date_enrolled": "2024-01-16",
     "status": "enrolled"
@@ -66,25 +174,25 @@
     "sr_code": "21-00472",
     "academic_year": "2023-2024",
     "semester": "Midterm",
-    "year_level": 3,
+    "year_level": "3rd",
     "total_units": 8,
-    "date_enrolled": "2024-06-16",
+    "date_enrolled": "2024-06-10",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2024-2025",
     "semester": "1st",
-    "year_level": 4,
+    "year_level": "4th",
     "total_units": 11,
-    "date_enrolled": "2024-07-20",
+    "date_enrolled": "2024-08-10",
     "status": "enrolled"
   },
   {
     "sr_code": "21-00472",
     "academic_year": "2024-2025",
     "semester": "2nd",
-    "year_level": 4,
+    "year_level": "4th",
     "total_units": 21,
     "date_enrolled": "2025-01-10",
     "status": "enrolled"

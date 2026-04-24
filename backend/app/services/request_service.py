@@ -5,6 +5,10 @@ import secrets
 import os
 from datetime import datetime
 from app.services.email_service import EmailService
+from app.services.release_hold_service import (
+    get_signing_available,
+    send_signatory_unavailable_notice_and_hold,
+)
 from app.services.settings_service import get_bool_setting
 from app.services.fee_service import (
     compute_request_cost,
@@ -311,14 +315,27 @@ async def update_request_status(
 
     if new_status == RequestStatus.FOR_RELEASING:
         try:
+            request.for_releasing_started_at = datetime.now()
             request.auto_print_requested_at = datetime.now()
             request.auto_print_status = AutoPrintStatus.REQUESTED.value
             request.auto_print_job_id = None
             request.auto_print_error = None
             request.auto_print_confirmed_at = None
+            signing_available = get_signing_available(db)
             # When wet signature is enabled, ready email is sent manually
             skip_ready_email = get_bool_setting(db, "use_wet_signature", False)
-            if not skip_ready_email:
+            if not signing_available:
+                db.commit()
+                db.refresh(request)
+                was_sent = await send_signatory_unavailable_notice_and_hold(
+                    db,
+                    request,
+                )
+                if was_sent:
+                    print(
+                        f"Auto signatory delay notice sent to {request.requestor_email}"
+                    )
+            elif not skip_ready_email:
                 campus_telNo = None
                 student = None
                 if request.sr_code:

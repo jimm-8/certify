@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.api.v1.auth import require_permissions
 from app.repositories import CertificateRequestRepository
+from app.services.release_hold_service import get_effective_processing_seconds
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -155,6 +156,15 @@ def _count_in_range(requests, start, end):
     )
 
 
+def _count_prints_in_range(requests, start, end):
+    return sum(
+        1
+        for r in requests
+        if _safe_date(getattr(r, "auto_printed_at", None))
+        and start <= _safe_date(r.auto_printed_at) <= end
+    )
+
+
 @router.get("/summary")
 def get_dashboard_summary(
     period: Optional[str] = None,
@@ -172,6 +182,9 @@ def get_dashboard_summary(
     last_month_start = last_month_end.replace(day=1)
 
     requests_today = sum(1 for r in requests if _safe_date(r.created_at) == today)
+    prints_today = sum(
+        1 for r in requests_all if _safe_date(getattr(r, "auto_printed_at", None)) == today
+    )
 
     pending_for_checking = sum(
         1
@@ -193,6 +206,11 @@ def get_dashboard_summary(
     requests_yesterday = sum(
         1 for r in requests if _safe_date(r.created_at) == yesterday
     )
+    prints_yesterday = sum(
+        1
+        for r in requests_all
+        if _safe_date(getattr(r, "auto_printed_at", None)) == yesterday
+    )
 
     ready_yesterday = sum(
         1
@@ -213,13 +231,9 @@ def get_dashboard_summary(
     for r in requests:
         if r.status != RequestStatus.RELEASED:
             continue
-        if not r.created_at:
-            continue
-        end_time = r.updated_at or r.created_at
-        try:
-            released_durations.append((end_time - r.created_at).total_seconds())
-        except Exception:
-            pass
+        effective_seconds = get_effective_processing_seconds(r)
+        if effective_seconds is not None:
+            released_durations.append(effective_seconds)
 
     avg_processing_seconds = (
         sum(released_durations) / len(released_durations)
@@ -340,10 +354,18 @@ def get_dashboard_summary(
         ) = period_range
         current_count = _count_in_range(requests_all, current_start, current_end)
         previous_count = _count_in_range(requests_all, prev_start, prev_end)
+        current_print_count = _count_prints_in_range(
+            requests_all, current_start, current_end
+        )
+        previous_print_count = _count_prints_in_range(
+            requests_all, prev_start, prev_end
+        )
         overview_meta = {
             "period": period,
             "current_count": current_count,
             "previous_count": previous_count,
+            "current_print_count": current_print_count,
+            "previous_print_count": previous_print_count,
             "change": _pct_change(current_count, previous_count),
             "label_current": label_current,
             "label_previous": label_previous,
@@ -353,6 +375,7 @@ def get_dashboard_summary(
         "generated_at": now.isoformat(),
         "totals": {
             "requests_today": requests_today,
+            "prints_today": prints_today,
             "pending_for_checking": pending_for_checking,
             "for_approval_review": for_approval_review,
             "ready_for_printing": ready_for_printing,
@@ -361,6 +384,7 @@ def get_dashboard_summary(
         },
         "changes": {
             "requests_today": _pct_change(requests_today, requests_yesterday),
+            "prints_today": _pct_change(prints_today, prints_yesterday),
             "ready_for_printing": _pct_change(ready_for_printing, ready_yesterday),
             "released_this_month": _pct_change(
                 released_this_month, released_last_month

@@ -188,7 +188,11 @@ class CertificateRequestDetail(BaseModel):
     requestor_contact: str
     requestor_email: str
     purpose: str
-    
+    purpose_normalized: Optional[str] = None
+    purpose_category: Optional[str] = None
+    purpose_extracted_notes: Optional[str] = None
+    needs_instruction_review: bool = False
+
     # Student info
     sr_code: Optional[str]
     student_name: str
@@ -199,6 +203,12 @@ class CertificateRequestDetail(BaseModel):
     course_description_selection: Optional[str] = None
     grade_selection: Optional[str] = None
     ready_email_sent_at: Optional[datetime] = None
+    for_releasing_started_at: Optional[datetime] = None
+    release_hold_active: bool = False
+    release_hold_started_at: Optional[datetime] = None
+    release_hold_total_seconds: Optional[int] = 0
+    release_hold_reason: Optional[str] = None
+    release_hold_source: Optional[str] = None
     auto_print_requested_at: Optional[datetime] = None
     auto_printed_at: Optional[datetime] = None
     auto_print_status: Optional[AutoPrintStatusEnum] = None
@@ -245,6 +255,10 @@ class RequestsValidationResponse(BaseModel):
 
 class RejectionEmailRequest(BaseModel):
     notes: Optional[str] = None
+
+
+class DelayNoticeRequest(BaseModel):
+    reason: Optional[str] = None
 
 # Schema for updating request status
 class StatusUpdateRequest(BaseModel):

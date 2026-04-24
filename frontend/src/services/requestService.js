@@ -196,6 +196,29 @@ const requestService = {
       throw error;
     }
   },
+  sendDelayNotice: async (requestId, reason = "") => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-delay-notice`,
+        { reason },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending delay notice:", error);
+      throw error;
+    }
+  },
+  holdRequestorNoPickup: async (requestId) => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/hold-requestor-no-pickup`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error holding request for no pickup:", error);
+      throw error;
+    }
+  },
   // mark as printed (auto print)
   markPrinted: async (requestId) => {
     try {

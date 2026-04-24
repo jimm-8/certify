@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
+import reportService from "../../services/reportService";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import {
   BsCalendar3,
@@ -9,6 +10,7 @@ import {
   BsSearch,
   BsChevronLeft,
   BsFunnel,
+  BsDownload,
 } from "react-icons/bs";
 
 const statusColors = {
@@ -55,7 +57,6 @@ export default function AllRequests() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Date Filter State
   const [selectedFilter, setSelectedFilter] = useState({
     label: "Last 7 days",
     days: 7,
@@ -63,7 +64,6 @@ export default function AllRequests() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Status Filter State
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef(null);
@@ -76,7 +76,6 @@ export default function AllRequests() {
     { label: "All time", days: null },
   ];
 
-  // Dynamically extract unique statuses from the rendered data
   const dynamicStatusOptions = useMemo(() => {
     const unique = [...new Set(requests.map((r) => r.status))].filter(Boolean);
     return ["ALL", ...unique.sort()];
@@ -125,23 +124,71 @@ export default function AllRequests() {
     fetchRequests();
   }, []);
 
+  const formatProgram = (programValue) => {
+    if (!programValue) return "-";
+
+    return String(programValue)
+      .replace(/Bachelor of Science/gi, "BS")
+      .replace(/Bachelor of Arts/gi, "BA")
+      .replace(/Bachelor of/gi, "")
+      .replace(/\s*in\s*/i, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const formatDisplayDate = (value) =>
+    value
+      ? new Date(value).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "—";
+
   const filtered = requests.filter((r) => {
-    // 1. Search Filter
     const matchesSearch = Object.values(r).some((val) =>
       String(val).toLowerCase().includes(search.toLowerCase()),
     );
 
-    // 2. Date Filter
     const dateFrom = getDateFrom(selectedFilter.days);
     const matchesDate = dateFrom
       ? new Date(r.created_at).toISOString().split("T")[0] >= dateFrom
       : true;
 
-    // 3. Status Filter
     const matchesStatus = statusFilter === "ALL" || r.status === statusFilter;
 
     return matchesSearch && matchesDate && matchesStatus;
   });
+
+  const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadExcel = async () => {
+    try {
+      const blob = await reportService.downloadRequests({
+        search,
+        status_filter: statusFilter,
+        date_days:
+          selectedFilter.days === null ? "null" : String(selectedFilter.days),
+      });
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[:T]/g, "-");
+      downloadBlob(blob, `all_requests_${timestamp}.xlsx`);
+    } catch (error) {
+      console.error("Failed to download requests export:", error);
+      window.alert("Failed to download requests export.");
+    }
+  };
 
   const columns = [
     {
@@ -164,22 +211,7 @@ export default function AllRequests() {
     },
     {
       name: "Program",
-      selector: (row) => {
-        let program = row.program;
-
-        program = program
-          .replace(/Bachelor of Science/gi, "BS")
-          .replace(/Bachelor of Arts/gi, "BA")
-          .replace(/Bachelor of/gi, ""); // remove completely
-
-        // Clean formatting
-        program = program
-          .replace(/\s*in\s*/i, " ") // remove "in"
-          .replace(/\s+/g, " ")
-          .trim();
-
-        return program;
-      },
+      selector: (row) => formatProgram(row.program),
       sortable: true,
       width: "280px",
     },
@@ -187,14 +219,16 @@ export default function AllRequests() {
       name: "Date Requested",
       selector: (row) => row.created_at,
       sortable: true,
+      cell: (row) => formatDisplayDate(row.created_at),
+      width: "180px",
+    },
+    {
+      name: "Date Released",
+      selector: (row) =>
+        row.status === "RELEASED" ? row.updated_at || "" : "",
+      sortable: true,
       cell: (row) =>
-        row.created_at
-          ? new Date(row.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })
-          : "—",
+        row.status === "RELEASED" ? formatDisplayDate(row.updated_at) : "—",
       width: "180px",
     },
     {
@@ -226,7 +260,15 @@ export default function AllRequests() {
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Status Dynamic Filter */}
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            className="flex items-center gap-2  border border-gray-300   rounded-md px-3 py-1.5 text-xs bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <BsDownload size={14} />
+            <span className="font-medium">Download Excel</span>
+          </button>
+
           <div className="relative" ref={statusDropdownRef}>
             <button
               onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
@@ -263,7 +305,6 @@ export default function AllRequests() {
             )}
           </div>
 
-          {/* Date Filter */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((prev) => !prev)}
@@ -298,7 +339,6 @@ export default function AllRequests() {
             )}
           </div>
 
-          {/* Search */}
           <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white">
             <input
               type="text"

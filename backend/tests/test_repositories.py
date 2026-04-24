@@ -80,6 +80,7 @@ def _seed_basic(db):
     student = Student(
         sr_code="22-00001",
         first_name="Ada",
+        middle_name="Byron",
         last_name="Lovelace",
         program_id=program.id,
         campus_id=campus.id,
@@ -109,6 +110,9 @@ def test_repository_helpers_core():
 
     student_repo = StudentRepository(db)
     assert student_repo.get_by_sr_code("22-00001").id == seed["student"].id
+    assert student_repo.get_by_student_name("Ada Byron Lovelace").id == seed["student"].id
+    assert student_repo.get_by_student_name("Lovelace, Ada Byron").id == seed["student"].id
+    assert student_repo.get_by_student_name("Ada B. Lovelace").id == seed["student"].id
 
     # Student address helpers
     addr_repo = StudentAddressRepository(db)

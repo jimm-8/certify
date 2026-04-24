@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from time import perf_counter
 
 from app.models.audit_log import AuditLog
 from app.models.certificate_request import CertificateRequest, RequestStatus
@@ -19,6 +20,7 @@ from app.repositories import (
     StudentAddressRepository,
     StudentRepository,
 )
+from app.services.purpose_service import certificate_purpose_text
 from app.services.settings_service import get_bool_setting
 
 
@@ -202,6 +204,8 @@ def generate_certificate_pdf(
     academic_summary = dependencies.get("academic_summary") or {}
     nstp_record = dependencies.get("nstp_record")
     student_id_record = dependencies.get("student_id_record")
+    if student is not None and not getattr(request, "sr_code", None):
+        request.sr_code = student.sr_code
 
     use_wet_signature = get_bool_setting(db, "use_wet_signature", False)
     try:
@@ -339,6 +343,9 @@ def generate_certificate_pdf(
     overall_gwa = (
         academic_summary.get("gwa") if isinstance(academic_summary, dict) else None
     )
+    is_currently_enrolled = bool(
+        getattr(student_id_record, "is_currently_enrolled", False)
+    )
     total_units_earned = (
         academic_summary.get("total_units_earned")
         if isinstance(academic_summary, dict)
@@ -364,6 +371,10 @@ def generate_certificate_pdf(
         return "he/she"
 
     student_pronoun = _pronoun_for_gender(student_gender)
+    request_purpose_display = certificate_purpose_text(
+        request.purpose,
+        getattr(request, "purpose_category", None),
+    )
     data = {
         "student_name": student_name,
         "student_honorific": student_honorific,
@@ -376,6 +387,7 @@ def generate_certificate_pdf(
         "year_graduated": request.year_graduated
         or (date_of_graduation[-4:] if date_of_graduation else ""),
         "is_graduated": is_graduated,
+        "is_currently_enrolled": is_currently_enrolled,
         "graduation_status": graduation_status,
         "reference_number": request.reference_number,
         "control_num": getattr(request, "control_num", "") or "",
@@ -443,7 +455,7 @@ def generate_certificate_pdf(
         "date_issued_day": day_text,
         "date_issued_month": month_text,
         "date_issued_year": year_text,
-        "request_purpose": request.purpose,
+        "request_purpose": request_purpose_display,
         "request_amount": getattr(request, "request_cost", "") or "",
         "cav_no": request.reference_number,
         "series_no": getattr(request, "control_num", "") or "",
@@ -555,6 +567,8 @@ def generate_certificate_pdf(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{request.reference_number}_{timestamp}.pdf"
     pdf_path = os.path.join(output_dir, filename)
+    generation_started_at = datetime.now()
+    generation_started_timer = perf_counter()
 
     try:
         pdf_bytes = CertificateEngine.generate(resolved_key, data)
@@ -595,6 +609,10 @@ def generate_certificate_pdf(
             ) from fallback_exc
 
     request.pdf_path = pdf_path
+    request.pdf_generated_at = generation_started_at
+    request.pdf_generation_time_ms = max(
+        1, int(round((perf_counter() - generation_started_timer) * 1000))
+    )
 
     audit_log = AuditLog(
         action="CERTIFICATE_GENERATED",

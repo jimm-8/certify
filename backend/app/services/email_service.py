@@ -168,7 +168,7 @@ class EmailService:
                     <p style="text-align: center;">
                         The total amount is computed as follows:
                         <br>
-                        <strong>₱30.00 per page + ₱30.00 Documentary Stamp Tax (DST) per page</strong>
+                        <strong>Based on the certificate type, number of page(s), and Documentary Stamp Tax (DST)</strong>
                     </p>
 
                     <p style="text-align: center;">
@@ -379,7 +379,7 @@ class EmailService:
                 <div class="header"><strong>Request Rejected</strong></div>
                 <div class="content">
                     <p>Dear {safe_requestor_name},</p>
-                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below.</p>
+                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below. We recommend that you submit a new request with the corrected information.</p>
 
                     <div class="request-card">
                         <div class="card-header">Request Details</div>
@@ -651,6 +651,184 @@ class EmailService:
             return True
         except Exception as e:
             print(f"❌ Failed to send ready-for-release email: {e}")
+            return False
+
+    async def send_delay_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+        reason: str | None = None,
+    ):
+        subject = f"Delay Notice for Certificate Release - {reference_number}"
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        reason_clean = (reason or "").strip()
+
+        if reason_clean:
+            if len(reason_clean.split()) <= 3:
+                # Auto-expand very short inputs
+                reason_clean = (
+                    f"Processing is temporarily delayed due to {reason_clean}"
+                )
+            else:
+                # Sentence case
+                reason_clean = reason_clean[0].upper() + reason_clean[1:]
+            reason_clean = reason_clean.rstrip(".") + "."
+            delay_message = (
+                f"We apologize for the delay. {reason_clean} "
+                "Thank you for your understanding."
+            )
+        else:
+            delay_message = (
+                "We apologize for the delay. Your certificate request is awaiting release as the authorized signatory is currently unavailable. "
+                "We will process it promptly once they return. Thank you for your understanding."
+            )
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    background-color: #f4f7f9;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: 1px solid #DE1B1B;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                }}
+                .header {{
+                    background-color: #DE1B1B;
+                    color: white;
+                    padding: 10px;
+                    text-align: center;
+                    font-size: 14pt;
+                }}
+                .content {{
+                    padding: 10px 30px;
+                    font-size: 10pt;
+                    text-align: justify;
+                }}
+                .request-card {{
+                    width: 100%;
+                    border: 1px solid #373737;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin: 25px 0;
+                }}
+                .card-header {{
+                    background-color: #373737;
+                    padding: 5px 16px;
+                    font-weight: bold;
+                    border-bottom: 1px solid #373737;
+                    color: #fff;
+                }}
+                .card-content {{
+                    padding: 5px 16px;
+                    background-color: #ffffff;
+                }}
+                .card-content p {{
+                    margin: 5px 0;
+                    font-size: 10pt;
+                }}
+                .footer {{
+                    text-align: center;
+                    font-size: 0.8rem;
+                    color: #777;
+                    padding: 10px;
+                    border-top: 1px solid #eee;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <strong>Delay Notice</strong>
+                </div>
+                <div class="content">
+                    <p>Dear {safe_requestor_name},</p>
+                    <p>
+                       {delay_message}
+                    </p>
+
+                    <div class="request-card">
+                        <div class="card-header">Request Summary</div>
+                        <div class="card-content">
+                            <p><strong>Reference Number:</strong> {reference_number}</p>
+                            <p><strong>Certificate for:</strong> {student_name}</p>
+                            <p><strong>Submitted Type:</strong> {certificate_type}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">What Happens Next</div>
+                        <div class="card-content">
+                            <p>Our team is taking action to complete the release as soon as possible.</p>
+                            <p>If you need assistance, you may contact the Registrar's Office through the details below.</p>
+                            <p><strong>Email:</strong> {contact_email}</p>
+                            <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>This is an automated email. Please do not reply.<br>
+                    © 2026 Certify System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        Delay Notice
+
+        Dear {safe_requestor_name},
+
+        {delay_message}
+
+        Reference No: {reference_number}
+        Student Name: {student_name}
+        Certificate: {certificate_type}
+
+        For assistance, please contact:
+        Email: {contact_email}
+        Tel No: {contact_phone}
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"âœ… Delay notice sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"âŒ Failed to send delay notice: {e}")
             return False
 
     async def send_payment_missing_notice(

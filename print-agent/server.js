@@ -18,6 +18,9 @@ const JOB_DISCOVERY_TIMEOUT_MS = Number(
 const JOB_COMPLETION_TIMEOUT_MS = Number(
   process.env.PRINT_AGENT_JOB_COMPLETION_TIMEOUT_MS || 120000,
 );
+const JOB_MONITOR_TIMEOUT_MS = Number(
+  process.env.PRINT_AGENT_JOB_MONITOR_TIMEOUT_MS || 0,
+);
 const JOB_POLL_INTERVAL_MS = Number(
   process.env.PRINT_AGENT_JOB_POLL_INTERVAL_MS || 1000,
 );
@@ -123,19 +126,56 @@ function markJobCompleted(job, detail) {
 }
 
 async function observeTrackedJob(job, beforeIds) {
-  const discoveryDeadline = Date.now() + JOB_DISCOVERY_TIMEOUT_MS;
+  const monitorStartedAt = Date.now();
 
-  while (Date.now() < discoveryDeadline && !job.spoolerJobId) {
+  while (true) {
+    if (
+      JOB_MONITOR_TIMEOUT_MS > 0 &&
+      Date.now() - monitorStartedAt >= JOB_MONITOR_TIMEOUT_MS
+    ) {
+      job.detail =
+        "Stopped monitoring this print job after reaching the configured timeout.";
+      return;
+    }
+
     try {
       const jobs = await listPrintJobs(job.printer);
-      const newJob = jobs
-        .filter((item) => !beforeIds.has(item.ID))
-        .sort((a, b) => Number(b.ID || 0) - Number(a.ID || 0))[0];
 
-      if (newJob) {
-        job.spoolerJobId = newJob.ID;
-        job.detail = `Tracking spooler job ${newJob.ID}`;
-        break;
+      if (!job.spoolerJobId) {
+        const newJob = jobs
+          .filter((item) => !beforeIds.has(item.ID))
+          .sort((a, b) => Number(b.ID || 0) - Number(a.ID || 0))[0];
+
+        if (newJob) {
+          job.spoolerJobId = newJob.ID;
+          job.detail = `Tracking spooler job ${newJob.ID}`;
+        } else if (Date.now() - monitorStartedAt >= JOB_DISCOVERY_TIMEOUT_MS) {
+          job.detail =
+            "Print command accepted. Waiting for the printer spooler job to appear.";
+        }
+      } else {
+        const activeJob = jobs.find((item) => item.ID === job.spoolerJobId);
+
+        if (!activeJob) {
+          markJobCompleted(job, "Spooler job completed and left the queue.");
+          return;
+        }
+
+        if (looksFailed(activeJob)) {
+          markJobFailed(
+            job,
+            activeJob.JobStatus || "Printer reported a failed spooler job.",
+          );
+          return;
+        }
+
+        if (Date.now() - monitorStartedAt >= JOB_COMPLETION_TIMEOUT_MS) {
+          job.detail =
+            activeJob.JobStatus ||
+            "Printer is still holding the spooler job. Waiting for completion.";
+        } else {
+          job.detail = activeJob.JobStatus || "Waiting for printer completion.";
+        }
       }
     } catch (error) {
       markJobFailed(job, error);
@@ -144,43 +184,6 @@ async function observeTrackedJob(job, beforeIds) {
 
     await sleep(JOB_POLL_INTERVAL_MS);
   }
-
-  if (!job.spoolerJobId) {
-    job.detail =
-      "Print command accepted, but a spooler job could not be matched yet.";
-    return;
-  }
-
-  const completionDeadline = Date.now() + JOB_COMPLETION_TIMEOUT_MS;
-
-  while (Date.now() < completionDeadline) {
-    try {
-      const jobs = await listPrintJobs(job.printer);
-      const activeJob = jobs.find((item) => item.ID === job.spoolerJobId);
-
-      if (!activeJob) {
-        markJobCompleted(job, "Spooler job completed and left the queue.");
-        return;
-      }
-
-      if (looksFailed(activeJob)) {
-        markJobFailed(
-          job,
-          activeJob.JobStatus || "Printer reported a failed spooler job.",
-        );
-        return;
-      }
-
-      job.detail = activeJob.JobStatus || "Waiting for printer completion.";
-    } catch (error) {
-      markJobFailed(job, error);
-      return;
-    }
-
-    await sleep(JOB_POLL_INTERVAL_MS);
-  }
-
-  job.detail = "Still waiting for printer completion.";
 }
 
 app.get("/health", (req, res) => {

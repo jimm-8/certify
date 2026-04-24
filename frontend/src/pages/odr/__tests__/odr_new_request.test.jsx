@@ -140,4 +140,38 @@ describe("OdrNewRequest", () => {
       }),
     );
   });
+
+  it("renders FastAPI validation errors without crashing", async () => {
+    const user = userEvent.setup();
+    requestService.getPrograms.mockResolvedValue([]);
+    requestService.createRequest.mockRejectedValue({
+      message: "Request failed with status code 422",
+      response: {
+        status: 422,
+        data: {
+          detail: [
+            {
+              type: "string_too_short",
+              loc: ["body", "purpose"],
+              msg: "String should have at least 5 characters",
+            },
+          ],
+        },
+      },
+    });
+
+    render(<OdrNewRequest />);
+
+    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.selectOptions(screen.getByLabelText(/office/i), "pablo_borbon");
+    await user.click(screen.getByRole("button", { name: /select diploma/i }));
+    await user.click(screen.getByRole("button", { name: /^next$/i }));
+    await user.click(screen.getByRole("button", { name: /add signature/i }));
+    await user.click(screen.getByLabelText(/i hereby confirm/i));
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(
+      await screen.findByText(/string should have at least 5 characters/i),
+    ).toBeInTheDocument();
+  });
 });

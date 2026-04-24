@@ -62,6 +62,11 @@ export default function PaymentTagging() {
   const [showOrModal, setShowOrModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [orNumberInput, setOrNumberInput] = useState("");
+  const [confirmPaymentModal, setConfirmPaymentModal] = useState({
+    open: false,
+    row: null,
+    orNumber: "",
+  });
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [feedbackModal, setFeedbackModal] = useState({
@@ -69,14 +74,18 @@ export default function PaymentTagging() {
     title: "",
     message: "",
     tone: "default",
+    loading: false,
+    confirmLabel: "Got it",
   });
 
-  const showFeedback = (title, message, tone = "default") => {
+  const showFeedback = (title, message, tone = "default", options = {}) => {
     setFeedbackModal({
       open: true,
       title,
       message,
       tone,
+      loading: options.loading ?? false,
+      confirmLabel: options.confirmLabel || "Got it",
     });
   };
 
@@ -160,9 +169,18 @@ export default function PaymentTagging() {
     }).format(num);
   };
 
-  const handleRecordPayment = async (row) => {
+  const handleRecordPayment = async (row, orNumber) => {
     if (!row?.id) return;
     setActionLoading((prev) => ({ ...prev, [row.id]: true }));
+    showFeedback(
+      "Recording Payment",
+      "Please wait while the payment is being recorded.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Recording...",
+      },
+    );
     try {
       await paymentService.createPayment({
         request_id: row.id,
@@ -172,9 +190,14 @@ export default function PaymentTagging() {
             : null,
         payment_method: "CASH",
         payment_status: "PAID",
-        or_number: orNumberInput.trim(),
+        or_number: orNumber.trim(),
       });
       await fetchRequests();
+      showFeedback(
+        "Payment Recorded",
+        "Payment has been tagged successfully.",
+        "success",
+      );
     } catch (err) {
       console.error("Failed to record payment:", err);
       showFeedback("Payment Failed", "Failed to record payment.", "error");
@@ -195,15 +218,34 @@ export default function PaymentTagging() {
     setOrNumberInput("");
   };
 
-  const confirmOrAndRecord = async () => {
+  const openPaymentConfirmation = () => {
     if (!selectedRow?.id) return;
     if (!orNumberInput.trim()) {
       showFeedback("OR Number Required", "Please enter OR Number.", "warning");
       return;
     }
-    const rowToRecord = selectedRow;
+    setConfirmPaymentModal({
+      open: true,
+      row: selectedRow,
+      orNumber: orNumberInput.trim(),
+    });
+  };
+
+  const closePaymentConfirmation = () => {
+    setConfirmPaymentModal({
+      open: false,
+      row: null,
+      orNumber: "",
+    });
+  };
+
+  const confirmOrAndRecord = async () => {
+    if (!confirmPaymentModal.row?.id || !confirmPaymentModal.orNumber) return;
+    const rowToRecord = confirmPaymentModal.row;
+    const confirmedOrNumber = confirmPaymentModal.orNumber;
+    closePaymentConfirmation();
     closeOrModal();
-    await handleRecordPayment(rowToRecord);
+    await handleRecordPayment(rowToRecord, confirmedOrNumber);
   };
 
   const filtered = requests
@@ -227,7 +269,9 @@ export default function PaymentTagging() {
         ? new Date(r.created_at).toISOString().split("T")[0] >= dateFrom
         : true;
       const matchesUnpaid = showOnlyUnpaid ? unpaidIds.has(r.id) : true;
-      return matchesSearch && matchesDate && matchesUnpaid;
+      const isVisibleStatus =
+        String(r.status || "").toUpperCase() !== "REJECTED";
+      return matchesSearch && matchesDate && matchesUnpaid && isVisibleStatus;
     })
     .sort((a, b) => {
       const aUnpaid = unpaidIds.has(a.id);
@@ -247,13 +291,13 @@ export default function PaymentTagging() {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
-      width: "200px",
+      width: "260px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
-      width: "280px",
+      width: "430px",
     },
     {
       name: "Date Requested",
@@ -474,7 +518,7 @@ export default function PaymentTagging() {
                 Cancel
               </button>
               <button
-                onClick={confirmOrAndRecord}
+                onClick={openPaymentConfirmation}
                 className="px-3 py-1.5 text-xs font-medium text-nowrap text-white bg-[#ee1133] border border-[#ee1133] rounded-md hover:bg-red-700"
               >
                 Record Payment
@@ -484,10 +528,36 @@ export default function PaymentTagging() {
         </div>
       )}
       <FeedbackDialog
+        open={confirmPaymentModal.open}
+        title="Confirm Payment"
+        message="Please review the OR number before submitting this payment."
+        tone="warning"
+        confirmLabel="Submit Payment"
+        cancelLabel="Back"
+        onConfirm={confirmOrAndRecord}
+        onClose={closePaymentConfirmation}
+      >
+        <div className="rounded-md border border-[var(--school-border)] px-4 py-3 text-left">
+          <div className="text-[11px] uppercase tracking-wide text-gray-400">
+            OR Number
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[var(--school-ink)]">
+            {confirmPaymentModal.orNumber}
+          </div>
+          {confirmPaymentModal.row?.reference_number && (
+            <div className="mt-3 text-xs text-gray-500">
+              Reference No.: {confirmPaymentModal.row.reference_number}
+            </div>
+          )}
+        </div>
+      </FeedbackDialog>
+      <FeedbackDialog
         open={feedbackModal.open}
         title={feedbackModal.title}
         message={feedbackModal.message}
         tone={feedbackModal.tone}
+        loading={feedbackModal.loading}
+        confirmLabel={feedbackModal.confirmLabel}
         onClose={() =>
           setFeedbackModal((current) => ({ ...current, open: false }))
         }

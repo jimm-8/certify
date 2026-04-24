@@ -12,6 +12,7 @@ const FieldError = ({ message }) =>
 
 const OdrRequestForm = React.forwardRef(
   ({ programs = [], selectedOffice = "" }, ref) => {
+    const currentYear = new Date().getFullYear();
     const [formData, setFormData] = useState({
       name: "",
       currentAddress: "",
@@ -61,17 +62,6 @@ const OdrRequestForm = React.forwardRef(
       "Mother",
     ];
 
-    const purposeOptions = [
-      "Employment",
-      "Further Studies",
-      "Scholarship Application",
-      "License Application",
-      "Board Exam",
-      "Personal Record",
-      "Immigration",
-      "Others",
-    ];
-
     const majorOptions = useMemo(() => {
       if (!formData.program) return [];
       return [
@@ -113,6 +103,10 @@ const OdrRequestForm = React.forwardRef(
         return `${labels[name] || name} is required.`;
       }
 
+      if (name === "purposeOfRequest" && trimmed && trimmed.length < 5) {
+        return "Purpose of request must be at least 5 characters.";
+      }
+
       if (name === "program" && trimmed && !programOptions.includes(trimmed)) {
         return "Please select a valid program from the list.";
       }
@@ -135,6 +129,16 @@ const OdrRequestForm = React.forwardRef(
         const phoneRegex = /^(09|\+639)\d{9}$/;
         if (!phoneRegex.test(trimmed.replace(/\s/g, "")))
           return "Enter a valid PH mobile number (e.g. 09XXXXXXXXX).";
+      }
+
+      if (name === "yearGraduated" && trimmed) {
+        if (!/^\d{4}$/.test(trimmed)) {
+          return "Year graduated must be a 4-digit year.";
+        }
+
+        if (Number(trimmed) > currentYear) {
+          return `Year graduated cannot be later than ${currentYear}.`;
+        }
       }
 
       return "";
@@ -208,7 +212,7 @@ const OdrRequestForm = React.forwardRef(
           : "border-gray-300 focus:ring-teal-500"
       }`;
 
-    const selectClass = (field) =>
+    const textareaClass = (field) =>
       `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 transition-colors ${
         errors[field]
           ? "border-red-400 bg-red-50 focus:ring-red-300"
@@ -305,7 +309,6 @@ const OdrRequestForm = React.forwardRef(
                 type="tel"
                 id="contactNumber"
                 name="contactNumber"
-                placeholder="09XXXXXXXXX"
                 value={formData.contactNumber}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -352,22 +355,22 @@ const OdrRequestForm = React.forwardRef(
               >
                 Purpose/s of request <span className="text-red-500">*</span>
               </label>
-              <select
+              <textarea
                 id="purposeOfRequest"
                 name="purposeOfRequest"
                 value={formData.purposeOfRequest}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                className={selectClass("purposeOfRequest")}
-              >
-                <option value="">Select purpose</option>
-                {purposeOptions.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                rows={4}
+                className={textareaClass("purposeOfRequest")}
+              />
               <FieldError message={errors.purposeOfRequest} />
+              {!errors.purposeOfRequest && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Use the exact wording provided by the requester. This field
+                  accepts both purpose and any special processing instruction.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -454,7 +457,6 @@ const OdrRequestForm = React.forwardRef(
                     const err = validateField("program", formData.program);
                     setErrors((prev) => ({ ...prev, program: err }));
                   }}
-                  placeholder="Type to search program..."
                   className={inputClass("program")}
                 />
 
@@ -512,11 +514,6 @@ const OdrRequestForm = React.forwardRef(
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : ""
                 }`}
-                placeholder={
-                  majorOptions.length === 0
-                    ? "No major available"
-                    : "Select major"
-                }
               />
               <datalist id="majorOptions">
                 {majorOptions.map((major) => (
@@ -538,10 +535,11 @@ const OdrRequestForm = React.forwardRef(
                 type="text"
                 id="yearGraduated"
                 name="yearGraduated"
-                placeholder="e.g. 2023"
                 value={formData.yearGraduated}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                inputMode="numeric"
+                maxLength={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
               />
               <FieldError message={errors.yearGraduated} />

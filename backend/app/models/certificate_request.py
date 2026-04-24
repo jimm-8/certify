@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -78,6 +79,10 @@ class CertificateRequest(Base):
     requestor_contact = Column(String(20), nullable=False)
     requestor_email = Column(String(255), nullable=False)
     purpose = Column(Text, nullable=False)
+    purpose_normalized = Column(Text, nullable=True)
+    purpose_category = Column(String(50), nullable=False, default="OTHER")
+    purpose_extracted_notes = Column(Text, nullable=True)
+    needs_instruction_review = Column(Boolean, nullable=False, default=False)
 
     sr_code = Column(String(20), nullable=True)
     student_name = Column(String(255), nullable=False)
@@ -94,8 +99,16 @@ class CertificateRequest(Base):
 
     verification_token = Column(String(100), unique=True, nullable=True, index=True)
     pdf_path = Column(String(500), nullable=True)
+    pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
+    pdf_generation_time_ms = Column(Integer, nullable=True)
     request_cost = Column(Numeric(10, 2), nullable=True)
     ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    for_releasing_started_at = Column(DateTime(timezone=True), nullable=True)
+    release_hold_active = Column(Boolean, nullable=False, default=False)
+    release_hold_started_at = Column(DateTime(timezone=True), nullable=True)
+    release_hold_total_seconds = Column(Integer, nullable=False, default=0)
+    release_hold_reason = Column(Text, nullable=True)
+    release_hold_source = Column(String(32), nullable=True)
     auto_print_requested_at = Column(DateTime(timezone=True), nullable=True)
     auto_printed_at = Column(DateTime(timezone=True), nullable=True)
     auto_print_status = Column(String(32), nullable=True)

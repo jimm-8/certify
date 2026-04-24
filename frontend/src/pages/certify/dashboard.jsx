@@ -4,6 +4,7 @@ import dashboardService from "../../services/dashboardService";
 import StatusChartCard from "./analytics/StatusChartCard";
 import TrendChartCard from "./analytics/TrendChartCard";
 import OverallHistoryCard from "./analytics/OverallHistoryCard";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 import {
   FaCalendarDays,
   FaFileLines,
@@ -20,7 +21,6 @@ export default function CertifyDashboard() {
   const [trendSummary, setTrendSummary] = useState(null);
   const [historySummary, setHistorySummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [trendMenuOpen, setTrendMenuOpen] = useState(false);
   const [historyMenuOpen, setHistoryMenuOpen] = useState(false);
@@ -30,6 +30,21 @@ export default function CertifyDashboard() {
   const [monthlyMenuOpen, setMonthlyMenuOpen] = useState(false);
   const [monthlyPeriod, setMonthlyPeriod] = useState("this_month");
   const [monthlySummary, setMonthlySummary] = useState(null);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const periodOptions = [
     { value: "today", label: "Today" },
@@ -57,7 +72,11 @@ export default function CertifyDashboard() {
         setDashboardData(data);
         sessionStorage.setItem("dashboard_summary_cache", JSON.stringify(data));
       } catch {
-        setError("Failed to load dashboard data.");
+        showFeedback(
+          "Dashboard Load Failed",
+          "Failed to load dashboard data.",
+          "error",
+        );
       } finally {
         setLoading(false);
       }
@@ -107,7 +126,8 @@ export default function CertifyDashboard() {
 
   const formatChangeBadge = (change) => {
     if (!change || change.direction === "flat") return "";
-    return `${change.direction === "up" ? "+" : "-"}${change.percent}%`;
+    const cappedPercent = Math.min(change.percent || 0, 100);
+    return `${change.direction === "up" ? "+" : "-"}${cappedPercent}%`;
   };
 
   const stats = [
@@ -118,6 +138,14 @@ export default function CertifyDashboard() {
       badgeDown: changes.requests_today?.direction === "down",
       iconBg: "bg-blue-50",
       icon: <FaCalendarDays className="text-[#4899F7]" />,
+    },
+    {
+      num: String(totals.prints_today || 0),
+      label: "Printed Today",
+      badge: formatChangeBadge(changes.prints_today),
+      badgeDown: changes.prints_today?.direction === "down",
+      iconBg: "bg-cyan-50",
+      icon: <FaPrint className="text-[#0891B2]" />,
     },
     {
       num: String(totals.for_approval_review || 0),
@@ -226,8 +254,8 @@ export default function CertifyDashboard() {
         {/* SKELETON */}
         {loading && !dashboardData && (
           <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-5 gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
                 <SkelCard key={i} className="h-[86px]" />
               ))}
             </div>
@@ -249,15 +277,8 @@ export default function CertifyDashboard() {
           </div>
         )}
 
-        {/* ERROR */}
-        {error && (
-          <div className="bg-white border border-gray-200 rounded p-3 text-[#F74242]">
-            {error}
-          </div>
-        )}
-
         {/* STATS */}
-        <div className="grid grid-cols-5 gap-3 mb-0">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-0">
           {stats.map((s, i) => (
             <div
               key={i}
@@ -272,7 +293,7 @@ export default function CertifyDashboard() {
                 <div className="text-xl font-semibold leading-none text-[#0B1B3A]">
                   {s.num}
                 </div>
-                <div className="text-xs text-[#6B778C] mt-1">
+                <div className="text-[10px]  text-nowrap text-[#6B778C] mt-1">
                   {s.label}
                   {s.badge && (
                     <span
@@ -472,6 +493,15 @@ export default function CertifyDashboard() {
           />
         </div>
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }
