@@ -276,10 +276,7 @@ const Tracker = () => {
       matchesDate &&
       matchesType &&
       matchesProgram &&
-      r.status !== "PENDING" &&
-      r.status !== "REJECTED" &&
-      r.status !== "FOR_RELEASING" &&
-      r.status !== "RELEASED"
+      r.status === "PROCESSING"
     );
   });
 
@@ -296,8 +293,7 @@ const Tracker = () => {
   const handleMarkProcessing = async (row) => {
     try {
       setStatusLoadingId(row.id);
-      const newStatus =
-        row.status === "APPROVED" ? "PROCESSING" : "FOR_RELEASING";
+      const newStatus = "FOR_RELEASING";
       const updated = await requestService.updateStatus(row.id, newStatus);
       setRequests((prev) =>
         prev.map((item) => (item.id === row.id ? updated : item)),
@@ -457,14 +453,10 @@ const Tracker = () => {
           >
             <BsEye size={18} />
           </button>
-          {(row.status === "APPROVED" || row.status === "PROCESSING") && (
+          {row.status === "PROCESSING" && (
             <button
               onClick={() => handleMarkProcessing(row)}
-              title={
-                row.status === "APPROVED"
-                  ? "Mark as Processing"
-                  : "Mark as For Releasing"
-              }
+              title="Mark as For Releasing"
               disabled={statusLoadingId === row.id}
               className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -702,7 +694,6 @@ const Tracker = () => {
                 >
                   <option value="">Select status...</option>
                   <option value="PROCESSING">Processing</option>
-                  <option value="FOR_RELEASING">For Releasing</option>
                 </select>
               </div>
               <div className="mt-4 text-sm text-gray-400">to</div>

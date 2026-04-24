@@ -49,13 +49,7 @@ const CertifyPage = () => {
         );
         const nextCounts = {
           received: requests.filter((r) => r.status === "APPROVED").length,
-          processing: requests.filter(
-            (r) =>
-              r.status !== "PENDING" &&
-              r.status !== "REJECTED" &&
-              r.status !== "FOR_RELEASING" &&
-              r.status !== "RELEASED",
-          ).length,
+          processing: requests.filter((r) => r.status === "PROCESSING").length,
           ready: requests.filter((r) => r.status === "FOR_RELEASING").length,
           history: requests.filter((r) => r.status === "RELEASED").length,
         };

@@ -269,7 +269,9 @@ export default function PaymentTagging() {
         ? new Date(r.created_at).toISOString().split("T")[0] >= dateFrom
         : true;
       const matchesUnpaid = showOnlyUnpaid ? unpaidIds.has(r.id) : true;
-      return matchesSearch && matchesDate && matchesUnpaid;
+      const isVisibleStatus =
+        String(r.status || "").toUpperCase() !== "REJECTED";
+      return matchesSearch && matchesDate && matchesUnpaid && isVisibleStatus;
     })
     .sort((a, b) => {
       const aUnpaid = unpaidIds.has(a.id);
@@ -289,13 +291,13 @@ export default function PaymentTagging() {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
-      width: "200px",
+      width: "260px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
-      width: "280px",
+      width: "430px",
     },
     {
       name: "Date Requested",

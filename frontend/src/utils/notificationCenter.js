@@ -169,12 +169,26 @@ export const getRequestHoldSecondsMs = (request, nowMs = Date.now()) => {
   return Math.max(0, (totalSeconds + activeSeconds) * 1000);
 };
 
-export const getForReleasingElapsedMs = (request, nowMs = Date.now()) => {
-  const startedAtValue =
-    request?.for_releasing_started_at || request?.updated_at || request?.created_at;
-  if (!startedAtValue) return 0;
+export const getForReleasingStartedAtMs = (request) => {
+  const candidateValues = [
+    request?.for_releasing_started_at,
+    request?.auto_print_requested_at,
+    request?.ready_email_sent_at,
+    request?.created_at,
+    request?.updated_at,
+  ];
 
-  const startedAt = new Date(startedAtValue).getTime();
+  for (const value of candidateValues) {
+    if (!value) continue;
+    const parsed = new Date(value).getTime();
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return null;
+};
+
+export const getForReleasingElapsedMs = (request, nowMs = Date.now()) => {
+  const startedAt = getForReleasingStartedAtMs(request);
   if (!Number.isFinite(startedAt)) return 0;
 
   const rawElapsed = Math.max(0, nowMs - startedAt);

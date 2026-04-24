@@ -379,7 +379,7 @@ class EmailService:
                 <div class="header"><strong>Request Rejected</strong></div>
                 <div class="content">
                     <p>Dear {safe_requestor_name},</p>
-                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below.</p>
+                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below. We recommend that you submit a new request with the corrected information.</p>
 
                     <div class="request-card">
                         <div class="card-header">Request Details</div>

@@ -4,6 +4,7 @@ import { vi } from "vitest";
 import Ready from "../ready";
 import requestService from "../../../services/requestService";
 import settingsService from "../../../services/settingsService";
+import paymentService from "../../../services/paymentService";
 
 vi.mock("../../../services/requestService", () => ({
   default: {
@@ -21,14 +22,22 @@ vi.mock("../../../services/settingsService", () => ({
   },
 }));
 
+vi.mock("../../../services/paymentService", () => ({
+  default: {
+    getPaymentsByReferences: vi.fn(),
+  },
+}));
+
 describe("Ready page", () => {
   afterEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("shows empty state when no requests", async () => {
     requestService.getAllRequests.mockResolvedValue([]);
     requestService.getCertificateTypes.mockResolvedValue([]);
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: false });
 
     render(<Ready />);
@@ -58,6 +67,7 @@ describe("Ready page", () => {
     requestService.downloadCertificate.mockResolvedValue(
       new Blob(["test"], { type: "application/pdf" }),
     );
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: true });
 
     render(<Ready />);
@@ -90,6 +100,7 @@ describe("Ready page", () => {
       ...request,
       status: "RELEASED",
     });
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: true });
 
     render(<Ready />);
@@ -122,6 +133,7 @@ describe("Ready page", () => {
     requestService.downloadCertificate.mockResolvedValue(
       new Blob(["test"], { type: "application/pdf" }),
     );
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: false });
 
     render(<Ready />);

@@ -280,7 +280,7 @@ const CertifyNavbar = () => {
   );
 
   useEffect(() => {
-    if (isCashier) return undefined;
+    if (isCashier || suppressForReleaseNotices) return undefined;
 
     let active = true;
 
@@ -294,9 +294,7 @@ const CertifyNavbar = () => {
 
         const all = Array.isArray(data) ? data : data.items || [];
         const releasing = all.filter(
-          (item) =>
-            item.status === "FOR_RELEASING" &&
-            (item.for_releasing_started_at || item.updated_at),
+          (item) => item.status === "FOR_RELEASING",
         );
         const stageMap = getDelayAlertStageMap();
         const stageBuckets = {
