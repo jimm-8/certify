@@ -5,6 +5,7 @@ import { LayoutGrid, Inbox, PackageCheck, History } from "lucide-react";
 import { LuRefreshCw } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { getTokenPayload } from "../../utils/auth";
+import settingsService from "../../services/settingsService";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} /> },
@@ -86,10 +87,13 @@ const DropdownPortal = ({ anchorRef, portalRef, onClose, sections }) => {
 
 const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [signingAvailable, setSigningAvailable] = useState(true);
+  const [signingLoading, setSigningLoading] = useState(false);
   const buttonRef = useRef(null);
   const portalRef = useRef(null);
   const role = getTokenPayload()?.role;
   const navigate = useNavigate();
+  const canManageSigning = role !== "cashier";
 
   const baseItems = baseMenuItems.map((item) => {
     if (item.label === "Reports") {
@@ -148,6 +152,25 @@ const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!canManageSigning) return;
+
+    let active = true;
+    settingsService
+      .getSigningAvailability()
+      .then((data) => {
+        if (!active) return;
+        setSigningAvailable(Boolean(data?.signing_available));
+      })
+      .catch((error) => {
+        console.error("Failed to load signing availability:", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canManageSigning]);
 
   const getTabCount = (tab) => {
     if (!tab.key || tab.showBadge === false) return null;
@@ -209,6 +232,64 @@ const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
             </button>
           </div>
         </>
+        {canManageSigning && (
+          <>
+            <div className="ml-auto flex items-center gap-3 px-4">
+              <label
+                htmlFor="signing-availability-toggle"
+                className="text-xs font-medium text-gray-600"
+              >
+                Available for signing
+              </label>
+              <button
+                id="signing-availability-toggle"
+                type="button"
+                onClick={async () => {
+                  const nextValue = !signingAvailable;
+                  setSigningLoading(true);
+                  try {
+                    const response =
+                      await settingsService.updateSigningAvailability(
+                        nextValue,
+                      );
+                    setSigningAvailable(Boolean(response?.signing_available));
+                  } catch (error) {
+                    console.error(
+                      "Failed to update signing availability:",
+                      error,
+                    );
+                    window.alert("Failed to update signing availability.");
+                  } finally {
+                    setSigningLoading(false);
+                  }
+                }}
+                disabled={signingLoading}
+                aria-pressed={signingAvailable}
+                aria-label={
+                  signingAvailable
+                    ? "Set not available for signing"
+                    : "Set available for signing"
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  signingAvailable ? "bg-[#0071ae]" : "bg-gray-300"
+                } ${signingLoading ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    signingAvailable ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="text-[11px] text-gray-400">
+                {signingLoading
+                  ? "Updating..."
+                  : signingAvailable
+                    ? "On"
+                    : "Off"}
+              </span>
+            </div>
+          </>
+        )}
       </div>
       {dropdownOpen && (
         <DropdownPortal

@@ -32,4 +32,24 @@ describe("OdrRequestForm", () => {
       "For transfer requirements, include only Gen Ed subjects."
     );
   });
+
+  it("shows an error for a future graduation year", async () => {
+    const user = userEvent.setup();
+    const currentYear = new Date().getFullYear();
+
+    render(
+      <OdrRequestForm
+        programs={[{ name: "BSCS", major: "" }]}
+        selectedOffice="pablo_borbon"
+      />
+    );
+
+    const yearField = screen.getByLabelText(/year graduated/i);
+    await user.type(yearField, String(currentYear + 1));
+    await user.tab();
+
+    expect(
+      screen.getByText(`Year graduated cannot be later than ${currentYear}.`)
+    ).toBeInTheDocument();
+  });
 });

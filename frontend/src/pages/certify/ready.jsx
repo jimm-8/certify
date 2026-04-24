@@ -498,12 +498,12 @@ const Ready = () => {
     setBulkReleaseDone(true);
     fetchRequests();
     showBulkDialog({
-      title: failed.length > 0
-        ? "Bulk Release Incomplete"
-        : "Bulk Release Complete",
-      message: failed.length > 0
-        ? `Released ${targets.length - failed.length} of ${targets.length} request(s). Please retry the failed items.`
-        : `${targets.length} request${targets.length !== 1 ? "s were" : " was"} marked as released.`,
+      title:
+        failed.length > 0 ? "Bulk Release Incomplete" : "Bulk Release Complete",
+      message:
+        failed.length > 0
+          ? `Released ${targets.length - failed.length} of ${targets.length} request(s). Please retry the failed items.`
+          : `${targets.length} request${targets.length !== 1 ? "s were" : " was"} marked as released.`,
       tone: failed.length > 0 ? "warning" : "success",
       current: targets.length,
       total: targets.length,
@@ -798,7 +798,7 @@ const Ready = () => {
           <button
             onClick={handlePrintAll}
             disabled={filteredRequests.length === 0}
-            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             <BsPrinter size={13} />
             Print All
@@ -807,7 +807,7 @@ const Ready = () => {
           <button
             onClick={handleBulkMarkReleased}
             disabled={bulkReleasing || releasableRequests.length === 0}
-            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             <BsCheckLg size={13} />
             Mark All Released
@@ -818,7 +818,7 @@ const Ready = () => {
           <select
             value={selectedProgram}
             onChange={(e) => setSelectedProgram(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none"
+            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50"
           >
             <option value="">All Programs</option>
             {programs.map((p) => (
@@ -831,7 +831,7 @@ const Ready = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none"
+            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50"
           >
             <option value="">All Certificate Types</option>
             {certificateTypes.map((ct) => (

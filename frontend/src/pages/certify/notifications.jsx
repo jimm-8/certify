@@ -2,32 +2,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
 import requestService from "../../services/requestService";
-
-const NOTIFICATION_ACTIONS = ["REQUEST_REVIEW_REQUIRED", "REQUEST_PRINTED"];
-
-const getNotificationMeta = (log) => {
-  if (log.action === "REQUEST_PRINTED") {
-    return {
-      title: "Document Printed",
-      badge: log.old_value || "Certificate request",
-      message: log.notes,
-      tone: "border-emerald-200 bg-emerald-50/40",
-      badgeTone: "text-emerald-700",
-    };
-  }
-
-  return {
-    title: "Historical Record Review Needed",
-    badge: log.old_value || "Certificate request",
-    message: log.notes,
-    tone: "border-amber-200 bg-amber-50/40",
-    badgeTone: "text-amber-700",
-  };
-};
+import {
+  getLocalNotifications,
+  getNotificationMeta,
+  mergeNotifications,
+  NOTIFICATION_ACTIONS,
+} from "../../utils/notificationCenter";
 
 const Notifications = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
+  const [localLogs, setLocalLogs] = useState(() => getLocalNotifications());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,10 +27,12 @@ const Notifications = () => {
           NOTIFICATION_ACTIONS.includes(log.action),
         );
         setLogs(filtered);
+        setLocalLogs(getLocalNotifications());
       })
       .catch(() => {
         if (!active) return;
         setLogs([]);
+        setLocalLogs(getLocalNotifications());
       })
       .finally(() => {
         if (!active) return;
@@ -58,9 +45,8 @@ const Notifications = () => {
   }, []);
 
   const notifications = useMemo(
-    () =>
-      [...logs].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
-    [logs],
+    () => mergeNotifications(logs, localLogs),
+    [localLogs, logs],
   );
 
   return (

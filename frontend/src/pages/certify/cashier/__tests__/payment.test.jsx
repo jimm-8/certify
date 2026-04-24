@@ -68,6 +68,14 @@ describe("Payment tagging page", () => {
     await user.click(
       within(orModal).getByRole("button", { name: /^record payment$/i }),
     );
+    const confirmDialog = await screen.findByText(
+      /please review the or number before submitting this payment/i,
+    );
+    const confirmModal = confirmDialog.closest("div[class*='max-w-sm']");
+    expect(screen.getByText("OR-123")).toBeInTheDocument();
+    await user.click(
+      within(confirmModal).getByRole("button", { name: /submit payment/i }),
+    );
 
     expect(
       await screen.findByText(/please wait while the payment is being recorded/i),

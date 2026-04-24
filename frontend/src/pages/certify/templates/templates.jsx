@@ -69,6 +69,17 @@ img[alt*="sign" i] {
 </style>
 `;
 
+const HIDDEN_TEMPLATE_NAMES = new Set([
+  "certification authentication and verification",
+]);
+
+const normalizeTemplateName = (name) =>
+  String(name || "")
+    .replace(/\.html$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase();
+
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState("");
@@ -313,7 +324,9 @@ const Templates = () => {
       try {
         setLoading(true);
         const data = await templateService.listTemplates();
-        const list = data?.templates || [];
+        const list = (data?.templates || []).filter(
+          (name) => !HIDDEN_TEMPLATE_NAMES.has(normalizeTemplateName(name)),
+        );
         setTemplates(list);
         if (list.length) {
           setSelected(list[0]);

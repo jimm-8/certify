@@ -459,14 +459,19 @@ class CertificateDependencyEngine:
         student_ref: Optional[Union[int, str]],
         request: Optional[CertificateRequest],
     ) -> Optional[Student]:
+        student_repo = StudentRepository(db)
         if isinstance(student_ref, int):
-            return (
-                StudentRepository(db).query().filter(Student.id == student_ref).first()
-            )
+            return student_repo.query().filter(Student.id == student_ref).first()
         if isinstance(student_ref, str) and student_ref:
-            return StudentRepository(db).get_by_sr_code(student_ref)
+            student = student_repo.get_by_sr_code(student_ref)
+            if student:
+                return student
         if request and request.sr_code:
-            return StudentRepository(db).get_by_sr_code(request.sr_code)
+            student = student_repo.get_by_sr_code(request.sr_code)
+            if student:
+                return student
+        if request and request.student_name:
+            return student_repo.get_by_student_name(request.student_name)
         return None
 
     @staticmethod

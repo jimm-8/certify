@@ -62,6 +62,11 @@ export default function PaymentTagging() {
   const [showOrModal, setShowOrModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [orNumberInput, setOrNumberInput] = useState("");
+  const [confirmPaymentModal, setConfirmPaymentModal] = useState({
+    open: false,
+    row: null,
+    orNumber: "",
+  });
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [feedbackModal, setFeedbackModal] = useState({
@@ -73,12 +78,7 @@ export default function PaymentTagging() {
     confirmLabel: "Got it",
   });
 
-  const showFeedback = (
-    title,
-    message,
-    tone = "default",
-    options = {},
-  ) => {
+  const showFeedback = (title, message, tone = "default", options = {}) => {
     setFeedbackModal({
       open: true,
       title,
@@ -169,7 +169,7 @@ export default function PaymentTagging() {
     }).format(num);
   };
 
-  const handleRecordPayment = async (row) => {
+  const handleRecordPayment = async (row, orNumber) => {
     if (!row?.id) return;
     setActionLoading((prev) => ({ ...prev, [row.id]: true }));
     showFeedback(
@@ -190,7 +190,7 @@ export default function PaymentTagging() {
             : null,
         payment_method: "CASH",
         payment_status: "PAID",
-        or_number: orNumberInput.trim(),
+        or_number: orNumber.trim(),
       });
       await fetchRequests();
       showFeedback(
@@ -218,15 +218,34 @@ export default function PaymentTagging() {
     setOrNumberInput("");
   };
 
-  const confirmOrAndRecord = async () => {
+  const openPaymentConfirmation = () => {
     if (!selectedRow?.id) return;
     if (!orNumberInput.trim()) {
       showFeedback("OR Number Required", "Please enter OR Number.", "warning");
       return;
     }
-    const rowToRecord = selectedRow;
+    setConfirmPaymentModal({
+      open: true,
+      row: selectedRow,
+      orNumber: orNumberInput.trim(),
+    });
+  };
+
+  const closePaymentConfirmation = () => {
+    setConfirmPaymentModal({
+      open: false,
+      row: null,
+      orNumber: "",
+    });
+  };
+
+  const confirmOrAndRecord = async () => {
+    if (!confirmPaymentModal.row?.id || !confirmPaymentModal.orNumber) return;
+    const rowToRecord = confirmPaymentModal.row;
+    const confirmedOrNumber = confirmPaymentModal.orNumber;
+    closePaymentConfirmation();
     closeOrModal();
-    await handleRecordPayment(rowToRecord);
+    await handleRecordPayment(rowToRecord, confirmedOrNumber);
   };
 
   const filtered = requests
@@ -497,7 +516,7 @@ export default function PaymentTagging() {
                 Cancel
               </button>
               <button
-                onClick={confirmOrAndRecord}
+                onClick={openPaymentConfirmation}
                 className="px-3 py-1.5 text-xs font-medium text-nowrap text-white bg-[#ee1133] border border-[#ee1133] rounded-md hover:bg-red-700"
               >
                 Record Payment
@@ -506,6 +525,30 @@ export default function PaymentTagging() {
           </div>
         </div>
       )}
+      <FeedbackDialog
+        open={confirmPaymentModal.open}
+        title="Confirm Payment"
+        message="Please review the OR number before submitting this payment."
+        tone="warning"
+        confirmLabel="Submit Payment"
+        cancelLabel="Back"
+        onConfirm={confirmOrAndRecord}
+        onClose={closePaymentConfirmation}
+      >
+        <div className="rounded-md border border-[var(--school-border)] px-4 py-3 text-left">
+          <div className="text-[11px] uppercase tracking-wide text-gray-400">
+            OR Number
+          </div>
+          <div className="mt-1 text-sm font-semibold text-[var(--school-ink)]">
+            {confirmPaymentModal.orNumber}
+          </div>
+          {confirmPaymentModal.row?.reference_number && (
+            <div className="mt-3 text-xs text-gray-500">
+              Reference No.: {confirmPaymentModal.row.reference_number}
+            </div>
+          )}
+        </div>
+      </FeedbackDialog>
       <FeedbackDialog
         open={feedbackModal.open}
         title={feedbackModal.title}

@@ -509,7 +509,7 @@ const Reports = () => {
   const handleDownloadSummary = async () => {
     try {
       const blob = await reportService.downloadSummary(period);
-      downloadBlob(blob, `certify_summary_${period}.csv`);
+      downloadBlob(blob, `certify_summary_${period}.xlsx`);
     } catch (err) {
       showFeedback(
         "Download Failed",

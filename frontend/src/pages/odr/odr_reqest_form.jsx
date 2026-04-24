@@ -12,6 +12,7 @@ const FieldError = ({ message }) =>
 
 const OdrRequestForm = React.forwardRef(
   ({ programs = [], selectedOffice = "" }, ref) => {
+    const currentYear = new Date().getFullYear();
     const [formData, setFormData] = useState({
       name: "",
       currentAddress: "",
@@ -128,6 +129,16 @@ const OdrRequestForm = React.forwardRef(
         const phoneRegex = /^(09|\+639)\d{9}$/;
         if (!phoneRegex.test(trimmed.replace(/\s/g, "")))
           return "Enter a valid PH mobile number (e.g. 09XXXXXXXXX).";
+      }
+
+      if (name === "yearGraduated" && trimmed) {
+        if (!/^\d{4}$/.test(trimmed)) {
+          return "Year graduated must be a 4-digit year.";
+        }
+
+        if (Number(trimmed) > currentYear) {
+          return `Year graduated cannot be later than ${currentYear}.`;
+        }
       }
 
       return "";
@@ -527,6 +538,8 @@ const OdrRequestForm = React.forwardRef(
                 value={formData.yearGraduated}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                inputMode="numeric"
+                maxLength={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
               />
               <FieldError message={errors.yearGraduated} />

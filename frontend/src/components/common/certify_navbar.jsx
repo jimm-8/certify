@@ -4,25 +4,111 @@ import { LogOut, Settings, HelpCircle, Activity, Bell } from "lucide-react";
 import authService from "../../services/authService";
 import { getTokenPayload } from "../../utils/auth";
 import requestService from "../../services/requestService";
+import FeedbackDialog from "./feedbackDialog";
+import {
+  NOTIFICATION_STORAGE_KEY,
+  DISMISSED_NOTIFICATION_STORAGE_KEY,
+  NOTIFICATION_ACTIONS,
+  appendLocalNotification,
+  buildDelayAlertMessage,
+  createDelayAlertNotification,
+  getForReleasingElapsedMs,
+  getDelayAlertStageMap,
+  getDismissedNotificationIds,
+  getLocalNotifications,
+  getNotificationMeta,
+  mergeNotifications,
+  saveDelayAlertStageMap,
+  STAGE_DEFINITIONS,
+} from "../../utils/notificationCenter";
 
-const NOTIFICATION_STORAGE_KEY = "certify.notifications.lastSeenId";
-const DISMISSED_NOTIFICATION_STORAGE_KEY = "certify.notifications.dismissedIds";
-const NOTIFICATION_ACTIONS = ["REQUEST_REVIEW_REQUIRED", "REQUEST_PRINTED"];
+const playSuccessNotification = () => {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
 
-const getNotificationMeta = (item) => {
-  if (item.action === "REQUEST_PRINTED") {
-    return {
-      title: "Document Printed",
-      badge: item.old_value || "Certificate request",
-      message: item.notes,
-    };
+  const ctx = new AudioCtx();
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
   }
 
+  [
+    [523, 0],
+    [659, 0.12],
+    [784, 0.24],
+  ].forEach(([freq, delay]) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      ctx.currentTime + delay + 0.5,
+    );
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + 0.5);
+  });
+
+  window.setTimeout(() => {
+    ctx.close().catch(() => {});
+  }, 900);
+};
+
+const playCriticalAlert = () => {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+
+  const ctx = new AudioCtx();
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+
+  [0, 0.12, 0.24, 0.36].forEach((delay) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
+    gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.09);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + 0.1);
+  });
+
+  window.setTimeout(() => {
+    ctx.close().catch(() => {});
+  }, 800);
+};
+
+const createCriticalAlertLoop = () => {
+  let intervalId = null;
+
   return {
-    title: "Historical Record Review Needed",
-    badge: item.old_value || "Certificate request",
-    message: item.notes,
+    start() {
+      if (intervalId !== null) return;
+      playCriticalAlert();
+      intervalId = window.setInterval(() => {
+        playCriticalAlert();
+      }, 900);
+    },
+    stop() {
+      if (intervalId === null) return;
+      window.clearInterval(intervalId);
+      intervalId = null;
+    },
   };
+};
+
+const getHighestDelayStage = (elapsedMs) => {
+  if (elapsedMs >= STAGE_DEFINITIONS.breach.thresholdMs) return "breach";
+  if (elapsedMs >= STAGE_DEFINITIONS.critical.thresholdMs) return "critical";
+  if (elapsedMs >= STAGE_DEFINITIONS.matters.thresholdMs) return "matters";
+  if (elapsedMs >= STAGE_DEFINITIONS.safe.thresholdMs) return "safe";
+  if (elapsedMs >= STAGE_DEFINITIONS.early.thresholdMs) return "early";
+  return null;
 };
 
 const CertifyNavbar = () => {
@@ -31,9 +117,32 @@ const CertifyNavbar = () => {
   const [helpOpen, setHelpOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [localNotifications, setLocalNotifications] = useState(() =>
+    getLocalNotifications(),
+  );
+  const [delayAlertModal, setDelayAlertModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "warning",
+    requests: [],
+    stage: "early",
+  });
+  const [delayNoticeSending, setDelayNoticeSending] = useState(false);
+  const [holdTriggering, setHoldTriggering] = useState(false);
+  const [delayAlertMuted, setDelayAlertMuted] = useState(false);
+  const [delayNoticeReason, setDelayNoticeReason] = useState("");
+  const [delayNoticeReasonError, setDelayNoticeReasonError] = useState("");
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
+  const latestNotificationIdRef = useRef(0);
+  const hasLoadedNotificationsRef = useRef(false);
+  const criticalAlertLoopRef = useRef(null);
   const navigate = useNavigate();
+
+  if (!criticalAlertLoopRef.current) {
+    criticalAlertLoopRef.current = createCriticalAlertLoop();
+  }
 
   // Real-time clock
   useEffect(() => {
@@ -105,6 +214,15 @@ const CertifyNavbar = () => {
         const items = all
           .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const newestId = Number(items[0]?.id || 0);
+        if (
+          hasLoadedNotificationsRef.current &&
+          newestId > latestNotificationIdRef.current
+        ) {
+          playSuccessNotification();
+        }
+        latestNotificationIdRef.current = newestId;
+        hasLoadedNotificationsRef.current = true;
         setNotifications(items);
       } catch (error) {
         if (!active) return;
@@ -121,40 +239,147 @@ const CertifyNavbar = () => {
     };
   }, [isCashier]);
 
-  const getDismissedNotificationIds = () => {
-    try {
-      const stored = window.localStorage.getItem(
-        DISMISSED_NOTIFICATION_STORAGE_KEY,
-      );
-      const parsed = stored ? JSON.parse(stored) : [];
-      return Array.isArray(parsed)
-        ? parsed.map((value) => Number(value)).filter(Number.isFinite)
-        : [];
-    } catch {
-      return [];
+  useEffect(() => {
+    const shouldPlayLoop =
+      delayAlertModal.open &&
+      delayAlertModal.requests.length > 0 &&
+      !delayAlertMuted;
+
+    if (shouldPlayLoop) {
+      criticalAlertLoopRef.current?.start();
+    } else {
+      criticalAlertLoopRef.current?.stop();
     }
+
+    return () => {
+      criticalAlertLoopRef.current?.stop();
+    };
+  }, [delayAlertModal.open, delayAlertModal.requests.length, delayAlertMuted]);
+
+  const closeDelayAlertModal = () => {
+    criticalAlertLoopRef.current?.stop();
+    setDelayNoticeReason("");
+    setDelayNoticeReasonError("");
+    setDelayAlertModal((current) => ({ ...current, open: false }));
   };
 
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState(() =>
     getDismissedNotificationIds(),
   );
 
-  const visibleNotifications = notifications.filter(
+  useEffect(() => {
+    if (isCashier) return undefined;
+
+    let active = true;
+
+    const evaluateDelayAlerts = async () => {
+      try {
+        const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+        if (!active) return;
+
+        const all = Array.isArray(data) ? data : data.items || [];
+        const releasing = all.filter(
+          (item) =>
+            item.status === "FOR_RELEASING" &&
+            (item.for_releasing_started_at || item.updated_at),
+        );
+        const stageMap = getDelayAlertStageMap();
+        const stageBuckets = {
+          breach: [],
+          critical: [],
+          matters: [],
+          safe: [],
+          early: [],
+        };
+
+        releasing.forEach((item) => {
+          const elapsedMs = getForReleasingElapsedMs(item);
+          const stage = getHighestDelayStage(elapsedMs);
+          if (!stage) return;
+          const previousStage = stageMap[item.id];
+          const previousSeverity = previousStage
+            ? STAGE_DEFINITIONS[previousStage]?.severity || 0
+            : 0;
+          const currentSeverity = STAGE_DEFINITIONS[stage].severity;
+          if (currentSeverity <= previousSeverity) return;
+          stageBuckets[stage].push(item);
+        });
+
+        const nextStage =
+          ["breach", "critical", "matters", "safe", "early"].find(
+            (stage) => stageBuckets[stage].length > 0,
+          ) || null;
+
+        if (!nextStage) return;
+
+        const triggeredRequests = stageBuckets[nextStage];
+        const nextStageMap = { ...stageMap };
+        triggeredRequests.forEach((item) => {
+          nextStageMap[item.id] = nextStage;
+        });
+        saveDelayAlertStageMap(nextStageMap);
+
+        const highestElapsedMs = Math.max(
+          ...triggeredRequests.map((item) => getForReleasingElapsedMs(item)),
+        );
+        const message = buildDelayAlertMessage({
+          count: triggeredRequests.length,
+          elapsedMs: highestElapsedMs,
+          remainingMs: STAGE_DEFINITIONS.breach.thresholdMs - highestElapsedMs,
+          isBreach: nextStage === "breach",
+        });
+
+        const nextLocalNotifications = appendLocalNotification(
+          createDelayAlertNotification({
+            stage: nextStage,
+            requests: triggeredRequests,
+          }),
+        );
+        setLocalNotifications(nextLocalNotifications);
+        playCriticalAlert();
+        setDelayAlertModal({
+          open: true,
+          title: STAGE_DEFINITIONS[nextStage].title,
+          message,
+          tone: nextStage === "breach" ? "error" : "warning",
+          requests: triggeredRequests,
+          stage: nextStage,
+        });
+      } catch (error) {
+        // Ignore alert polling failures so the navbar remains usable.
+      }
+    };
+
+    evaluateDelayAlerts();
+    const intervalId = window.setInterval(evaluateDelayAlerts, 60000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isCashier]);
+
+  const mergedNotifications = mergeNotifications(notifications, localNotifications);
+
+  const visibleNotifications = mergedNotifications.filter(
     (item) => !dismissedNotificationIds.includes(item.id),
   );
 
-  const lastSeenNotificationId = Number.parseInt(
+  const lastSeenNotificationAt = Number.parseInt(
     window.localStorage.getItem(NOTIFICATION_STORAGE_KEY) || "0",
     10,
   );
   const unreadCount = visibleNotifications.filter(
-    (item) => item.id > lastSeenNotificationId,
+    (item) => new Date(item.created_at).getTime() > lastSeenNotificationAt,
   ).length;
 
   const markNotificationsSeen = () => {
-    const highestId = visibleNotifications[0]?.id;
-    if (!highestId) return;
-    window.localStorage.setItem(NOTIFICATION_STORAGE_KEY, String(highestId));
+    const newestCreatedAt = visibleNotifications[0]?.created_at;
+    if (!newestCreatedAt) return;
+    window.localStorage.setItem(
+      NOTIFICATION_STORAGE_KEY,
+      String(new Date(newestCreatedAt).getTime()),
+    );
   };
 
   const dismissNotification = (notificationId) => {
@@ -167,6 +392,99 @@ const CertifyNavbar = () => {
       );
       return next;
     });
+  };
+
+  const handleSendDelayNotice = async () => {
+    criticalAlertLoopRef.current?.stop();
+
+    if (delayAlertModal.requests.length === 0) {
+      closeDelayAlertModal();
+      return;
+    }
+
+    const trimmedReason = delayNoticeReason.trim();
+    if (!trimmedReason) {
+      setDelayNoticeReasonError("Please enter the reason for delay.");
+      return;
+    }
+
+    setDelayNoticeSending(true);
+    setDelayNoticeReasonError("");
+    try {
+      await Promise.all(
+        delayAlertModal.requests.map((item) =>
+          requestService.sendDelayNotice(item.id, trimmedReason),
+        ),
+      );
+      setDelayAlertModal({
+        open: true,
+        title: "Delay Notice Sent",
+        message:
+          delayAlertModal.requests.length === 1
+            ? "The notice is sent successfully."
+            : "The delay notices were sent successfully.",
+        tone: "success",
+        requests: [],
+        stage: delayAlertModal.stage,
+      });
+      const refreshed = await requestService.getAllAuditLogs({
+        page: 1,
+        limit: 50,
+      });
+      const all = Array.isArray(refreshed) ? refreshed : refreshed.items || [];
+      setNotifications(
+        all
+          .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+      );
+    } catch (error) {
+      setDelayAlertModal((current) => ({
+        ...current,
+        title: "Send Failed",
+        message: "Failed to send the delay notice. Please try again.",
+        tone: "error",
+      }));
+    } finally {
+      setDelayNoticeSending(false);
+    }
+  };
+
+  const handleTriggerNoPickupHold = async () => {
+    criticalAlertLoopRef.current?.stop();
+
+    if (delayAlertModal.requests.length === 0) {
+      closeDelayAlertModal();
+      return;
+    }
+
+    setHoldTriggering(true);
+    try {
+      await Promise.all(
+        delayAlertModal.requests.map((item) =>
+          requestService.holdRequestorNoPickup(item.id),
+        ),
+      );
+      setDelayAlertModal({
+        open: true,
+        title: "Hold Started",
+        message:
+          delayAlertModal.requests.length === 1
+            ? "The release timer is now paused because the requestor did not pick up."
+            : "The release timers are now paused because the requestors did not pick up.",
+        tone: "success",
+        requests: [],
+        stage: delayAlertModal.stage,
+      });
+    } catch (error) {
+      setDelayAlertModal((current) => ({
+        ...current,
+        title: "Hold Failed",
+        message: "Failed to start the hold. Please try again.",
+        tone: "error",
+      }));
+    } finally {
+      setHoldTriggering(false);
+    }
   };
 
   const supportContacts = [
@@ -234,13 +552,13 @@ const CertifyNavbar = () => {
 
               {notificationsOpen && (
                 <div className="absolute right-0 top-12 z-50 w-96 overflow-hidden rounded-xl border border-[var(--school-border)] bg-white text-gray-700 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-[var(--school-border)] bg-[var(--school-ivory)] px-4 py-3">
+                  <div className="flex items-center justify-between border-b border-[var(--school-border)] px-4 py-3">
                     <div>
-                      <div className="text-sm font-semibold text-[var(--school-ink)]">
+                      <div className="text-sm  font-semibold text-[var(--school-ink)]">
                         Notifications
                       </div>
                       <div className="text-[11px] text-gray-500">
-                        Review-required requests from ODR
+                        System and release alerts
                       </div>
                     </div>
                     <button
@@ -263,10 +581,6 @@ const CertifyNavbar = () => {
                     ) : (
                       visibleNotifications.slice(0, 8).map((item) => {
                         const meta = getNotificationMeta(item);
-                        const badgeClass =
-                          item.action === "REQUEST_PRINTED"
-                            ? "text-emerald-700"
-                            : "text-amber-700";
 
                         return (
                           <button
@@ -283,7 +597,7 @@ const CertifyNavbar = () => {
                               {meta.title}
                             </div>
                             <div
-                              className={`mt-1 text-[11px] font-medium uppercase tracking-wide ${badgeClass}`}
+                              className={`mt-1 text-[11px] font-medium uppercase tracking-wide ${meta.badgeTone}`}
                             >
                               {meta.badge}
                             </div>
@@ -436,6 +750,71 @@ const CertifyNavbar = () => {
           </div>
         </div>
       )}
+
+      <FeedbackDialog
+        open={delayAlertModal.open}
+        title={delayAlertModal.title}
+        message={delayAlertModal.message}
+        tone={delayAlertModal.tone}
+        loading={delayNoticeSending || holdTriggering}
+        confirmLabel={
+          delayAlertModal.requests.length > 0 ? "Send Delay Notice" : "Got it"
+        }
+        cancelLabel={delayAlertModal.requests.length > 0 ? "Cancel" : ""}
+        showSoundToggle={delayAlertModal.requests.length > 0}
+        soundMuted={delayAlertMuted}
+        onConfirm={
+          delayAlertModal.requests.length > 0 ? handleSendDelayNotice : undefined
+        }
+        onClose={closeDelayAlertModal}
+        onSoundToggle={() => {
+          setDelayAlertMuted((current) => !current);
+        }}
+      >
+        {delayAlertModal.requests.length > 0 && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleTriggerNoPickupHold}
+              disabled={holdTriggering || delayNoticeSending}
+              className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 transition hover:bg-[var(--school-ivory)] disabled:opacity-50"
+            >
+              {holdTriggering
+                ? "Starting hold..."
+                : delayAlertModal.requests.length === 1
+                  ? "Requestor Did Not Pick Up"
+                  : "Requestors Did Not Pick Up"}
+            </button>
+            <div className="text-[11px] text-gray-500">
+              This pauses the release timer without sending a delay notice.
+            </div>
+            <label className="block text-xs font-medium text-gray-600">
+              Reason for delay
+            </label>
+            <textarea
+              value={delayNoticeReason}
+              onChange={(event) => {
+                setDelayNoticeReason(event.target.value);
+                if (delayNoticeReasonError) {
+                  setDelayNoticeReasonError("");
+                }
+              }}
+              rows={4}
+              placeholder="Type the reason that will be sent to the requester."
+              className="w-full rounded-md border border-[var(--school-border)] px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[var(--school-crimson)]"
+            />
+            {delayNoticeReasonError && (
+              <div className="text-[11px] text-[var(--school-crimson)]">
+                {delayNoticeReasonError}
+              </div>
+            )}
+            <div className="text-[11px] text-gray-500">
+              Sending a delay notice with a custom reason will also pause the
+              release timer.
+            </div>
+          </div>
+        )}
+      </FeedbackDialog>
     </div>
   );
 };

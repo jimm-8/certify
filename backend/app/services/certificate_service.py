@@ -204,6 +204,8 @@ def generate_certificate_pdf(
     academic_summary = dependencies.get("academic_summary") or {}
     nstp_record = dependencies.get("nstp_record")
     student_id_record = dependencies.get("student_id_record")
+    if student is not None and not getattr(request, "sr_code", None):
+        request.sr_code = student.sr_code
 
     use_wet_signature = get_bool_setting(db, "use_wet_signature", False)
     try:

@@ -14,9 +14,9 @@ const reportService = {
     });
     return response.data;
   },
-  downloadRequests: async () => {
-    const response = await api.get("/reports/export", {
-      params: { report_type: "requests" },
+  downloadRequests: async (params = {}) => {
+    const response = await api.get("/reports/requests-export", {
+      params,
       responseType: "blob",
     });
     return response.data;

@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.api.v1.auth import require_permissions
 from app.repositories import CertificateRequestRepository
+from app.services.release_hold_service import get_effective_processing_seconds
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -230,13 +231,9 @@ def get_dashboard_summary(
     for r in requests:
         if r.status != RequestStatus.RELEASED:
             continue
-        if not r.created_at:
-            continue
-        end_time = r.updated_at or r.created_at
-        try:
-            released_durations.append((end_time - r.created_at).total_seconds())
-        except Exception:
-            pass
+        effective_seconds = get_effective_processing_seconds(r)
+        if effective_seconds is not None:
+            released_durations.append(effective_seconds)
 
     avg_processing_seconds = (
         sum(released_durations) / len(released_durations)

@@ -37,6 +37,7 @@ from app.schemas.certificate_request import (
     GradeSelectionUpdate,
     RequestsValidationRequest,
     RequestsValidationResponse,
+    DelayNoticeRequest,
     RejectionEmailRequest,
 )
 
@@ -59,6 +60,10 @@ from app.engine.certificate_dependency_engine import CertificateDependencyEngine
 from app.api.v1.auth import require_permissions
 from fastapi.responses import FileResponse
 from app.services.audit_service import log_action, log_print_completed
+from app.services.release_hold_service import (
+    hold_request_for_no_pickup,
+    send_manual_delay_notice,
+)
 
 # Create router
 router = APIRouter(prefix="/requests", tags=["Certificate Requests"])
@@ -69,6 +74,38 @@ OUT_OF_RANGE_YEAR_NOTIFICATION = (
     "the supported data range. Records prior to 2018 are not available in "
     "the system. Please review the request via the ODR portal."
 )
+
+
+def extract_graduation_year(record) -> int | None:
+    if record is None:
+        return None
+
+    for value in (
+        getattr(record, "date_of_graduation", None),
+        getattr(record, "proposed_graduation_date", None),
+        getattr(record, "academic_year", None),
+    ):
+        if not value:
+            continue
+
+        match = re.search(r"\b(19|20)\d{2}\b", str(value))
+        if match:
+            return int(match.group(0))
+
+    return None
+
+
+def is_graduation_related_certificate(certificate_type_name: Optional[str]) -> bool:
+    normalized = str(certificate_type_name or "").strip().lower()
+    if not normalized:
+        return False
+
+    keywords = (
+        "graduation",
+        "honor graduate",
+        "completed academic requirement",
+    )
+    return any(keyword in normalized for keyword in keywords)
 
 # Helper function to generate reference number
 def generate_reference_number(db: Session) -> str:
@@ -139,6 +176,12 @@ async def create_certificate_request(
         if request_data.requested_document_name
         else None
     )
+    resolved_sr_code = (request_data.sr_code or "").strip() or None
+    student_repo = StudentRepository(db)
+    if not resolved_sr_code and request_data.student_name:
+        matched_student = student_repo.get_by_student_name(request_data.student_name)
+        if matched_student is not None:
+            resolved_sr_code = matched_student.sr_code
 
     graduation_year = None
     if request_data.year_graduated:
@@ -175,11 +218,11 @@ async def create_certificate_request(
     # Compute request cost on the server (pricing rules)
     computed_cost = None
     if cert_type is not None:
-        if request_data.sr_code and (
+        if resolved_sr_code and (
             is_course_description(cert_type.name) or is_certification_of_grades(cert_type.name)
         ):
             student_courses = CertificateDependencyEngine._get_student_courses(
-                db, request_data.sr_code
+                db, resolved_sr_code
             )
             computed_cost = compute_request_cost(cert_type.name, row_count=len(student_courses))
         else:
@@ -209,7 +252,7 @@ async def create_certificate_request(
         purpose_category=purpose_metadata["purpose_category"],
         purpose_extracted_notes=purpose_metadata["purpose_extracted_notes"],
         needs_instruction_review=purpose_metadata["needs_instruction_review"],
-        sr_code=request_data.sr_code,
+        sr_code=resolved_sr_code,
         student_name=request_data.student_name,
         program=request_data.program,
         major=request_data.major,
@@ -256,10 +299,9 @@ async def create_certificate_request(
             campus_email = None
             campus_telNo = None
 
-            student_repo = StudentRepository(db)
             program_repo = ProgramRepository(db)
-            if request_data.sr_code:
-                student = student_repo.get_by_sr_code(request_data.sr_code)
+            if resolved_sr_code:
+                student = student_repo.get_by_sr_code(resolved_sr_code)
             else:
                 student = None
 
@@ -376,6 +418,7 @@ def validate_requests(
     student_repo = StudentRepository(db)
     program_repo = ProgramRepository(db)
     graduation_repo = GraduationRecordRepository(db)
+    current_year = datetime.now().year
 
     def normalize_name(name: Optional[str]) -> str:
         if not name:
@@ -448,13 +491,18 @@ def validate_requests(
         add_invalid_flags(request, flags)
 
         sr_code = (request.sr_code or "").strip()
-        if not sr_code:
-            flags.append("Missing SR code.")
-
         student = student_repo.get_by_sr_code(sr_code) if sr_code else None
+        if student is None and request.student_name:
+            student = student_repo.get_by_student_name(request.student_name)
+
         if not student:
             flags.append("Student record not found in registry.")
         else:
+            if sr_code and student.sr_code and sr_code != student.sr_code:
+                flags.append(
+                    f"SR code does not match registry record ({student.sr_code})."
+                )
+
             req_name = normalize_name(request.student_name)
             student_name = normalize_name(
                 f"{student.first_name or ''} {student.middle_name or ''} {student.last_name or ''}"
@@ -486,6 +534,13 @@ def validate_requests(
         if campus is None:
             flags.append("Campus could not be verified.")
 
+        grad_record = None
+        lookup_sr_code = sr_code or (student.sr_code if student is not None else "")
+        if lookup_sr_code:
+            grad_record = graduation_repo.get_by_sr_code(lookup_sr_code)
+        if grad_record is None and request.student_name:
+            grad_record = graduation_repo.get_by_student_name(request.student_name)
+
         # Graduation year validation
         if request.year_graduated:
             year_text = str(request.year_graduated).strip()
@@ -493,18 +548,32 @@ def validate_requests(
                 flags.append("Year graduated must be a 4-digit year.")
             else:
                 year_value = int(year_text)
+                if year_value > current_year:
+                    flags.append(
+                        f"Graduation year cannot be later than {current_year}."
+                    )
                 if year_value <= 2022:
                     flags.append("Graduation year is 2022 or below.")
-
-                grad_record = None
-                if sr_code:
-                    grad_record = graduation_repo.get_by_sr_code(sr_code)
-                if grad_record is None and request.student_name:
-                    grad_record = graduation_repo.get_by_student_name(
-                        request.student_name
-                    )
                 if grad_record is not None and not grad_record.is_graduated:
                     flags.append("Student is not yet graduated.")
+                else:
+                    recorded_year = extract_graduation_year(grad_record)
+                    if (
+                        grad_record is not None
+                        and recorded_year is not None
+                        and year_value != recorded_year
+                    ):
+                        flags.append(
+                            f"Graduation year does not match registry record ({recorded_year})."
+                        )
+
+        if (
+            is_graduation_related_certificate(request.certificate_type_name)
+            and grad_record is None
+        ):
+            flags.append(
+                "No graduation record found for this student for the requested certificate."
+            )
 
         results.append(
             {
@@ -812,6 +881,89 @@ async def send_ready_email(
     db.commit()
     db.refresh(request)
     return {"message": "Ready-for-release email sent."}
+
+
+@router.post("/{request_id}/send-delay-notice")
+async def send_delay_notice(
+    request_id: int,
+    payload: DelayNoticeRequest,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    if request.status != RequestStatus.FOR_RELEASING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is not in for releasing.",
+        )
+
+    reason = (payload.reason or "").strip()
+    if not reason:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Delay notice reason is required.",
+        )
+
+    was_sent = await send_manual_delay_notice(
+        db,
+        request,
+        reason=reason,
+        user_name="Registrar",
+    )
+    if not was_sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send delay notice.",
+        )
+
+    return {"message": "Delay notice sent."}
+
+
+@router.post("/{request_id}/hold-requestor-no-pickup")
+def hold_for_requestor_no_pickup(
+    request_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    if request.status != RequestStatus.FOR_RELEASING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is not in for releasing.",
+        )
+    if request.release_hold_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request is already on hold.",
+        )
+
+    was_held = hold_request_for_no_pickup(
+        db,
+        request,
+        user_name="Registrar",
+    )
+    if not was_held:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start hold.",
+        )
+
+    return {"message": "Release timer paused because requestor did not pick up."}
 
 # Endpoint: Mark auto print completed
 @router.post("/{request_id}/mark-printed")
