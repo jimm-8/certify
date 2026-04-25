@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.payment import Payment
 from app.models.certificate_request import (
-    AutoPrintStatus,
     CertificateRequest,
     RequestStatus,
 )
@@ -92,18 +91,6 @@ def create_payment(
             "System",
             "Auto-marked for releasing after payment",
         )
-        db.refresh(request)
-        if (
-            request.status == RequestStatus.FOR_RELEASING
-            and request.auto_print_requested_at is None
-        ):
-            request.auto_print_requested_at = datetime.now()
-            request.auto_print_status = AutoPrintStatus.REQUESTED.value
-            request.auto_print_job_id = None
-            request.auto_print_error = None
-            request.auto_print_confirmed_at = None
-            db.commit()
-            db.refresh(request)
     return payment
 
 
@@ -218,18 +205,6 @@ def create_payment_by_reference(
             "System",
             "Auto-marked for releasing after payment",
         )
-        db.refresh(request)
-        if (
-            request.status == RequestStatus.FOR_RELEASING
-            and request.auto_print_requested_at is None
-        ):
-            request.auto_print_requested_at = datetime.now()
-            request.auto_print_status = AutoPrintStatus.REQUESTED.value
-            request.auto_print_job_id = None
-            request.auto_print_error = None
-            request.auto_print_confirmed_at = None
-            db.commit()
-            db.refresh(request)
     return payment
 
 

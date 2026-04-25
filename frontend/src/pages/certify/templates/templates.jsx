@@ -130,7 +130,8 @@ const Templates = () => {
   const initializedRef = useRef(false);
 
   const apiBase =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+    import.meta.env.VITE_API_BASE_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
   const assetsBase = `${apiBase}/templates/assets/`;
 
   const showFeedback = (title, message, tone = "default") => {

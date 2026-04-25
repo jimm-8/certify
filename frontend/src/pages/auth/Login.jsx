@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
-import bg from "../../assets/bsu-bg.png";
+import bg from "../../assets/bsu-bg.webp";
 import bsuLogo from "../../assets/bsu_logo.png";
 import certifyLogo from "../../assets/certify-logo.png";
 import bsuNEU from "../../assets/system-logo.png";
@@ -33,7 +33,12 @@ export default function Login() {
 
       {/* glass card */}
       <div className="relative z-10 bg-white rounded-xl shadow-2xl border-[#B22222] border-1 p-4 w-full max-w-sm">
-        <img src={bsuNEU} alt="BatStateU Logo" className="mb-0" />
+        <img
+          loading="lazy"
+          src={bsuNEU}
+          alt="BatStateU Logo"
+          className="mb-0"
+        />
 
         {error && (
           <div className="mb-4 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">

@@ -87,6 +87,15 @@ def generate_or_number(db: Session, now: Optional[datetime] = None) -> str:
     return f"{prefix}{next_num:04d}"
 
 
+def clear_auto_print_tracking(request: CertificateRequest) -> None:
+    """Remove any active auto-print queue metadata from a request."""
+    request.auto_print_requested_at = None
+    request.auto_print_status = None
+    request.auto_print_job_id = None
+    request.auto_print_error = None
+    request.auto_print_confirmed_at = None
+
+
 async def update_request_status(
     db: Session,
     request_id: int,
@@ -254,10 +263,14 @@ async def update_request_status(
                 )
             )
         except Exception as e:
+            db.commit()
+            db.refresh(request)
             print(f"Auto-generation failed: {e}")
             # Don't fail the status update if PDF generation fails
 
     if new_status == RequestStatus.RELEASED:
+        clear_auto_print_tracking(request)
+
         # Persist released requests into certificates table (idempotent)
         existing_cert = certificate_repo.get_by_request_id(request.id)
         if not existing_cert:
@@ -335,6 +348,9 @@ async def update_request_status(
                     print(
                         f"Auto signatory delay notice sent to {request.requestor_email}"
                     )
+            elif skip_ready_email:
+                db.commit()
+                db.refresh(request)
             elif not skip_ready_email:
                 campus_telNo = None
                 student = None
@@ -361,6 +377,8 @@ async def update_request_status(
                     campus_telNo=campus_telNo,
                 )
                 request.ready_email_sent_at = datetime.now()
+                db.commit()
+                db.refresh(request)
                 print(f"✅ Release email sent to {request.requestor_email}")
         except Exception as e:
             print(f"⚠️ Release email failed: {e}")

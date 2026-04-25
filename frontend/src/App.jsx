@@ -5,29 +5,44 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
+
 import MainLayout from "./layout/main";
-import OdrRequests from "./pages/odr/odr_requests";
-import CertifyIndex from "./pages/certify/index";
-import CertifyDashboard from "./pages/certify/dashboard";
-import TemplatePreview from "./pages/templates/TemplatePreview";
-import Login from "./pages/auth/Login";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import UserManagement from "./pages/admin/UserManagement";
-import RoleManagement from "./pages/admin/RoleManagement";
 import RequireAuth from "./components/common/RequireAuth";
 import RequireRole from "./components/common/RequireRole";
-import AllRequests from "./pages/certify/all_requests";
-import Settings from "./pages/certify/settings/settings";
-import Faqs from "./pages/certify/settings/faqs";
-import AuditLogs from "./pages/certify/settings/auditlogs";
-import SignatureManager from "./pages/certify/settings/signatures";
-import Templates from "./pages/certify/templates/templates";
-import Reports from "./pages/certify/reports";
-import Activity from "./pages/certify/activity";
-import Notifications from "./pages/certify/notifications";
-import Payment from "./pages/certify/cashier/payment";
 import { getTokenPayload } from "./utils/auth";
+
+/* ❗ Lazy load ONLY heavy pages */
+const OdrRequests = lazy(() => import("./pages/odr/odr_requests"));
+const CertifyIndex = lazy(() => import("./pages/certify/index"));
+const TemplatePreview = lazy(() => import("./pages/templates/TemplatePreview"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
+const AllRequests = lazy(() => import("./pages/certify/all_requests"));
+const Settings = lazy(() => import("./pages/certify/settings/settings"));
+const Faqs = lazy(() => import("./pages/certify/settings/faqs"));
+const AuditLogs = lazy(() => import("./pages/certify/settings/auditlogs"));
+const SignatureManager = lazy(
+  () => import("./pages/certify/settings/signatures"),
+);
+const Templates = lazy(() => import("./pages/certify/templates/templates"));
+const Reports = lazy(() => import("./pages/certify/reports"));
+const Activity = lazy(() => import("./pages/certify/activity"));
+const Notifications = lazy(() => import("./pages/certify/notifications"));
+const Payment = lazy(() => import("./pages/certify/cashier/payment"));
+
+/* ❗ DO NOT lazy load small critical pages */
+import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+
+/* Fallback */
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
+      Loading...
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -47,6 +62,7 @@ function AppContent() {
     }
   }, [location.pathname]);
 
+  /* CASHIER ROUTES */
   if (role === "cashier") {
     return (
       <Routes>
@@ -62,18 +78,12 @@ function AppContent() {
               ]}
             >
               <MainLayout>
-                <Payment />
+                <Suspense fallback={<RouteFallback />}>
+                  <Payment />
+                </Suspense>
               </MainLayout>
             </RequireRole>
           }
-        />
-        <Route
-          path="/login"
-          element={<Navigate to="/payment-tagging" replace />}
-        />
-        <Route
-          path="/forgot-password"
-          element={<Navigate to="/payment-tagging" replace />}
         />
         <Route path="*" element={<Navigate to="/payment-tagging" replace />} />
       </Routes>
@@ -82,20 +92,29 @@ function AppContent() {
 
   return (
     <Routes>
-      {/* With Navbar */}
+      {/* Dashboard / Home */}
       <Route
         path="/"
         element={
           <RequireAuth>
             <MainLayout>
-              <CertifyIndex />
+              <Suspense fallback={<RouteFallback />}>
+                <CertifyIndex />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
-      {/* Without Navbar */}
-      <Route path="/odr" element={<OdrRequests />} />
+      {/* ODR (public) */}
+      <Route
+        path="/odr"
+        element={
+          <Suspense fallback={<RouteFallback />}>
+            <OdrRequests />
+          </Suspense>
+        }
+      />
 
       {/* Dashboard */}
       <Route
@@ -103,142 +122,183 @@ function AppContent() {
         element={
           <RequireAuth>
             <MainLayout>
-              <CertifyIndex />
+              <Suspense fallback={<RouteFallback />}>
+                <CertifyIndex />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Template Preview */}
       <Route
         path="/templates/preview"
         element={
           <RequireAuth>
             <MainLayout>
-              <TemplatePreview />
+              <Suspense fallback={<RouteFallback />}>
+                <TemplatePreview />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Auth (NO lazy load) */}
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
+      {/* Admin */}
       <Route
         path="/admin/users"
         element={
           <RequireAuth>
             <MainLayout>
-              <UserManagement />
+              <Suspense fallback={<RouteFallback />}>
+                <UserManagement />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
+
       <Route
         path="/admin/roles"
         element={
           <RequireRole role="superadmin">
             <MainLayout>
-              <RoleManagement />
+              <Suspense fallback={<RouteFallback />}>
+                <RoleManagement />
+              </Suspense>
             </MainLayout>
           </RequireRole>
         }
       />
 
+      {/* Requests */}
       <Route
         path="/dashboard/requests"
         element={
           <RequireAuth>
             <MainLayout>
-              <AllRequests />
+              <Suspense fallback={<RouteFallback />}>
+                <AllRequests />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Settings */}
       <Route
         path="/settings"
         element={
           <RequireAuth>
             <MainLayout>
-              <Settings />
+              <Suspense fallback={<RouteFallback />}>
+                <Settings />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
+
       <Route
         path="/settings/audit-logs"
         element={
           <RequireAuth>
             <MainLayout>
-              <AuditLogs />
+              <Suspense fallback={<RouteFallback />}>
+                <AuditLogs />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
+
       <Route
         path="/settings/signatures"
         element={
           <RequireRole roles={["superadmin", "registrar_head"]}>
             <MainLayout>
-              <SignatureManager />
+              <Suspense fallback={<RouteFallback />}>
+                <SignatureManager />
+              </Suspense>
             </MainLayout>
           </RequireRole>
         }
       />
+
       <Route
         path="/faqs"
         element={
           <RequireAuth>
             <MainLayout>
-              <Faqs />
+              <Suspense fallback={<RouteFallback />}>
+                <Faqs />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
+
+      {/* Templates */}
       <Route
         path="/templates"
         element={
           <RequireAuth>
             <MainLayout>
-              <Templates />
+              <Suspense fallback={<RouteFallback />}>
+                <Templates />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Reports */}
       <Route
         path="/reports"
         element={
           <RequireAuth>
             <MainLayout>
-              <Reports />
+              <Suspense fallback={<RouteFallback />}>
+                <Reports />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Activity */}
       <Route
         path="/activity"
         element={
           <RequireAuth>
             <MainLayout>
-              <Activity />
+              <Suspense fallback={<RouteFallback />}>
+                <Activity />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Notifications */}
       <Route
         path="/notifications"
         element={
           <RequireAuth>
             <MainLayout>
-              <Notifications />
+              <Suspense fallback={<RouteFallback />}>
+                <Notifications />
+              </Suspense>
             </MainLayout>
           </RequireAuth>
         }
       />
 
+      {/* Payment */}
       <Route
         path="/payment-tagging"
         element={
@@ -251,7 +311,9 @@ function AppContent() {
             ]}
           >
             <MainLayout>
-              <Payment />
+              <Suspense fallback={<RouteFallback />}>
+                <Payment />
+              </Suspense>
             </MainLayout>
           </RequireRole>
         }

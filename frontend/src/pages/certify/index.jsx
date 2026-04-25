@@ -43,10 +43,15 @@ const CertifyPage = () => {
 
     const fetchTabCounts = async () => {
       try {
-        const data = await requestService.getAllRequests({ page: 1, limit: 200 });
+        const data = await requestService.getAllRequests({
+          page: 1,
+          limit: 50, // 🔥 reduce load
+        });
+
         const requests = filterCertifyEligibleRequests(
           Array.isArray(data) ? data : data.items || [],
         );
+
         const nextCounts = {
           received: requests.filter((r) => r.status === "APPROVED").length,
           processing: requests.filter((r) => r.status === "PROCESSING").length,
@@ -55,6 +60,7 @@ const CertifyPage = () => {
         };
 
         const snapshot = JSON.stringify(nextCounts);
+
         if (mounted && snapshot !== lastSnapshotRef.current) {
           lastSnapshotRef.current = snapshot;
           setTabCounts(nextCounts);
@@ -64,12 +70,18 @@ const CertifyPage = () => {
       }
     };
 
-    fetchTabCounts();
-    const intervalId = window.setInterval(fetchTabCounts, 5000);
+    // 🔥 DEFER INITIAL LOAD
+    const timeoutId = setTimeout(() => {
+      fetchTabCounts();
+
+      const intervalId = setInterval(fetchTabCounts, 5000);
+
+      return () => clearInterval(intervalId);
+    }, 1000); // delay execution
 
     return () => {
       mounted = false;
-      window.clearInterval(intervalId);
+      clearTimeout(timeoutId);
     };
   }, []);
 

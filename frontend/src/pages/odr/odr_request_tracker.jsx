@@ -10,7 +10,7 @@ import {
   FaTimesCircle,
   FaSpinner,
 } from "react-icons/fa";
-import CARDBG from "../../assets/card_bg.png";
+import CARDBG from "../../assets/card_bg.webp";
 import requestService from "../../services/requestService";
 
 const OdrRequestTracker = () => {
@@ -57,7 +57,7 @@ const OdrRequestTracker = () => {
 
         if (status === 404) {
           setError(
-            "Request not found. Please check your reference number and PIN."
+            "Request not found. Please check your reference number and PIN.",
           );
         } else if (status === 400) {
           setError(detail || "Invalid request. Please try again.");
@@ -67,7 +67,7 @@ const OdrRequestTracker = () => {
       } else if (err.request) {
         // Network error
         setError(
-          "Cannot connect to server. Please check your internet connection."
+          "Cannot connect to server. Please check your internet connection.",
         );
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -280,7 +280,7 @@ const OdrRequestTracker = () => {
             <div className="mb-4">
               <span
                 className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(
-                  requestData.status
+                  requestData.status,
                 )}`}
               >
                 {requestData.status.replace(/_/g, " ")}

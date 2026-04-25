@@ -715,6 +715,7 @@ const RequestModal = ({
             value={
               request.signature_data ? (
                 <img
+                  loading="lazy"
                   src={
                     request.signature_data.startsWith("data:image")
                       ? request.signature_data
