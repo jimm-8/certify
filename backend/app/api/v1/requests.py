@@ -330,9 +330,9 @@ async def create_certificate_request(
                 campus_email=campus_email,
                 campus_telNo=campus_telNo,
             )
-            print(f"✅ Email sent to {request_data.requestor_email}")
+            print(f"Email sent to {request_data.requestor_email}")
     except Exception as e:
-        print(f"⚠️ Email failed but request was created: {e}")
+        print(f"Email failed but request was created: {e}")
         # Don't fail the request if email fails
     
     return CertificateRequestResponse(

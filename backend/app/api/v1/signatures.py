@@ -89,7 +89,7 @@ async def upload_signature(
         print(f"✅ Signature processing complete.")
         
     except Exception as e:
-        print(f"⚠️ Image processing failed, using original: {e}")
+        print(f"Warning: Image processing failed, using original: {e}")
         # If processing fails, continue with original image
         # Don't raise error - system still works without optional processing
 

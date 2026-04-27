@@ -177,7 +177,7 @@ async def update_request_status(
                     campus_telNo=campus_telNo,
                 )
             except Exception as e:
-                print(f"⚠️ Payment-missing email failed: {e}")
+                print(f"Payment-missing email failed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot change status. No payment found for this reference number.",
@@ -322,9 +322,9 @@ async def update_request_status(
                 campus_email=campus_email,
                 campus_telNo=campus_telNo,
             )
-            print(f"✅ Confirmation email sent to {request.requestor_email}")
+            print(f"Confirmation email sent to {request.requestor_email}")
         except Exception as e:
-            print(f"⚠️ Confirmation email failed: {e}")
+            print(f"Confirmation email failed: {e}")
 
     if new_status == RequestStatus.FOR_RELEASING:
         try:
@@ -379,9 +379,9 @@ async def update_request_status(
                 request.ready_email_sent_at = datetime.now()
                 db.commit()
                 db.refresh(request)
-                print(f"✅ Release email sent to {request.requestor_email}")
+                print(f"Release email sent to {request.requestor_email}")
         except Exception as e:
-            print(f"⚠️ Release email failed: {e}")
+            print(f"Release email failed: {e}")
 
     return request
 
