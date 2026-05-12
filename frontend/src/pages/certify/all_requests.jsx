@@ -4,6 +4,8 @@ import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import reportService from "../../services/reportService";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import formatApiError from "../../utils/formatApiError";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 import {
   BsCalendar3,
   BsChevronDown,
@@ -67,6 +69,21 @@ export default function AllRequests() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef(null);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const filterOptions = [
     { label: "Today", days: 0 },
@@ -186,7 +203,11 @@ export default function AllRequests() {
       downloadBlob(blob, `all_requests_${timestamp}.xlsx`);
     } catch (error) {
       console.error("Failed to download requests export:", error);
-      window.alert("Failed to download requests export.");
+      showFeedback(
+        "Download Failed",
+        formatApiError(error, "Failed to download requests export."),
+        "error",
+      );
     }
   };
 
@@ -371,6 +392,15 @@ export default function AllRequests() {
           }
         />
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }

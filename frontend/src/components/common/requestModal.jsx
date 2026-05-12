@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import requestService from "../../services/requestService";
+import FeedbackDialog from "./feedbackDialog";
+import formatApiError from "../../utils/formatApiError";
 import {
   BsX,
   BsCheckCircle,
@@ -87,6 +89,21 @@ const RequestModal = ({
   const [savingGradesSelection, setSavingGradesSelection] = useState(false);
   const [yearFilter, setYearFilter] = useState("");
   const [semesterFilter, setSemesterFilter] = useState("");
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const isCourseDescription = (request?.certificate_type_name || "")
     .toLowerCase()
@@ -171,12 +188,9 @@ const RequestModal = ({
         setCourseOptions(items);
       })
       .catch((err) => {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to load courses.";
+        const detail = formatApiError(err, "Failed to load courses.");
         setCourseError(detail);
+        showFeedback("Load Failed", detail, "error");
       })
       .finally(() => setCourseLoading(false));
   }, [request, isCourseDescription, isCertificationOfGrades]);
@@ -331,6 +345,30 @@ const RequestModal = ({
       if (lower.includes("student is not yet graduated")) {
         pushUnique(
           "Student is not yet graduated. Request cannot be processed until graduation is confirmed.",
+        );
+        return;
+      }
+      if (lower.includes("no latin honor record found")) {
+        pushUnique(
+          "No latin honor record was found. Request cannot be processed as an honor graduate certificate until the latin honor is verified.",
+        );
+        return;
+      }
+      if (lower.includes("requested gwa certificate")) {
+        pushUnique(
+          "GWA certificates are only for graduated students. Please confirm the student's graduation record first.",
+        );
+        return;
+      }
+      if (lower.includes("requested cav certificate")) {
+        pushUnique(
+          "CAV certificates are only for graduated students. Please confirm the student's graduation record first.",
+        );
+        return;
+      }
+      if (lower.includes("requested honor graduate certificate")) {
+        pushUnique(
+          "Honor graduate certificates require a matching graduation record and latin honor record. Please verify both first.",
         );
         return;
       }
@@ -526,12 +564,12 @@ const RequestModal = ({
           "Course description selection saved",
         );
       } catch (err) {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to save course selection.";
+        const detail = formatApiError(
+          err,
+          "Failed to save course selection.",
+        );
         setCourseError(detail);
+        showFeedback("Save Failed", detail, "error");
         setSavingSelection(false);
         return;
       }
@@ -548,12 +586,9 @@ const RequestModal = ({
           "Certification of grades selection saved",
         );
       } catch (err) {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to save grade selection.";
+        const detail = formatApiError(err, "Failed to save grade selection.");
         setCourseError(detail);
+        showFeedback("Save Failed", detail, "error");
         setSavingGradesSelection(false);
         return;
       }
@@ -782,10 +817,6 @@ const RequestModal = ({
                 </div>
               )}
 
-              {!courseLoading && courseError && (
-                <div className="mt-2 text-xs text-red-600">{courseError}</div>
-              )}
-
               {!courseLoading && !courseError && (
                 <>
                   <div className="mt-2 flex items-center gap-2">
@@ -924,10 +955,6 @@ const RequestModal = ({
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-transparent" />
                   Loading grades...
                 </div>
-              )}
-
-              {!courseLoading && courseError && (
-                <div className="mt-2 text-xs text-red-600">{courseError}</div>
               )}
 
               {!courseLoading && !courseError && (
@@ -1171,7 +1198,7 @@ const RequestModal = ({
                     }
                     className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#ee1133] border border-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    {loading || savingSelection ? (
+                    {savingSelection || savingGradesSelection ? (
                       <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
                       <BsCheckCircle size={13} />
@@ -1190,6 +1217,15 @@ const RequestModal = ({
         @keyframes fadeIn  { from { opacity: 0 }               to { opacity: 1 } }
         @keyframes slideUp { from { transform: translateY(12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
       `}</style>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };

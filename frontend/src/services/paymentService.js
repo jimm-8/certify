@@ -46,6 +46,8 @@ const paymentService = {
     try {
       const response = await api.post("/payments/by-references", {
         reference_numbers: referenceNumbers,
+      }, {
+        timeout: 20000,
       });
       return response.data;
     } catch (error) {
@@ -62,6 +64,7 @@ const paymentService = {
       const skip = (page - 1) * limit;
       const response = await api.get("/payments/unpaid-requests", {
         params: { skip, limit },
+        timeout: 20000,
       });
       return response.data;
     } catch (error) {

@@ -119,7 +119,7 @@ export default function PaymentTagging() {
       if (!opts.silent) setLoading(true);
       const [allData, unpaidData] = await Promise.all([
         requestService.getAllRequests({ page: 1, limit: 200 }),
-        paymentService.getUnpaidRequests({ page: 1, limit: 500 }),
+        paymentService.getUnpaidRequests({ page: 1, limit: 200 }),
       ]);
       const allRequests = filterCertifyEligibleRequests(
         Array.isArray(allData) ? allData : allData.items || [],
@@ -150,7 +150,7 @@ export default function PaymentTagging() {
   }, []);
 
   useEffect(() => {
-    const id = setInterval(() => fetchRequests({ silent: true }), 3000);
+    const id = setInterval(() => fetchRequests({ silent: true }), 15000);
     return () => clearInterval(id);
   }, []);
 

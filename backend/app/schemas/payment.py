@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, constr
 
 
-FiveDigitOrNumber = constr(pattern=r"^\d{5}$")
+SevenDigitOrNumber = constr(pattern=r"^\d{7}$")
 
 
 class PaymentCreate(BaseModel):
@@ -12,8 +12,8 @@ class PaymentCreate(BaseModel):
     amount: Optional[float] = Field(None, description="Payment amount")
     payment_method: Optional[str] = Field(None, description="Payment method")
     payment_status: Optional[str] = Field("PAID", description="Payment status")
-    or_number: Optional[FiveDigitOrNumber] = Field(
-        None, description="Official receipt number as a 5-digit number"
+    or_number: Optional[SevenDigitOrNumber] = Field(
+        None, description="Official receipt number as a 7-digit number"
     )
 
 
@@ -23,8 +23,8 @@ class PaymentByReferenceCreate(BaseModel):
     purpose: Optional[str] = Field(None, description="Purpose of payment")
     payment_method: Optional[str] = Field(None, description="Payment method")
     payment_status: Optional[str] = Field("PAID", description="Payment status")
-    or_number: Optional[FiveDigitOrNumber] = Field(
-        None, description="Official receipt number as a 5-digit number"
+    or_number: Optional[SevenDigitOrNumber] = Field(
+        None, description="Official receipt number as a 7-digit number"
     )
 
 

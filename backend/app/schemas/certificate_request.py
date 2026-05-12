@@ -203,6 +203,11 @@ class CertificateRequestDetail(BaseModel):
     course_description_selection: Optional[str] = None
     grade_selection: Optional[str] = None
     ready_email_sent_at: Optional[datetime] = None
+    processing_hold_active: bool = False
+    processing_hold_started_at: Optional[datetime] = None
+    processing_hold_total_seconds: Optional[int] = 0
+    processing_hold_reason: Optional[str] = None
+    processing_hold_source: Optional[str] = None
     for_releasing_started_at: Optional[datetime] = None
     release_hold_active: bool = False
     release_hold_started_at: Optional[datetime] = None
@@ -215,6 +220,7 @@ class CertificateRequestDetail(BaseModel):
     auto_print_job_id: Optional[str] = None
     auto_print_error: Optional[str] = None
     auto_print_confirmed_at: Optional[datetime] = None
+    owner_username: Optional[str] = None
 
     verification_token: Optional[str] = None
     pdf_path: Optional[str] = None

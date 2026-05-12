@@ -30,6 +30,7 @@ from app.services.release_hold_service import (
     get_effective_processing_seconds,
     get_request_age_days,
 )
+from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -900,13 +901,20 @@ def export_reports(
     status_filter: Optional[str] = None,
     date_days: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("reports.read")),
+    ctx: dict = Depends(require_permissions("reports.read")),
 ):
     request_repo = CertificateRequestRepository(db)
     requests = request_repo.certificates_only().all()
     now = datetime.now()
 
     if report_type == "requests":
+        log_action(
+            db,
+            action="REPORT_EXPORTED",
+            entity_type="report",
+            user_name=ctx["user"].username,
+            notes="Exported requests report.",
+        )
         filtered_requests = requests
 
         if search:
@@ -960,6 +968,13 @@ def export_reports(
         )
 
     summary = _build_reports_payload(requests, period, now)
+    log_action(
+        db,
+        action="REPORT_EXPORTED",
+        entity_type="report",
+        user_name=ctx["user"].username,
+        notes=f"Exported summary report for period {period or 'all'}.",
+    )
     workbook = _build_summary_workbook(summary)
     output = BytesIO()
     workbook.save(output)
@@ -978,7 +993,7 @@ def export_request_rows(
     status_filter: Optional[str] = None,
     date_days: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.read")),
+    ctx: dict = Depends(require_permissions("requests.read")),
 ):
     request_repo = CertificateRequestRepository(db)
     requests = request_repo.certificates_only().all()
@@ -989,6 +1004,13 @@ def export_request_rows(
         search=search,
         status_filter=status_filter,
         date_days=date_days,
+    )
+    log_action(
+        db,
+        action="REPORT_EXPORTED",
+        entity_type="report",
+        user_name=ctx["user"].username,
+        notes="Exported filtered request rows report.",
     )
 
     workbook = _build_requests_workbook(filtered_requests)

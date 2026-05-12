@@ -6,6 +6,8 @@ import { LuRefreshCw } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { getTokenPayload } from "../../utils/auth";
 import settingsService from "../../services/settingsService";
+import FeedbackDialog from "./feedbackDialog";
+import formatApiError from "../../utils/formatApiError";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} /> },
@@ -89,11 +91,26 @@ const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [signingAvailable, setSigningAvailable] = useState(true);
   const [signingLoading, setSigningLoading] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
   const buttonRef = useRef(null);
   const portalRef = useRef(null);
   const role = getTokenPayload()?.role;
   const navigate = useNavigate();
   const canManageSigning = role !== "cashier";
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const baseItems = baseMenuItems.map((item) => {
     if (item.label === "Reports") {
@@ -258,7 +275,14 @@ const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
                       "Failed to update signing availability:",
                       error,
                     );
-                    window.alert("Failed to update signing availability.");
+                    showFeedback(
+                      "Update Failed",
+                      formatApiError(
+                        error,
+                        "Failed to update signing availability.",
+                      ),
+                      "error",
+                    );
                   } finally {
                     setSigningLoading(false);
                   }
@@ -299,6 +323,15 @@ const CertifyHeader = ({ activeTab = 0, onTabChange, tabCounts = {} }) => {
           sections={sections}
         />
       )}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };

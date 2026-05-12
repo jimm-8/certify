@@ -185,6 +185,15 @@ const Checking = () => {
     });
   };
 
+  const getErrorDetail = (
+    error,
+    fallback = "Failed to process the certificate request.",
+  ) =>
+    error.response?.data?.detail ||
+    error.response?.data?.message ||
+    error.message ||
+    fallback;
+
   useEffect(
     () => setCurrentPage(1),
     [search, selectedFilter, selectedType, selectedProgram, showOnlyFlagged],
@@ -344,6 +353,11 @@ const Checking = () => {
       fetchRequests();
     } catch (error) {
       console.error("Failed to advance request:", error);
+      showFeedback(
+        "Processing Failed",
+        getErrorDetail(error),
+        "error",
+      );
     } finally {
       setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: false }));
     }
@@ -360,8 +374,9 @@ const Checking = () => {
   };
 
   const handleModalApprove = async (req) => {
+    if (!req) return;
     const nextStatus = "PROCESSING";
-    setSelectedRequest(null);
+    setModalLoading(true);
     showFeedback(
       "Submitting Request",
       "Please wait while the certificate request is being submitted.",
@@ -378,6 +393,7 @@ const Checking = () => {
         "Request moved to processing",
       );
       await fetchRequests({ silent: true });
+      setSelectedRequest(null);
       showFeedback(
         "Request Submitted",
         "Certificate request submitted successfully.",
@@ -387,9 +403,11 @@ const Checking = () => {
       console.error("Failed to advance request:", error);
       showFeedback(
         "Submission Failed",
-        "Failed to submit the certificate request.",
+        getErrorDetail(error, "Failed to submit the certificate request."),
         "error",
       );
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -415,12 +433,21 @@ const Checking = () => {
     if (!req) return;
     setModalLoading(true);
     setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
+    showFeedback(
+      "Sending Rejection Email",
+      "Please wait while the rejection is recorded and the email is sent.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Sending...",
+      },
+    );
     try {
       const finalNotes = notes || "Request rejected during validation.";
       await requestService.updateStatus(req.id, "REJECTED", finalNotes);
       await requestService.sendRejectionEmail(req.id, finalNotes);
-      setSelectedRequest({ ...req, status: "REJECTED" });
-      fetchRequests();
+      setSelectedRequest(null);
+      await fetchRequests({ silent: true });
       showFeedback("Email Sent", "Rejection email sent.", "success");
     } catch (error) {
       console.error("Failed to reject request:", error);

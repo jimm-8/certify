@@ -64,7 +64,7 @@ describe("Payment tagging page", () => {
     await user.click(await screen.findByRole("button", { name: /record payment/i }));
     const orInput = screen.getByPlaceholderText(/or number/i);
     const orModal = orInput.closest("div.w-full.max-w-sm");
-    await user.type(orInput, "OR-123");
+    await user.type(orInput, "1900054");
     await user.click(
       within(orModal).getByRole("button", { name: /^record payment$/i }),
     );
@@ -72,7 +72,7 @@ describe("Payment tagging page", () => {
       /please review the or number before submitting this payment/i,
     );
     const confirmModal = confirmDialog.closest("div[class*='max-w-sm']");
-    expect(screen.getByText("OR-123")).toBeInTheDocument();
+    expect(screen.getByText("1900054")).toBeInTheDocument();
     await user.click(
       within(confirmModal).getByRole("button", { name: /submit payment/i }),
     );
@@ -88,7 +88,7 @@ describe("Payment tagging page", () => {
       expect(paymentService.createPayment).toHaveBeenCalledWith(
         expect.objectContaining({
           request_id: 10,
-          or_number: "OR-123",
+          or_number: "1900054",
         }),
       );
     });

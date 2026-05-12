@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.v1.auth import require_permissions
+from app.api.v1.auth import require_any_permissions, require_permissions
 from app.database import get_db
 from app.models.certificate_request import CertificateRequest, RequestStatus
 from app.services.release_hold_service import (
@@ -29,7 +29,9 @@ class SigningAvailabilityUpdate(BaseModel):
 @router.get("/wet-signature")
 def get_wet_signature_setting(
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("signatures.manage")),
+    _: dict = Depends(
+        require_any_permissions("signatures.manage", "requests.update_status")
+    ),
 ):
     return {"use_wet_signature": get_bool_setting(db, "use_wet_signature", False)}
 

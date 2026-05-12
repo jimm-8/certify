@@ -22,68 +22,79 @@ import {
   STAGE_DEFINITIONS,
 } from "../../utils/notificationCenter";
 
-const playSuccessNotification = () => {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
+let sharedAudioContext = null;
 
-  const ctx = new AudioCtx();
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
+const getSharedAudioContext = async () => {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    sharedAudioContext = new AudioCtx();
   }
 
-  [
-    [523, 0],
-    [659, 0.12],
-    [784, 0.24],
-  ].forEach(([freq, delay]) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime + delay + 0.5,
-    );
-    osc.start(ctx.currentTime + delay);
-    osc.stop(ctx.currentTime + delay + 0.5);
-  });
+  if (sharedAudioContext.state === "suspended") {
+    try {
+      await sharedAudioContext.resume();
+    } catch {
+      return null;
+    }
+  }
 
-  window.setTimeout(() => {
-    ctx.close().catch(() => {});
-  }, 900);
+  return sharedAudioContext;
+};
+
+const primeAudioPlayback = async () => {
+  const ctx = await getSharedAudioContext();
+  if (!ctx) return false;
+  return ctx.state === "running";
+};
+
+const playSuccessNotification = () => {
+  getSharedAudioContext().then((ctx) => {
+    if (!ctx) return;
+
+    [
+      [523, 0],
+      [659, 0.12],
+      [784, 0.24],
+    ].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + delay + 0.5,
+      );
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.5);
+    });
+  });
 };
 
 const playCriticalAlert = () => {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
+  getSharedAudioContext().then((ctx) => {
+    if (!ctx) return;
 
-  const ctx = new AudioCtx();
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
-  }
-
-  [0, 0.12, 0.24, 0.36].forEach((delay) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "square";
-    osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
-    gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime + delay + 0.09,
-    );
-    osc.start(ctx.currentTime + delay);
-    osc.stop(ctx.currentTime + delay + 0.1);
+    [0, 0.12, 0.24, 0.36].forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "square";
+      osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + delay + 0.09,
+      );
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.1);
+    });
   });
-
-  window.setTimeout(() => {
-    ctx.close().catch(() => {});
-  }, 800);
 };
 
 const createCriticalAlertLoop = () => {
@@ -210,6 +221,20 @@ const CertifyNavbar = () => {
     .join("");
 
   useEffect(() => {
+    const unlockAudio = () => {
+      primeAudioPlayback().catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio);
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isCashier || suppressForReleaseNotices) return undefined;
 
     let active = true;
@@ -223,7 +248,11 @@ const CertifyNavbar = () => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
         const items = all
-          .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
+          .filter(
+            (log) =>
+              NOTIFICATION_ACTIONS.includes(log.action) &&
+              (!log.owner_username || log.owner_username === username),
+          )
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         const newestId = Number(items[0]?.id || 0);
         if (
@@ -241,14 +270,27 @@ const CertifyNavbar = () => {
       }
     };
 
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        loadNotifications();
+      }
+    };
+
     loadNotifications();
+    window.addEventListener("focus", loadNotifications);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
     const intervalId = window.setInterval(loadNotifications, 5000);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", loadNotifications);
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityRefresh,
+      );
       window.clearInterval(intervalId);
     };
-  }, [isCashier, suppressForReleaseNotices]);
+  }, [isCashier, suppressForReleaseNotices, username]);
 
   useEffect(() => {
     const shouldPlayLoop =
@@ -289,6 +331,7 @@ const CertifyNavbar = () => {
         const data = await requestService.getAllRequests({
           page: 1,
           limit: 100,
+          ownerUsername: username,
         });
         if (!active) return;
 
@@ -363,14 +406,27 @@ const CertifyNavbar = () => {
       }
     };
 
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        evaluateDelayAlerts();
+      }
+    };
+
     evaluateDelayAlerts();
+    window.addEventListener("focus", evaluateDelayAlerts);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
     const intervalId = window.setInterval(evaluateDelayAlerts, 60000);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", evaluateDelayAlerts);
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityRefresh,
+      );
       window.clearInterval(intervalId);
     };
-  }, [isCashier, suppressForReleaseNotices]);
+  }, [isCashier, suppressForReleaseNotices, username]);
 
   useEffect(() => {
     if (!suppressForReleaseNotices) return;

@@ -19,6 +19,7 @@ import {
 } from "../../utils/printQueue";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import FeedbackDialog from "../../components/common/feedbackDialog";
+import { getTokenPayload } from "../../utils/auth";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -163,6 +164,7 @@ const Ready = () => {
     cancelLabel: "",
   });
   const [paymentMap, setPaymentMap] = useState({});
+  const ownerUsername = getTokenPayload()?.sub || "";
 
   const showFeedback = (title, message, tone = "default", extra = {}) => {
     setFeedbackModal({
@@ -206,7 +208,11 @@ const Ready = () => {
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+        ownerUsername,
+      });
       const all = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );
@@ -238,12 +244,12 @@ const Ready = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     console.log("READY requests:", requests);

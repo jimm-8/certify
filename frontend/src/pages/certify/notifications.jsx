@@ -8,12 +8,14 @@ import {
   mergeNotifications,
   NOTIFICATION_ACTIONS,
 } from "../../utils/notificationCenter";
+import { getTokenPayload } from "../../utils/auth";
 
 const Notifications = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [localLogs, setLocalLogs] = useState(() => getLocalNotifications());
   const [loading, setLoading] = useState(true);
+  const username = getTokenPayload()?.sub || "";
 
   useEffect(() => {
     let active = true;
@@ -23,8 +25,10 @@ const Notifications = () => {
       .then((data) => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
-        const filtered = all.filter((log) =>
-          NOTIFICATION_ACTIONS.includes(log.action),
+        const filtered = all.filter(
+          (log) =>
+            NOTIFICATION_ACTIONS.includes(log.action) &&
+            (!log.owner_username || log.owner_username === username),
         );
         setLogs(filtered);
         setLocalLogs(getLocalNotifications());
@@ -42,7 +46,7 @@ const Notifications = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [username]);
 
   const notifications = useMemo(
     () => mergeNotifications(logs, localLogs),

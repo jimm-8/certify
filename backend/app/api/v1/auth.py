@@ -121,6 +121,19 @@ def require_permissions(*required: str):
     return _guard
 
 
+def require_any_permissions(*allowed: str):
+    def _guard(ctx=Depends(get_current_user)):
+        perms = ctx["permissions"]
+        if not any(p in perms for p in allowed):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Missing permission",
+            )
+        return ctx
+
+    return _guard
+
+
 def require_superadmin(ctx=Depends(require_roles("superadmin"))):
     return ctx
 

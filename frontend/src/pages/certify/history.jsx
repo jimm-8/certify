@@ -104,7 +104,10 @@ const History = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+      });
       const all = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );

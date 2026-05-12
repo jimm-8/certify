@@ -13,6 +13,10 @@ class AuditLogResponse(BaseModel):
     user_name: Optional[str]
     notes: Optional[str]
     created_at: datetime
+    request_reference: Optional[str] = None
+    request_label: Optional[str] = None
+    student_name: Optional[str] = None
+    owner_username: Optional[str] = None
     
     class Config:
         from_attributes = True

@@ -5,6 +5,8 @@ import userService from "../../services/userService";
 import rbacService from "../../services/rbacService";
 import campusService from "../../services/campusService";
 import { BsChevronLeft } from "react-icons/bs";
+import FeedbackDialog from "../../components/common/feedbackDialog";
+import formatApiError from "../../utils/formatApiError";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -20,12 +22,26 @@ export default function UserManagement() {
     campus_id: null,
     permissions: [],
   });
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [permissions, setPermissions] = useState([]);
   const [permissionFilter, setPermissionFilter] = useState("");
   const [campuses, setCampuses] = useState([]);
   const [campusLoading, setCampusLoading] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const fetch = async () => {
     try {
@@ -70,6 +86,13 @@ export default function UserManagement() {
     if (!form.department.trim())
       nextErrors.department = "Department is required.";
     setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      showFeedback(
+        "Incomplete Form",
+        Object.values(nextErrors).join(" "),
+        "error",
+      );
+    }
     return Object.keys(nextErrors).length === 0;
   };
   const handlePermissionToggle = (permName) => {
@@ -101,7 +124,6 @@ export default function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setError("");
       if (!validateForm()) return;
       await userService.createUser(form);
       setForm({
@@ -118,7 +140,11 @@ export default function UserManagement() {
       setFieldErrors({});
       fetch();
     } catch (err) {
-      setError(err.response?.data || "Failed to create user");
+      showFeedback(
+        "Create User Failed",
+        formatApiError(err, "Failed to create user."),
+        "error",
+      );
     }
   };
 
@@ -148,12 +174,6 @@ export default function UserManagement() {
         </p>
       </div>
 
-      {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-          {String(error)}
-        </div>
-      )}
-
       <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
         <div className="text-sm font-semibold text-gray-800 mb-2">
           Create User
@@ -177,11 +197,6 @@ export default function UserManagement() {
                 placeholder="Enter username"
                 required
               />
-              {fieldErrors.username && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.username}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -196,11 +211,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="Enter full name"
               />
-              {fieldErrors.full_name && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.full_name}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -216,11 +226,6 @@ export default function UserManagement() {
                 placeholder="name@university.edu"
                 required
               />
-              {fieldErrors.email && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.email}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -237,11 +242,6 @@ export default function UserManagement() {
                 placeholder="Create a password"
                 required
               />
-              {fieldErrors.password && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.password}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -258,11 +258,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="e.g. 09xx-xxx-xxxx"
               />
-              {fieldErrors.contact_number && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.contact_number}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -277,11 +272,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="Registrar Office"
               />
-              {fieldErrors.department && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.department}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">Role</label>
@@ -419,6 +409,15 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }

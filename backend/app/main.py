@@ -43,11 +43,30 @@ app.add_middleware(
 )
 
 
+AUDIT_LOG_EXCLUDED_PREFIXES = (
+    "/api/v1/requests/",
+    "/api/v1/payments/",
+    "/api/v1/reports/",
+    "/api/v1/templates/",
+)
+
+
+def _should_log_generic_api_action(request: Request) -> bool:
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return False
+
+    path = request.url.path
+    if path == "/api/v1/requests/":
+        return False
+
+    return not path.startswith(AUDIT_LOG_EXCLUDED_PREFIXES)
+
+
 @app.middleware("http")
 async def audit_logging_middleware(request: Request, call_next):
     response = await call_next(request)
 
-    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+    if _should_log_generic_api_action(request):
         auth_header = request.headers.get("Authorization")
         log_api_request(request.method, request.url.path, response.status_code, auth_header)
 

@@ -169,12 +169,26 @@ export const getRequestHoldSecondsMs = (request, nowMs = Date.now()) => {
   return Math.max(0, (totalSeconds + activeSeconds) * 1000);
 };
 
+export const getProcessingHoldSecondsMs = (request, nowMs = Date.now()) => {
+  const totalSeconds = Number(request?.processing_hold_total_seconds || 0);
+  let activeSeconds = 0;
+
+  if (request?.processing_hold_active && request?.processing_hold_started_at) {
+    const startedAt = new Date(request.processing_hold_started_at).getTime();
+    if (Number.isFinite(startedAt)) {
+      activeSeconds = Math.max(0, Math.floor((nowMs - startedAt) / 1000));
+    }
+  }
+
+  return Math.max(0, (totalSeconds + activeSeconds) * 1000);
+};
+
 export const getForReleasingStartedAtMs = (request) => {
   const candidateValues = [
+    request?.created_at,
     request?.for_releasing_started_at,
     request?.auto_print_requested_at,
     request?.ready_email_sent_at,
-    request?.created_at,
     request?.updated_at,
   ];
 
@@ -192,7 +206,12 @@ export const getForReleasingElapsedMs = (request, nowMs = Date.now()) => {
   if (!Number.isFinite(startedAt)) return 0;
 
   const rawElapsed = Math.max(0, nowMs - startedAt);
-  return Math.max(0, rawElapsed - getRequestHoldSecondsMs(request, nowMs));
+  return Math.max(
+    0,
+    rawElapsed -
+      getProcessingHoldSecondsMs(request, nowMs) -
+      getRequestHoldSecondsMs(request, nowMs),
+  );
 };
 
 export const buildDelayAlertMessage = ({

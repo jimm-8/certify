@@ -21,6 +21,11 @@ from app.repositories import (
     StudentRepository,
 )
 from app.services.purpose_service import certificate_purpose_text
+from app.services.release_hold_service import (
+    DEFAULT_PAYMENT_AWAITING_REASON,
+    PAYMENT_AWAITING_HOLD_SOURCE,
+    start_processing_hold,
+)
 from app.services.settings_service import get_bool_setting
 
 
@@ -608,11 +613,25 @@ def generate_certificate_pdf(
                 detail=f"Failed to generate certificate: {str(exc)}",
             ) from fallback_exc
 
+    generation_completed_at = datetime.now()
     request.pdf_path = pdf_path
-    request.pdf_generated_at = generation_started_at
+    request.pdf_generated_at = generation_completed_at
     request.pdf_generation_time_ms = max(
         1, int(round((perf_counter() - generation_started_timer) * 1000))
     )
+
+    payment = payment_repo.get_by_reference(request.reference_number)
+    payment_is_recorded = bool(
+        payment and str(payment.payment_status or "").upper() == "PAID"
+    )
+    hold_started = False
+    if request.status == RequestStatus.PROCESSING and not payment_is_recorded:
+        hold_started = start_processing_hold(
+            request,
+            DEFAULT_PAYMENT_AWAITING_REASON,
+            PAYMENT_AWAITING_HOLD_SOURCE,
+            now=generation_completed_at,
+        )
 
     audit_log = AuditLog(
         action="CERTIFICATE_GENERATED",
@@ -624,6 +643,22 @@ def generate_certificate_pdf(
         notes="Certificate PDF generated from mapped template successfully",
     )
     audit_repo.add(audit_log)
+    if hold_started:
+        audit_repo.add(
+            AuditLog(
+                action="DATA_UPDATED",
+                entity_type="certificate_request",
+                entity_id=request_id,
+                field_name="processing_hold",
+                old_value="running",
+                new_value="paused",
+                user_name=user_name,
+                notes=(
+                    f"Processing timer paused for {request.reference_number} "
+                    "after PDF generation while awaiting payment."
+                ),
+            )
+        )
     db.commit()
     db.refresh(request)
 

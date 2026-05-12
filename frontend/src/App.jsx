@@ -73,7 +73,6 @@ function AppContent() {
               roles={[
                 "superadmin",
                 "registrar_head",
-                "registrar_staff",
                 "cashier",
               ]}
             >
@@ -152,13 +151,13 @@ function AppContent() {
       <Route
         path="/admin/users"
         element={
-          <RequireAuth>
+          <RequireRole roles={["superadmin", "registrar_head"]}>
             <MainLayout>
               <Suspense fallback={<RouteFallback />}>
                 <UserManagement />
               </Suspense>
             </MainLayout>
-          </RequireAuth>
+          </RequireRole>
         }
       />
 
@@ -206,13 +205,13 @@ function AppContent() {
       <Route
         path="/settings/audit-logs"
         element={
-          <RequireAuth>
+          <RequireRole roles={["superadmin", "registrar_head"]}>
             <MainLayout>
               <Suspense fallback={<RouteFallback />}>
                 <AuditLogs />
               </Suspense>
             </MainLayout>
-          </RequireAuth>
+          </RequireRole>
         }
       />
 
@@ -306,7 +305,6 @@ function AppContent() {
             roles={[
               "superadmin",
               "registrar_head",
-              "registrar_staff",
               "cashier",
             ]}
           >

@@ -8,6 +8,7 @@ import Ready from "./ready";
 import History from "./history";
 import requestService from "../../services/requestService";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { getTokenPayload } from "../../utils/auth";
 
 const tabs = [
   { key: "dashboard", component: <Dashboard /> },
@@ -26,6 +27,7 @@ const CertifyPage = () => {
     history: 0,
   });
   const lastSnapshotRef = useRef("");
+  const ownerUsername = getTokenPayload()?.sub || "";
   const activeTabKey = searchParams.get("tab") || "dashboard";
   const activeTabIndex = Math.max(
     0,
@@ -40,22 +42,35 @@ const CertifyPage = () => {
 
   useEffect(() => {
     let mounted = true;
+    let intervalId;
 
     const fetchTabCounts = async () => {
       try {
-        const data = await requestService.getAllRequests({
-          page: 1,
-          limit: 50, // 🔥 reduce load
-        });
+        const [data, ownedData] = await Promise.all([
+          requestService.getAllRequests({
+            page: 1,
+            limit: 100,
+          }),
+          requestService.getAllRequests({
+            page: 1,
+            limit: 100,
+            ownerUsername,
+          }),
+        ]);
 
         const requests = filterCertifyEligibleRequests(
           Array.isArray(data) ? data : data.items || [],
         );
+        const ownedRequests = filterCertifyEligibleRequests(
+          Array.isArray(ownedData) ? ownedData : ownedData.items || [],
+        );
 
         const nextCounts = {
           received: requests.filter((r) => r.status === "APPROVED").length,
-          processing: requests.filter((r) => r.status === "PROCESSING").length,
-          ready: requests.filter((r) => r.status === "FOR_RELEASING").length,
+          processing: ownedRequests.filter((r) => r.status === "PROCESSING")
+            .length,
+          ready: ownedRequests.filter((r) => r.status === "FOR_RELEASING")
+            .length,
           history: requests.filter((r) => r.status === "RELEASED").length,
         };
 
@@ -70,20 +85,17 @@ const CertifyPage = () => {
       }
     };
 
-    // 🔥 DEFER INITIAL LOAD
     const timeoutId = setTimeout(() => {
       fetchTabCounts();
-
-      const intervalId = setInterval(fetchTabCounts, 5000);
-
-      return () => clearInterval(intervalId);
-    }, 1000); // delay execution
+      intervalId = setInterval(fetchTabCounts, 5000);
+    }, 1000);
 
     return () => {
       mounted = false;
       clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, []);
+  }, [ownerUsername]);
 
   return (
     <div>

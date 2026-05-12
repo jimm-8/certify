@@ -8,6 +8,12 @@ import {
   BsChevronLeft,
 } from "react-icons/bs";
 import requestService from "../../../services/requestService";
+import {
+  formatAuditLogAction,
+  formatAuditLogChange,
+  formatAuditLogField,
+  formatAuditLogNotes,
+} from "../../../utils/auditLogFormatter";
 
 const AuditLogs = () => {
   const navigate = useNavigate();
@@ -102,16 +108,34 @@ const AuditLogs = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch = Object.values(log).some((val) =>
-      String(val).toLowerCase().includes(search.toLowerCase()),
-    );
-    const dateFrom = getDateFrom(selectedFilter.days);
-    const matchesDate = dateFrom
-      ? new Date(log.created_at).toISOString().split("T")[0] >= dateFrom
-      : true;
-    return matchesSearch && matchesDate;
-  });
+  const filteredLogs = logs
+    .filter((log) => {
+      const searchableValues = [
+        log.user_name,
+        log.action,
+        log.field_name,
+        log.old_value,
+        log.new_value,
+        log.notes,
+        log.request_reference,
+        log.request_label,
+        log.student_name,
+        formatAuditLogAction(log),
+        formatAuditLogField(log),
+        formatAuditLogNotes(log),
+      ];
+      const matchesSearch = searchableValues.some((val) =>
+        String(val || "")
+          .toLowerCase()
+          .includes(search.toLowerCase()),
+      );
+      const dateFrom = getDateFrom(selectedFilter.days);
+      const matchesDate = dateFrom
+        ? new Date(log.created_at).toISOString().split("T")[0] >= dateFrom
+        : true;
+      return matchesSearch && matchesDate;
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const columns = [
     {
@@ -124,6 +148,7 @@ const AuditLogs = () => {
           {new Date(row.created_at).toLocaleString()}
         </span>
       ),
+      width: "160px",
     },
     {
       name: "User",
@@ -134,65 +159,48 @@ const AuditLogs = () => {
           {row.user_name || "System"}
         </span>
       ),
+      width: "170px",
     },
     {
       name: "Action",
-      selector: (row) => row.action,
+      selector: (row) => formatAuditLogAction(row),
       sortable: true,
+      grow: 2,
       cell: (row) => (
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
-          {row.action}
+        <span className="text-[11px] font-semibold text-gray-700">
+          {formatAuditLogAction(row)}
         </span>
       ),
-    },
-    {
-      name: "Entity",
-      selector: (row) => row.entity_type,
-      sortable: true,
-      cell: (row) => (
-        <div className="text-xs text-gray-600">
-          <span className="font-medium">{row.entity_type}</span>
-          {row.entity_id !== null && row.entity_id !== undefined && (
-            <span className="text-gray-400"> #{row.entity_id}</span>
-          )}
-        </div>
-      ),
+      width: "180px",
     },
     {
       name: "Field",
-      selector: (row) => row.field_name || "-",
+      selector: (row) => formatAuditLogField(row),
       sortable: true,
       cell: (row) => (
-        <span className="text-xs text-gray-600">{row.field_name || "-"}</span>
+        <span className="text-xs text-gray-600">
+          {formatAuditLogField(row)}
+        </span>
       ),
+      width: "120px",
     },
     {
-      name: "Old → New",
-      selector: (row) => `${row.old_value || ""} ${row.new_value || ""}`,
+      name: "Change",
+      selector: (row) => formatAuditLogChange(row),
       grow: 2,
       cell: (row) => (
-        <div className="text-xs text-gray-600">
-          {row.old_value ? (
-            <span className="text-gray-500">{row.old_value}</span>
-          ) : (
-            <span className="text-gray-400">-</span>
-          )}
-          <span className="mx-1 text-gray-400">→</span>
-          {row.new_value ? (
-            <span className="text-gray-700">{row.new_value}</span>
-          ) : (
-            <span className="text-gray-400">-</span>
-          )}
+        <div className="text-xs text-gray-600 break-words">
+          {formatAuditLogChange(row)}
         </div>
       ),
     },
     {
       name: "Notes",
-      selector: (row) => row.notes || "-",
+      selector: (row) => formatAuditLogNotes(row),
       grow: 2,
       cell: (row) => (
         <span className="text-xs text-gray-500 line-clamp-2">
-          {row.notes || "-"}
+          {formatAuditLogNotes(row)}
         </span>
       ),
     },
@@ -201,18 +209,16 @@ const AuditLogs = () => {
   return (
     <>
       <div className="bg-white rounded-md border border-gray-200 shadow-sm mt-3 mb-4 p-2 min-h-[calc(100vh-10rem)]">
-        {/* Toolbar */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <button
             onClick={() => navigate("/dashboard")}
             title="Back to Dashboard"
-            className="text-lg font-bold  text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+            className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors rounded"
           >
             <BsChevronLeft style={{ strokeWidth: "0.5" }} />
             <span>Audit Logs</span>
           </button>
           <div className="flex items-center gap-2">
-            {/* Date Filter */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}
@@ -247,7 +253,6 @@ const AuditLogs = () => {
               )}
             </div>
 
-            {/* Search */}
             <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
               <input
                 type="text"
@@ -263,7 +268,7 @@ const AuditLogs = () => {
             </div>
           </div>
         </div>
-        {/* Table */}
+
         <div className="border border-gray-200 rounded mt-2">
           <DataTable
             columns={columns}
@@ -275,6 +280,7 @@ const AuditLogs = () => {
             highlightOnHover
             responsive
             defaultSortFieldId="created_at"
+            defaultSortAsc={false}
             noDataComponent={
               <div className="py-10 text-xs text-gray-400">
                 No audit logs found.

@@ -102,6 +102,11 @@ class CertificateRequest(Base):
     pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
     pdf_generation_time_ms = Column(Integer, nullable=True)
     request_cost = Column(Numeric(10, 2), nullable=True)
+    processing_hold_active = Column(Boolean, nullable=False, default=False)
+    processing_hold_started_at = Column(DateTime(timezone=True), nullable=True)
+    processing_hold_total_seconds = Column(Integer, nullable=False, default=0)
+    processing_hold_reason = Column(Text, nullable=True)
+    processing_hold_source = Column(String(32), nullable=True)
     ready_email_sent_at = Column(DateTime(timezone=True), nullable=True)
     for_releasing_started_at = Column(DateTime(timezone=True), nullable=True)
     release_hold_active = Column(Boolean, nullable=False, default=False)
@@ -115,6 +120,7 @@ class CertificateRequest(Base):
     auto_print_job_id = Column(String(120), nullable=True, index=True)
     auto_print_error = Column(Text, nullable=True)
     auto_print_confirmed_at = Column(DateTime(timezone=True), nullable=True)
+    owner_username = Column(String(255), nullable=True, index=True)
 
     status = Column(
         Enum(RequestStatus), default=RequestStatus.SUBMITTED, nullable=False

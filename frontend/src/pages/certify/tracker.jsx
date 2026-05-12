@@ -4,6 +4,7 @@ import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { getTokenPayload } from "../../utils/auth";
 import {
   BsSearch,
   BsCalendar3,
@@ -174,6 +175,7 @@ const Tracker = () => {
   const lastSnapshotRef = useRef("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const ownerUsername = getTokenPayload()?.sub || "";
 
   useEffect(
     () => setCurrentPage(1),
@@ -205,7 +207,11 @@ const Tracker = () => {
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+        ownerUsername,
+      });
       const items = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );
@@ -226,12 +232,12 @@ const Tracker = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);

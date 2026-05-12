@@ -43,7 +43,12 @@ const requestService = {
     }
   },
   // get all requests
-  getAllRequests: async ({ page = 1, limit = 10, status = null } = {}) => {
+  getAllRequests: async ({
+    page = 1,
+    limit = 10,
+    status = null,
+    ownerUsername = null,
+  } = {}) => {
     try {
       const skip = (page - 1) * limit;
 
@@ -52,6 +57,7 @@ const requestService = {
           skip,
           limit,
           status_filter: status,
+          owner_username: ownerUsername,
         },
       });
 

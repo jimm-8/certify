@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import case
 from fastapi import HTTPException, status
 from typing import Optional
 import secrets
@@ -8,6 +9,7 @@ from app.services.email_service import EmailService
 from app.services.release_hold_service import (
     get_signing_available,
     send_signatory_unavailable_notice_and_hold,
+    stop_processing_hold,
 )
 from app.services.settings_service import get_bool_setting
 from app.services.fee_service import (
@@ -36,6 +38,15 @@ from app.repositories import (
     ProgramRepository,
     StudentRepository,
 )
+
+STATUS_AUDIT_ACTIONS = {
+    RequestStatus.APPROVED: "REQUEST_APPROVED",
+    RequestStatus.PROCESSING: "REQUEST_PROCESSED",
+    RequestStatus.FOR_RELEASING: "REQUEST_READY_FOR_RELEASE",
+    RequestStatus.RELEASED: "REQUEST_RELEASED",
+    RequestStatus.REJECTED: "REQUEST_REJECTED",
+    RequestStatus.PENDING: "REQUEST_MARKED_PENDING",
+}
 
 # Define valid status transitions
 VALID_TRANSITIONS = {
@@ -185,9 +196,58 @@ async def update_request_status(
 
     # Store old status for audit
     old_status = request.status
+    audit_user_name = user_name or request.owner_username or "System"
 
-    # Update status
-    request.status = new_status
+    if new_status == RequestStatus.PROCESSING:
+        claimed_owner = user_name if user_name and user_name != "System" else None
+        update_values = {
+            CertificateRequest.status: new_status,
+            CertificateRequest.updated_at: datetime.now(),
+        }
+        if claimed_owner:
+            update_values[CertificateRequest.owner_username] = case(
+                (
+                    CertificateRequest.owner_username.is_(None),
+                    claimed_owner,
+                ),
+                else_=CertificateRequest.owner_username,
+            )
+
+        claimed = (
+            request_repo.query()
+            .filter(
+                CertificateRequest.id == request_id,
+                CertificateRequest.status == RequestStatus.APPROVED,
+            )
+            .update(update_values, synchronize_session=False)
+        )
+
+        if claimed == 0:
+            db.rollback()
+            current = request_repo.get_by_id(request_id)
+            if not current:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Request not found",
+                )
+            if current.status == RequestStatus.PROCESSING:
+                owner_label = current.owner_username or "another user"
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Request was already processed by {owner_label}.",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Request is already {current.status.value} and can no longer "
+                    f"be moved to {new_status.value}."
+                ),
+            )
+
+        db.refresh(request)
+    else:
+        # Update status
+        request.status = new_status
 
     # Generate verification token when moving to APPROVED
     if new_status == RequestStatus.APPROVED and not request.verification_token:
@@ -195,13 +255,13 @@ async def update_request_status(
 
     # Create audit log
     audit_log = AuditLog(
-        action="STATUS_CHANGED",
+        action=STATUS_AUDIT_ACTIONS.get(new_status, "STATUS_CHANGED"),
         entity_type="certificate_request",
         entity_id=request_id,
         field_name="status",
         old_value=old_status.value,
         new_value=new_status.value,
-        user_name=user_name,
+        user_name=audit_user_name,
         notes=notes,
     )
     audit_repo.add(audit_log)
@@ -238,7 +298,7 @@ async def update_request_status(
                             field_name="request_cost",
                             old_value=str(old_cost) if old_cost is not None else None,
                             new_value=str(request.request_cost),
-                            user_name="System",
+                            user_name=audit_user_name,
                             notes=f"Updated request cost based on {page_count} PDF page(s).",
                         )
                     )
@@ -259,7 +319,7 @@ async def update_request_status(
                     entity_id=request_id,
                     field_name="notes",
                     new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
-                    user_name="System",
+                    user_name=audit_user_name,
                 )
             )
         except Exception as e:
@@ -328,6 +388,7 @@ async def update_request_status(
 
     if new_status == RequestStatus.FOR_RELEASING:
         try:
+            stop_processing_hold(request)
             request.for_releasing_started_at = datetime.now()
             request.auto_print_requested_at = datetime.now()
             request.auto_print_status = AutoPrintStatus.REQUESTED.value

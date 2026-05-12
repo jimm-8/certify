@@ -103,27 +103,27 @@ const OdrRequestTracker = () => {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 p-1">
+      <div className="grid grid-cols-1 gap-3 p-1 md:grid-cols-2 xl:grid-cols-3">
         {/* office hours */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3 h-[260px] bg-contain bg-bottom bg-no-repeat"
+          className="min-h-[220px] rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3 md:min-h-[240px] xl:h-[260px]"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaRegClock className="text-gray-500" />
             Office Hours
           </p>
           <hr />
-          <p className="text-lg mt-3 ml-5">Monday to Friday</p>
-          <p className="text-lg ml-5">8:00 AM to 5:00 PM</p>
+          <p className="ml-5 mt-3 text-base sm:text-lg">Monday to Friday</p>
+          <p className="ml-5 text-base sm:text-lg">8:00 AM to 5:00 PM</p>
         </div>
 
         {/* contact us */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3  bg-contain bg-bottom bg-no-repeat"
+          className="rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaRegEnvelope className="text-gray-500" />
             Contact Us
           </p>
@@ -177,9 +177,9 @@ const OdrRequestTracker = () => {
         {/* advisory */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3  bg-contain bg-bottom bg-no-repeat"
+          className="rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaBullhorn className="text-gray-500" />
             Advisory
           </p>
@@ -203,11 +203,11 @@ const OdrRequestTracker = () => {
         </p>
       </div>
 
-      <div className="flex  w-full max-w-full translate-y-4 p-1">
-        <div className="flex items-center flex-1 border border-gray-900 rounded-md mb-10 bg-white">
+      <div className="w-full max-w-full translate-y-4 p-1">
+        <div className="mb-10 flex flex-col overflow-hidden rounded-md border border-gray-900 bg-white lg:flex-row lg:items-stretch">
           {/* Reference Number Section */}
-          <div className="flex border-r border-gray-300">
-            <label className="px-3 py-2 font-medium text-sm text-gray-600 bg-gray-100 border-r border-gray-300 whitespace-nowrap">
+          <div className="flex flex-col border-b border-gray-300 sm:flex-row lg:flex-1 lg:border-b-0 lg:border-r">
+            <label className="whitespace-nowrap border-b border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:border-b-0 sm:border-r">
               Reference Number
             </label>
             <input
@@ -216,13 +216,13 @@ const OdrRequestTracker = () => {
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
               disabled={loading}
-              className="px-3 py-2 text-sm outline-none w-[21.5rem]"
+              className="w-full min-w-0 px-3 py-2 text-sm outline-none"
             />
           </div>
 
           {/* PIN Section */}
-          <div className="flex items-center border-r border-gray-300">
-            <label className="px-3 py-2 font-medium text-sm text-gray-600 bg-gray-100 border-r border-gray-300">
+          <div className="flex flex-col border-b border-gray-300 sm:flex-row lg:flex-1 lg:border-b-0 lg:border-r">
+            <label className="border-b border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:border-b-0 sm:border-r">
               PIN
             </label>
             <input
@@ -233,7 +233,7 @@ const OdrRequestTracker = () => {
               disabled={loading}
               maxLength={4}
               inputMode="numeric"
-              className="px-3 py-2 text-sm outline-none w-[21.3rem]"
+              className="w-full min-w-0 px-3 py-2 text-sm outline-none"
             />
           </div>
 
@@ -241,7 +241,7 @@ const OdrRequestTracker = () => {
           <button
             onClick={handleTrack} // Add this!
             disabled={loading}
-            className="flex items-center font-medium gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="flex items-center justify-center gap-2 bg-gray-100 px-3 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 lg:px-4"
           >
             {loading ? (
               <>
@@ -288,7 +288,7 @@ const OdrRequestTracker = () => {
             </div>
 
             {/* Request Details */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <p className="text-sm text-gray-500">Reference Number</p>
                 <p className="font-semibold">{requestData.reference_number}</p>

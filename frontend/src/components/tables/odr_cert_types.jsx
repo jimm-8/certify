@@ -139,25 +139,35 @@ const OdrCertTypes = ({
           onChange={() => handleCheckboxChange(row)}
         />
       ),
-      width: "80px",
+      width: "64px",
       center: true,
     },
     {
       name: "COPIES",
       selector: (row) => row.copies,
-      width: "200px",
+      minWidth: "110px",
       center: true,
     },
     {
       name: "REQUESTED DOCUMENTS",
       selector: (row) => row.requested_documents,
-      width: "350px",
+      minWidth: "220px",
+      cell: (row) => (
+        <div className="py-2 text-center whitespace-normal break-words leading-snug">
+          {row.requested_documents}
+        </div>
+      ),
       center: true,
     },
     {
       name: "UNIT COST (in Php)",
       selector: (row) => row.unit_cost,
-      width: "220px",
+      minWidth: "150px",
+      cell: (row) => (
+        <div className="py-2 text-center whitespace-normal break-words leading-snug">
+          {row.unit_cost}
+        </div>
+      ),
       center: true,
     },
   ];
@@ -196,19 +206,26 @@ const OdrCertTypes = ({
   };
 
   return (
-    <div className="ml-5 inline-block mt-3">
-      <DataTable
-        columns={columns}
-        data={selectedOffice ? REQUEST_OPTIONS : []}
-        customStyles={customStyles}
-        dense
-        persistTableHead
-        noDataComponent={<></>}
-      />
+    <div className="mt-3 w-full max-w-full px-0 sm:px-5">
+      <div className="w-full overflow-x-auto rounded-md">
+        <div className="min-w-[34rem]">
+          <DataTable
+            columns={columns}
+            data={selectedOffice ? REQUEST_OPTIONS : []}
+            customStyles={customStyles}
+            dense
+            responsive
+            persistTableHead
+            noDataComponent={<></>}
+          />
+        </div>
+      </div>
 
       {certificationChecked && (
         <div className="mt-4 w-full">
-          <p className="mb-2">Type of Certification</p>
+          <p className="mb-2 text-sm font-medium sm:text-base">
+            Type of Certification
+          </p>
           {loading ? (
             <p className="text-gray-500 text-sm">
               Loading certificate types...
@@ -245,7 +262,7 @@ const OdrCertTypes = ({
           )}
         </div>
       )}
-      <p className="text-center text-gray-500 text-xs py-3 px-4">
+      <p className="px-2 py-3 text-center text-xs text-gray-500 sm:px-4">
         * 2 pages is the minimum number of pages for TOR (Transcript of
         Records).
       </p>

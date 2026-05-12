@@ -20,6 +20,7 @@ SIGNING_AVAILABLE_SETTING_KEY = "signing_available_for_release"
 SIGNATORY_UNAVAILABLE_HOLD_SOURCE = "signatory_unavailable"
 REQUESTOR_NO_PICKUP_HOLD_SOURCE = "requestor_no_pickup"
 MANUAL_DELAY_NOTICE_HOLD_SOURCE = "manual_delay_notice"
+PAYMENT_AWAITING_HOLD_SOURCE = "awaiting_payment"
 DEFAULT_SIGNATORY_DELAY_REASON = (
     "The authorized signatory is currently unavailable. "
     "We will process your certificate promptly once signing resumes."
@@ -27,6 +28,9 @@ DEFAULT_SIGNATORY_DELAY_REASON = (
 DEFAULT_REQUESTOR_NO_PICKUP_REASON = (
     "The requestor did not pick up the certificate. "
     "Release timing is paused until pickup resumes."
+)
+DEFAULT_PAYMENT_AWAITING_REASON = (
+    "Payment is pending. Processing timing is paused until payment is recorded."
 )
 
 
@@ -70,6 +74,38 @@ def get_request_hold_seconds(
     return max(0, total_seconds)
 
 
+def get_processing_hold_seconds(
+    request: CertificateRequest,
+    now: Optional[datetime] = None,
+) -> int:
+    total_seconds = int(getattr(request, "processing_hold_total_seconds", 0) or 0)
+    if getattr(request, "processing_hold_active", False) and getattr(
+        request, "processing_hold_started_at", None
+    ):
+        current_now = now or _resolve_now(request.processing_hold_started_at)
+        try:
+            total_seconds += max(
+                0,
+                int(
+                    (current_now - request.processing_hold_started_at).total_seconds(),
+                ),
+            )
+        except Exception:
+            return max(0, total_seconds)
+    return max(0, total_seconds)
+
+
+def get_total_sla_hold_seconds(
+    request: CertificateRequest,
+    now: Optional[datetime] = None,
+) -> int:
+    return max(
+        0,
+        get_processing_hold_seconds(request, now=now)
+        + get_request_hold_seconds(request, now=now),
+    )
+
+
 def get_effective_processing_seconds(
     request: CertificateRequest,
     end_time: Optional[datetime] = None,
@@ -81,7 +117,7 @@ def get_effective_processing_seconds(
         total_seconds = (resolved_end - request.created_at).total_seconds()
     except Exception:
         return None
-    effective = total_seconds - get_request_hold_seconds(request, now=resolved_end)
+    effective = total_seconds - get_total_sla_hold_seconds(request, now=resolved_end)
     return max(0, effective)
 
 
@@ -90,9 +126,9 @@ def get_for_releasing_elapsed_seconds(
     now: Optional[datetime] = None,
 ) -> float:
     started_at = (
-        getattr(request, "for_releasing_started_at", None)
+        getattr(request, "created_at", None)
+        or getattr(request, "for_releasing_started_at", None)
         or getattr(request, "updated_at", None)
-        or getattr(request, "created_at", None)
     )
     if not started_at:
         return 0
@@ -101,7 +137,7 @@ def get_for_releasing_elapsed_seconds(
         elapsed = (current_now - started_at).total_seconds()
     except Exception:
         return 0
-    effective = elapsed - get_request_hold_seconds(request, now=current_now)
+    effective = elapsed - get_total_sla_hold_seconds(request, now=current_now)
     return max(0, effective)
 
 
@@ -137,6 +173,25 @@ def start_request_hold(
     return True
 
 
+def start_processing_hold(
+    request: CertificateRequest,
+    reason: str = DEFAULT_PAYMENT_AWAITING_REASON,
+    source: str = PAYMENT_AWAITING_HOLD_SOURCE,
+    now: Optional[datetime] = None,
+) -> bool:
+    if getattr(request, "processing_hold_active", False):
+        return False
+    request.processing_hold_active = True
+    request.processing_hold_started_at = now or _resolve_now(
+        getattr(request, "pdf_generated_at", None)
+        or getattr(request, "updated_at", None)
+        or getattr(request, "created_at", None),
+    )
+    request.processing_hold_reason = reason
+    request.processing_hold_source = source
+    return True
+
+
 def stop_request_hold(
     request: CertificateRequest,
     now: Optional[datetime] = None,
@@ -160,6 +215,32 @@ def stop_request_hold(
     ) + elapsed_seconds
     request.release_hold_active = False
     request.release_hold_started_at = None
+    return True
+
+
+def stop_processing_hold(
+    request: CertificateRequest,
+    now: Optional[datetime] = None,
+) -> bool:
+    if not request.processing_hold_active or not request.processing_hold_started_at:
+        request.processing_hold_active = False
+        request.processing_hold_started_at = None
+        return False
+
+    current_now = now or _resolve_now(request.processing_hold_started_at)
+    try:
+        elapsed_seconds = max(
+            0,
+            int((current_now - request.processing_hold_started_at).total_seconds()),
+        )
+    except Exception:
+        elapsed_seconds = 0
+
+    request.processing_hold_total_seconds = int(
+        getattr(request, "processing_hold_total_seconds", 0) or 0,
+    ) + elapsed_seconds
+    request.processing_hold_active = False
+    request.processing_hold_started_at = None
     return True
 
 

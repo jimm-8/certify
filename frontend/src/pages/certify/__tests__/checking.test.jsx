@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import { render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Checking from "../checking";
 import requestService from "../../../services/requestService";
 
@@ -75,9 +77,9 @@ describe("Checking page", () => {
 
     render(<Checking />);
 
-    const button = await screen.findByRole("button", {
+    const button = (await screen.findAllByRole("button", {
       name: /process all/i,
-    });
+    })).find((item) => !item.disabled);
 
     await user.click(button);
 
@@ -97,7 +99,7 @@ describe("Checking page", () => {
     );
   });
 
-  it("closes the request modal after approval and shows loading then submitted feedback", async () => {
+  it("closes the request modal only after approval succeeds and shows loading then submitted feedback", async () => {
     const user = userEvent.setup();
     const approved = [
       {
@@ -124,12 +126,11 @@ describe("Checking page", () => {
 
     render(<Checking />);
 
-    await user.click(await screen.findByText("Ada"));
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
     await user.click(await screen.findByRole("button", { name: /modal approve/i }));
 
-    expect(
-      screen.queryByRole("button", { name: /modal approve/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /modal approve/i })).toBeInTheDocument();
     expect(
       await screen.findByText(/please wait while the certificate request is being submitted/i),
     ).toBeInTheDocument();
@@ -145,8 +146,84 @@ describe("Checking page", () => {
       );
     });
 
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: /modal approve/i }),
+      ).not.toBeInTheDocument();
+    });
     expect(
       await screen.findByText(/certificate request submitted successfully/i),
     ).toBeInTheDocument();
+  });
+
+  it("shows backend conflict details in feedback dialog when approval claim is lost", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    requestService.updateStatus.mockRejectedValue({
+      response: {
+        data: {
+          detail: "Request was already claimed by janine_aguisanda.",
+        },
+      },
+    });
+
+    render(<Checking />);
+
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
+    await user.click(await screen.findByRole("button", { name: /modal approve/i }));
+
+    expect(
+      await screen.findByText(/request was already claimed by janine_aguisanda\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/submission failed/i)).toBeInTheDocument();
+  });
+
+  it("shows needs review when auto validation returns graduation-related flags", async () => {
+    const approved = [
+      {
+        id: 7,
+        status: "APPROVED",
+        certificate_type_name: "Certification of GWA",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({
+      results: [
+        {
+          request_id: 7,
+          exists: true,
+          flags: [
+            "Student is not yet graduated for the requested GWA certificate.",
+          ],
+        },
+      ],
+    });
+
+    render(<Checking />);
+
+    expect((await screen.findAllByText(/needs review/i)).length).toBeGreaterThan(
+      0,
+    );
   });
 });
