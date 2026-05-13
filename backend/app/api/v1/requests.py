@@ -40,6 +40,7 @@ from app.schemas.certificate_request import (
     RequestsValidationResponse,
     DelayNoticeRequest,
     RejectionEmailRequest,
+    CheckingEmailRequest,
 )
 
 from app.services.request_service import (
@@ -357,21 +358,6 @@ async def create_certificate_request(
             notes=OUT_OF_RANGE_YEAR_NOTIFICATION,
         )
 
-    if new_request.needs_instruction_review:
-        review_reason = purpose_metadata.get("review_reason") or (
-            "Purpose of request requires manual review."
-        )
-        log_action(
-            db,
-            action="REQUEST_REVIEW_REQUIRED",
-            entity_type="certificate_request",
-            entity_id=new_request.id,
-            field_name="purpose",
-            new_value=new_request.purpose,
-            user_name="System",
-            notes=review_reason,
-        )
-    
     # Send confirmation email (optional; can be deferred to processing step)
     try:
         send_on_create = os.getenv("SEND_CONFIRMATION_ON_CREATE", "0").lower() in (
@@ -1028,6 +1014,62 @@ async def send_ready_email(
         notes=f"Sent ready-for-pickup email for {request.reference_number}.",
     )
     return {"message": "Ready-for-release email sent."}
+
+
+@router.post("/{request_id}/send-checking-email")
+async def send_checking_email(
+    request_id: int,
+    payload: CheckingEmailRequest,
+    db: Session = Depends(get_db),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    if request.status != RequestStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only approved requests in checking can send this email.",
+        )
+    if not (request.requestor_email or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Requestor email is missing for this request.",
+        )
+
+    email_service = EmailService()
+    was_sent = await email_service.send_checking_update(
+        to_email=request.requestor_email,
+        subject=payload.subject,
+        message_body=payload.message,
+        reference_number=request.reference_number,
+        requestor_name=request.requestor_name,
+        student_name=request.student_name,
+        certificate_type=request.certificate_type_name or request.request_label,
+    )
+    if not was_sent:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Checking update email could not be sent. "
+                "Please verify the requestor email address and SMTP mail settings."
+            ),
+        )
+
+    log_action(
+        db,
+        action="CHECKING_EMAIL_SENT",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        user_name=ctx["user"].username,
+        notes=f"Sent checking update email for {request.reference_number}.",
+    )
+    return {"message": "Checking update email sent."}
 
 
 @router.post("/{request_id}/send-delay-notice")

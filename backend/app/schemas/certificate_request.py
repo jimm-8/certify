@@ -266,6 +266,11 @@ class RejectionEmailRequest(BaseModel):
 class DelayNoticeRequest(BaseModel):
     reason: Optional[str] = None
 
+
+class CheckingEmailRequest(BaseModel):
+    subject: str = Field(..., min_length=1, max_length=255)
+    message: str = Field(..., min_length=1)
+
 # Schema for updating request status
 class StatusUpdateRequest(BaseModel):
     new_status: RequestStatusEnum

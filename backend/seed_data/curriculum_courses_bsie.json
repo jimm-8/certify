@@ -1,0 +1,1176 @@
+[
+  {
+    "new": [
+      {
+        "program_code": "BSIE",
+        "curriculum_name": "Bachelor of Science in Industrial Engineering",
+        "academic_year": "2023-2024",
+        "total_courses": 62,
+        "courses": [
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Foundational course introducing students to the engineering profession, focusing on basic concepts and the role of engineers in society[cite: 41, 53].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "Explores the nature of identity and the various factors that shape the self through interdisciplinary perspectives[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics in the Modern World",
+            "course_description": "Examines the nature and application of mathematics as a tool for understanding patterns and solving practical problems in contemporary life[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "Analyzes Philippine history through primary sources, fostering critical thinking about the nation's political and social development[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Develops communicative competence and enhances skills in conveying messages effectively to diverse audiences in various contexts[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Covers the concepts of functions, limits, continuity, and derivatives, with applications in physical and engineering sciences[cite: 41, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Provides fundamental principles of chemistry, including atomic structure and chemical reactions, essential for engineering analysis[cite: 41, 53].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 1",
+            "course_title": "Movement Competency Training",
+            "course_description": "Focuses on developing the fundamental movement skills and physical literacy required for health and fitness[cite: 44, 53].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Aims to develop civic consciousness and defense preparedness by involving students in service-oriented activities[cite: 46, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Explores the concepts of integration, its techniques, and applications in determining areas, volumes, and work[cite: 41, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Introduces mechanics, heat, and thermodynamics, emphasizing the application of physical laws to engineering problems[cite: 41, 54].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Introduction to logic formulation and high-level programming to solve basic computational problems[cite: 41, 54].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Teaches technical drawing standards and orthographic projections necessary for engineering communication[cite: 41, 54].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Examines the complexities of globalization and its impact on international economic and political landscapes[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Develops the ability to appreciate and analyze various art forms within their cultural and aesthetic contexts[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "Explores the interactions between scientific progress, technological innovations, and societal development[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Continuation of NSTP 1, focusing on community-based project implementation and practical service applications[cite: 46, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 2",
+            "course_title": "Exercise-based Fitness Activities",
+            "course_description": "Provides instruction on various exercises and activities designed to maintain and improve physical fitness[cite: 44, 54].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "Study of the life, works, and writings of Jose Rizal, emphasizing his role in the development of Filipino nationalism[cite: 44, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Discussion of moral frameworks and ethical theories that guide professional responsibility and human conduct[cite: 44, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Highlights essential biological principles focusing on cell structures, genetics, and ecological health for engineers[cite: 41, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Focuses on methods for solving equations used to model dynamic physical engineering systems[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 401",
+            "course_title": "Statistical Analysis for IE 1",
+            "course_description": "Introduces probability and statistics applied to industrial engineering problems and data analysis[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 402",
+            "course_title": "Principles of Economics",
+            "course_description": "Provides an overview of micro and macroeconomics principles relevant to engineering decision-making[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 403",
+            "course_title": "Financial Accounting for IE",
+            "course_description": "Teaches fundamental accounting principles and practices used in managing industrial organizations[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 404",
+            "course_title": "Industrial Organization and Management",
+            "course_description": "Covers the management of industrial enterprises, including organizational structures and production management[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "CpE 402",
+            "course_title": "Computer Programming 2",
+            "course_description": "Advanced programming concepts and logic formulation for solving complex computational engineering tasks[cite: 41].",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "Covers environmental principles and the impact of engineering solutions on sustainability and ecology[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Refines communication skills in Filipino tailored for professional and academic contexts[cite: 44].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 3",
+            "course_title": "Menu of Dance, Sports, Martial Arts, etc.",
+            "course_description": "Provides a selection of physical activities including traditional games and recreational sports[cite: 44, 47].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 405",
+            "course_title": "Statistical Analysis for IE 2",
+            "course_description": "Continuation of statistical methods focusing on hypothesis testing, regression, and analysis of variance[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 406",
+            "course_title": "Industrial Materials and Processes",
+            "course_description": "Study of materials used in industry and the various manufacturing processes to transform them into products[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 407",
+            "course_title": "Advanced Mathematics for IE",
+            "course_description": "Higher mathematical methods such as transforms and matrices used in industrial engineering applications[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 408",
+            "course_title": "Work Study and Measurement",
+            "course_description": "Focuses on analyzing and measuring work methods to improve productivity and establish labor standards[cite: 41].",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Design",
+            "course_description": "Training in CAD software for creating digital representations of technical and engineering designs[cite: 41].",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Financial assessment tools for evaluating the economic feasibility of engineering projects[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "Study of forces and their effects on physical bodies at rest and in motion[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "Advanced usage of the Filipino language in research across various engineering and technical fields[cite: 44].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 4",
+            "course_title": "Team Sports (Basketball and Volleyball)",
+            "course_description": "Focuses on team-building and skill development through competitive group sports like Basketball and Volleyball[cite: 44, 47].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 409",
+            "course_title": "Managerial Accounting for IE",
+            "course_description": "Focuses on the use of accounting information for internal management planning and control[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 410",
+            "course_title": "Operations Research 1",
+            "course_description": "Introduction to deterministic models and optimization techniques for solving complex industrial problems[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 411",
+            "course_title": "Quality Management Systems",
+            "course_description": "Discusses quality standards, philosophies, and the implementation of management systems in organizations[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 412",
+            "course_title": "Ergonomics 1",
+            "course_description": "Explores the design of systems, tools, and environments to fit the capabilities and limitations of human users[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 401",
+            "course_title": "IE Elective 1 (CAD/CAM with Automation)",
+            "course_description": "Specialized course in computer-integrated manufacturing and automation in production systems[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 411",
+            "course_title": "Basic Occupational Safety and Health",
+            "course_description": "Covers workplace hazard identification and safety protocols for industrial environments[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ME 431",
+            "course_title": "Thermodynamics",
+            "course_description": "Fundamental principles of energy conversion and the laws governing heat and work[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Exploration of the literary works and cultural diversity of the ASEAN region[cite: 44].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 413",
+            "course_title": "Operations Research 2",
+            "course_description": "Deals with stochastic models, queuing theory, and simulation for industrial engineering optimization[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 414",
+            "course_title": "Operations Management",
+            "course_description": "The design, operation, and control of production systems to efficiently produce goods and services[cite: 43].",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 415",
+            "course_title": "Ergonomics 2",
+            "course_description": "Advanced ergonomics focusing on cognitive and organizational factors in system design[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 416",
+            "course_title": "Project Feasibility 1",
+            "course_description": "Techniques for conducting feasibility studies, focusing on market and technical analysis[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 418",
+            "course_title": "Engineering Values and Ethics",
+            "course_description": "Discusses professional ethical standards and values critical for engineering practice[cite: 43].",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "EE 419",
+            "course_title": "Basic Electrical Engineering",
+            "course_description": "Covers basic electrical circuits and components necessary for industrial systems[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 402",
+            "course_title": "IE Elective 2 (Industrial Quality Control)",
+            "course_description": "Statistical methods and systems for ensuring product and process quality in industry[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 417",
+            "course_title": "Project Feasibility 2",
+            "course_description": "Focuses on financial and economic analysis for completing a full project feasibility report[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 403",
+            "course_title": "IE Elective 3 (Six Sigma)",
+            "course_description": "Study of Six Sigma methodologies for process improvement and defect reduction[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Explores the intersection of engineering innovation and entrepreneurship for business creation[cite: 41].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "Immersive industrial internship providing real-world experience in various functional areas[cite: 43].",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 419",
+            "course_title": "Methods of Research for IE",
+            "course_description": "Teaches scientific research methodologies from problem definition to data collection[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 420",
+            "course_title": "Supply Chain Management",
+            "course_description": "The design and management of integrated supply chains for efficient material and information flow[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 421",
+            "course_title": "Information Systems",
+            "course_description": "Analysis and design of information systems to support management decision-making[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 422",
+            "course_title": "Systems Engineering",
+            "course_description": "Focuses on the design and management of complex systems throughout their life cycles[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 423",
+            "course_title": "IE Capstone Project",
+            "course_description": "Final design project demonstrating integration of IE knowledge to solve a real-world problem[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 424",
+            "course_title": "IE Practice with Comprehensive Examination",
+            "course_description": "Preparation for professional practice through integrative activities and comprehensive assessment[cite: 43].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          }
+        ]
+      }
+    ],
+    "old": [
+      {
+        "program_code": "BSIE",
+        "curriculum_name": "Bachelor of Science in Industrial Engineering",
+        "academic_year": "2023-2024",
+        "total_courses": 62,
+        "courses": [
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Foundational course introducing students to the engineering profession, focusing on basic concepts and the role of engineers in society[cite: 41, 53].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "Explores the nature of identity and the various factors that shape the self through interdisciplinary perspectives[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics in the Modern World",
+            "course_description": "Examines the nature and application of mathematics as a tool for understanding patterns and solving practical problems in contemporary life[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "Analyzes Philippine history through primary sources, fostering critical thinking about the nation's political and social development[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Develops communicative competence and enhances skills in conveying messages effectively to diverse audiences in various contexts[cite: 44, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Covers the concepts of functions, limits, continuity, and derivatives, with applications in physical and engineering sciences[cite: 41, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Provides fundamental principles of chemistry, including atomic structure and chemical reactions, essential for engineering analysis[cite: 41, 53].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 1",
+            "course_title": "Movement Competency Training",
+            "course_description": "Focuses on developing the fundamental movement skills and physical literacy required for health and fitness[cite: 44, 53].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Aims to develop civic consciousness and defense preparedness by involving students in service-oriented activities[cite: 46, 53].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Explores the concepts of integration, its techniques, and applications in determining areas, volumes, and work[cite: 41, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Introduces mechanics, heat, and thermodynamics, emphasizing the application of physical laws to engineering problems[cite: 41, 54].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Introduction to logic formulation and high-level programming to solve basic computational problems[cite: 41, 54].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Teaches technical drawing standards and orthographic projections necessary for engineering communication[cite: 41, 54].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Examines the complexities of globalization and its impact on international economic and political landscapes[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Develops the ability to appreciate and analyze various art forms within their cultural and aesthetic contexts[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "Explores the interactions between scientific progress, technological innovations, and societal development[cite: 44, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Continuation of NSTP 1, focusing on community-based project implementation and practical service applications[cite: 46, 54].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 2",
+            "course_title": "Exercise-based Fitness Activities",
+            "course_description": "Provides instruction on various exercises and activities designed to maintain and improve physical fitness[cite: 44, 54].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "Study of the life, works, and writings of Jose Rizal, emphasizing his role in the development of Filipino nationalism[cite: 44, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Discussion of moral frameworks and ethical theories that guide professional responsibility and human conduct[cite: 44, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Highlights essential biological principles focusing on cell structures, genetics, and ecological health for engineers[cite: 41, 56].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Focuses on methods for solving equations used to model dynamic physical engineering systems[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 401",
+            "course_title": "Statistical Analysis for IE 1",
+            "course_description": "Introduces probability and statistics applied to industrial engineering problems and data analysis[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 402",
+            "course_title": "Principles of Economics",
+            "course_description": "Provides an overview of micro and macroeconomics principles relevant to engineering decision-making[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 403",
+            "course_title": "Financial Accounting for IE",
+            "course_description": "Teaches fundamental accounting principles and practices used in managing industrial organizations[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 404",
+            "course_title": "Industrial Organization and Management",
+            "course_description": "Covers the management of industrial enterprises, including organizational structures and production management[cite: 41, 59].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "CpE 402",
+            "course_title": "Computer Programming 2",
+            "course_description": "Advanced programming concepts and logic formulation for solving complex computational engineering tasks[cite: 41].",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "Covers environmental principles and the impact of engineering solutions on sustainability and ecology[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Refines communication skills in Filipino tailored for professional and academic contexts[cite: 44].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 3",
+            "course_title": "Menu of Dance, Sports, Martial Arts, etc.",
+            "course_description": "Provides a selection of physical activities including traditional games and recreational sports[cite: 44, 47].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 405",
+            "course_title": "Statistical Analysis for IE 2",
+            "course_description": "Continuation of statistical methods focusing on hypothesis testing, regression, and analysis of variance[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 406",
+            "course_title": "Industrial Materials and Processes",
+            "course_description": "Study of materials used in industry and the various manufacturing processes to transform them into products[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 407",
+            "course_title": "Advanced Mathematics for IE",
+            "course_description": "Higher mathematical methods such as transforms and matrices used in industrial engineering applications[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 408",
+            "course_title": "Work Study and Measurement",
+            "course_description": "Focuses on analyzing and measuring work methods to improve productivity and establish labor standards[cite: 41].",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Design",
+            "course_description": "Training in CAD software for creating digital representations of technical and engineering designs[cite: 41].",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Financial assessment tools for evaluating the economic feasibility of engineering projects[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "Study of forces and their effects on physical bodies at rest and in motion[cite: 41].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "Advanced usage of the Filipino language in research across various engineering and technical fields[cite: 44].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "PATHFit 4",
+            "course_title": "Team Sports (Basketball and Volleyball)",
+            "course_description": "Focuses on team-building and skill development through competitive group sports like Basketball and Volleyball[cite: 44, 47].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 409",
+            "course_title": "Managerial Accounting for IE",
+            "course_description": "Focuses on the use of accounting information for internal management planning and control[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 410",
+            "course_title": "Operations Research 1",
+            "course_description": "Introduction to deterministic models and optimization techniques for solving complex industrial problems[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 411",
+            "course_title": "Quality Management Systems",
+            "course_description": "Discusses quality standards, philosophies, and the implementation of management systems in organizations[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 412",
+            "course_title": "Ergonomics 1",
+            "course_description": "Explores the design of systems, tools, and environments to fit the capabilities and limitations of human users[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 401",
+            "course_title": "IE Elective 1 (CAD/CAM with Automation)",
+            "course_description": "Specialized course in computer-integrated manufacturing and automation in production systems[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 411",
+            "course_title": "Basic Occupational Safety and Health",
+            "course_description": "Covers workplace hazard identification and safety protocols for industrial environments[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ME 431",
+            "course_title": "Thermodynamics",
+            "course_description": "Fundamental principles of energy conversion and the laws governing heat and work[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Exploration of the literary works and cultural diversity of the ASEAN region[cite: 44].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 413",
+            "course_title": "Operations Research 2",
+            "course_description": "Deals with stochastic models, queuing theory, and simulation for industrial engineering optimization[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 414",
+            "course_title": "Operations Management",
+            "course_description": "The design, operation, and control of production systems to efficiently produce goods and services[cite: 43].",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 415",
+            "course_title": "Ergonomics 2",
+            "course_description": "Advanced ergonomics focusing on cognitive and organizational factors in system design[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 416",
+            "course_title": "Project Feasibility 1",
+            "course_description": "Techniques for conducting feasibility studies, focusing on market and technical analysis[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 418",
+            "course_title": "Engineering Values and Ethics",
+            "course_description": "Discusses professional ethical standards and values critical for engineering practice[cite: 43].",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "EE 419",
+            "course_title": "Basic Electrical Engineering",
+            "course_description": "Covers basic electrical circuits and components necessary for industrial systems[cite: 41].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 402",
+            "course_title": "IE Elective 2 (Industrial Quality Control)",
+            "course_description": "Statistical methods and systems for ensuring product and process quality in industry[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 417",
+            "course_title": "Project Feasibility 2",
+            "course_description": "Focuses on financial and economic analysis for completing a full project feasibility report[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IEE 403",
+            "course_title": "IE Elective 3 (Six Sigma)",
+            "course_description": "Study of Six Sigma methodologies for process improvement and defect reduction[cite: 43].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Explores the intersection of engineering innovation and entrepreneurship for business creation[cite: 41].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "Immersive industrial internship providing real-world experience in various functional areas[cite: 43].",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 419",
+            "course_title": "Methods of Research for IE",
+            "course_description": "Teaches scientific research methodologies from problem definition to data collection[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 420",
+            "course_title": "Supply Chain Management",
+            "course_description": "The design and management of integrated supply chains for efficient material and information flow[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 421",
+            "course_title": "Information Systems",
+            "course_description": "Analysis and design of information systems to support management decision-making[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 422",
+            "course_title": "Systems Engineering",
+            "course_description": "Focuses on the design and management of complex systems throughout their life cycles[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 423",
+            "course_title": "IE Capstone Project",
+            "course_description": "Final design project demonstrating integration of IE knowledge to solve a real-world problem[cite: 43].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          },
+          {
+            "course_code": "IE 424",
+            "course_title": "IE Practice with Comprehensive Examination",
+            "course_description": "Preparation for professional practice through integrative activities and comprehensive assessment[cite: 43].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSIE"
+          }
+        ]
+      }
+    ]
+  }
+]

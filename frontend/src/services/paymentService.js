@@ -3,7 +3,9 @@ import api from "./api";
 const paymentService = {
   createPayment: async (payload) => {
     try {
-      const response = await api.post("/payments/", payload);
+      const response = await api.post("/payments/", payload, {
+        timeout: 20000,
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating payment:", {

@@ -1,4 +1,5 @@
 import os
+import html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import aiosmtplib
@@ -339,6 +340,186 @@ class EmailService:
             return True
         except Exception as e:
             print(f"❌ Failed to send email: {e}")
+            return False
+
+    async def send_checking_update(
+        self,
+        to_email: str,
+        subject: str,
+        message_body: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+    ):
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        safe_student_name = (student_name or "").strip() or "-"
+        safe_certificate_type = (
+            certificate_type or ""
+        ).strip() or "Certificate Request"
+        safe_subject = (
+            subject or ""
+        ).strip() or f"Certificate Request Update - {reference_number}"
+        safe_message_html = html.escape((message_body or "").strip()).replace(
+            "\n", "<br />"
+        )
+        safe_message_text = (message_body or "").strip()
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
+        </head>
+        <body>
+
+        <div class="container">
+            <div class="header">
+            <strong>Certificate Request Update</strong>
+            </div>
+
+            <div class="content">
+                <p>{safe_message_html}</p>
+                <div class="request-card">
+                    <div class="card-header">Request Details</div>
+                    <div class="card-content">
+                        <p><strong>Reference Number:</strong> {reference_number}</p>
+                        <p><strong>Student Name:</strong> {safe_student_name}</p>
+                        <p><strong>Requested Document:</strong> {safe_certificate_type}</p>
+                        <p><strong>Current Status:</strong> APPROVED / Checking</p>
+                    </div>
+                </div>
+                <p>Please keep your reference number for tracking and future follow-ups.</p>
+            </div>
+        </div>
+
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+Certificate Request Update
+
+Dear {safe_requestor_name},
+
+{safe_message_text}
+
+Reference Number: {reference_number}
+Student Name: {safe_student_name}
+Requested Document: {safe_certificate_type}
+Current Status: APPROVED / Checking
+
+Please keep your reference number for tracking and future follow-ups.
+        """.strip()
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = safe_subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"Checking update email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"Failed to send checking update email: {e}")
             return False
 
     async def send_rejection_notice(

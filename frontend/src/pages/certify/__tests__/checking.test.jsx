@@ -12,6 +12,7 @@ vi.mock("../../../services/requestService", () => ({
     getCertificateTypes: vi.fn(),
     validateRequests: vi.fn(),
     updateStatus: vi.fn(),
+    sendCheckingEmail: vi.fn(),
     sendRejectionEmail: vi.fn(),
   },
 }));
@@ -193,6 +194,52 @@ describe("Checking page", () => {
     expect(screen.getByText(/submission failed/i)).toBeInTheDocument();
   });
 
+  it("reconciles modal approval timeout when the request was already advanced", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests
+      .mockResolvedValueOnce(approved)
+      .mockResolvedValueOnce([]);
+    requestService.getCertificateTypes.mockResolvedValue([]);
+    requestService.validateRequests
+      .mockResolvedValueOnce({ results: [] })
+      .mockResolvedValueOnce({ results: [] });
+    requestService.updateStatus.mockRejectedValue({
+      code: "ECONNABORTED",
+      message: "timeout of 1000ms exceeded",
+    });
+
+    render(<Checking />);
+
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
+    await user.click(await screen.findByRole("button", { name: /modal approve/i }));
+
+    expect(
+      await screen.findByText(
+        /certificate request was submitted successfully\. the page has been refreshed to reflect the latest status\./i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/submission failed/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: /modal approve/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it("shows needs review when auto validation returns graduation-related flags", async () => {
     const approved = [
       {
@@ -225,5 +272,58 @@ describe("Checking page", () => {
     expect((await screen.findAllByText(/needs review/i)).length).toBeGreaterThan(
       0,
     );
+  });
+
+  it("sends checking update email through the backend action", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    requestService.sendCheckingEmail.mockResolvedValue({});
+
+    render(<Checking />);
+
+    const emailButtons = await screen.findAllByRole("button", {
+      name: /send checking email/i,
+    });
+    await user.click(emailButtons[0]);
+
+    await waitFor(() => {
+      expect(requestService.sendCheckingEmail).not.toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText(/compose email/i)).toBeInTheDocument();
+
+    const subject = screen.getByLabelText(/subject/i);
+    const message = screen.getByLabelText(/message/i);
+
+    await user.clear(subject);
+    await user.type(subject, "Need more details");
+    await user.clear(message);
+    await user.type(message, "Please confirm the purpose of your request.");
+    await user.click(screen.getByRole("button", { name: /^send email$/i }));
+
+    await waitFor(() => {
+      expect(requestService.sendCheckingEmail).toHaveBeenCalledWith(1, {
+        subject: "Need more details",
+        message: "Please confirm the purpose of your request.",
+      });
+    });
+
+    expect(
+      await screen.findByText(/message sent to the requestor\./i),
+    ).toBeInTheDocument();
   });
 });

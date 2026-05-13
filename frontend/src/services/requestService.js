@@ -202,6 +202,18 @@ const requestService = {
       throw error;
     }
   },
+  sendCheckingEmail: async (requestId, payload) => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-checking-email`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending checking email:", error);
+      throw error;
+    }
+  },
   sendDelayNotice: async (requestId, reason = "") => {
     try {
       const response = await api.post(

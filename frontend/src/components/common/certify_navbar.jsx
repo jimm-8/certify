@@ -6,6 +6,7 @@ import { getTokenPayload } from "../../utils/auth";
 import requestService from "../../services/requestService";
 import FeedbackDialog from "./feedbackDialog";
 import {
+  LOCAL_NOTIFICATIONS_UPDATED_EVENT,
   NOTIFICATION_STORAGE_KEY,
   DISMISSED_NOTIFICATION_STORAGE_KEY,
   NOTIFICATION_ACTIONS,
@@ -17,7 +18,9 @@ import {
   getDismissedNotificationIds,
   getLocalNotifications,
   getNotificationMeta,
+  getAnomalySoundPlayedRequestIds,
   mergeNotifications,
+  saveAnomalySoundPlayedRequestIds,
   saveDelayAlertStageMap,
   STAGE_DEFINITIONS,
 } from "../../utils/notificationCenter";
@@ -129,6 +132,19 @@ const FOR_RELEASE_NOTICE_ACTIONS = [
   "FOR_RELEASE_DELAY_ALERT",
   "REQUEST_DELAY_NOTICE_SENT",
 ];
+const AUTO_VALIDATION_NOTIFICATION_ACTION =
+  "REQUEST_AUTO_VALIDATION_REVIEW";
+
+const getAnomalyRequestIds = (items = []) =>
+  new Set(
+    items
+      .filter(
+        (item) =>
+          item?.action === AUTO_VALIDATION_NOTIFICATION_ACTION &&
+          Number.isFinite(Number(item?.entity_id)),
+      )
+      .map((item) => Number(item.entity_id)),
+  );
 
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -156,6 +172,9 @@ const CertifyNavbar = () => {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
   const latestNotificationIdRef = useRef(0);
+  const latestLocalNotificationMarkerRef = useRef("");
+  const latestAnomalyRequestIdsRef = useRef(new Set());
+  const soundedAnomalyRequestIdsRef = useRef(new Set());
   const hasLoadedNotificationsRef = useRef(false);
   const criticalAlertLoopRef = useRef(null);
   const location = useLocation();
@@ -235,6 +254,68 @@ const CertifyNavbar = () => {
   }, []);
 
   useEffect(() => {
+    const buildLocalNotificationMarker = (items) => {
+      const newest = items?.[0];
+      if (!newest) return "";
+      return `${newest.id}:${newest.created_at}:${newest.notes || ""}`;
+    };
+
+    latestLocalNotificationMarkerRef.current =
+      buildLocalNotificationMarker(localNotifications);
+    latestAnomalyRequestIdsRef.current = getAnomalyRequestIds(localNotifications);
+    soundedAnomalyRequestIdsRef.current = new Set(
+      getAnomalySoundPlayedRequestIds(),
+    );
+
+    const handleLocalNotificationsUpdated = (event) => {
+      const nextItems = Array.isArray(event.detail?.items)
+        ? event.detail.items
+        : getLocalNotifications();
+      const isSilentUpdate = Boolean(event.detail?.silent);
+      const nextMarker = buildLocalNotificationMarker(nextItems);
+      const nextAnomalyRequestIds = getAnomalyRequestIds(nextItems);
+      const unsoundedAnomalyRequestIds = Array.from(nextAnomalyRequestIds).filter(
+        (requestId) => !soundedAnomalyRequestIdsRef.current.has(requestId),
+      );
+      const hasNewAnomalyRequest = unsoundedAnomalyRequestIds.length > 0;
+
+      if (
+        nextMarker &&
+        nextMarker !== latestLocalNotificationMarkerRef.current &&
+        !isSilentUpdate &&
+        hasNewAnomalyRequest
+      ) {
+        playSuccessNotification();
+      }
+
+      if (hasNewAnomalyRequest) {
+        const nextSoundedIds = new Set(soundedAnomalyRequestIdsRef.current);
+        unsoundedAnomalyRequestIds.forEach((requestId) => {
+          nextSoundedIds.add(requestId);
+        });
+        soundedAnomalyRequestIdsRef.current = nextSoundedIds;
+        saveAnomalySoundPlayedRequestIds(Array.from(nextSoundedIds));
+      }
+
+      latestLocalNotificationMarkerRef.current = nextMarker;
+      latestAnomalyRequestIdsRef.current = nextAnomalyRequestIds;
+      setLocalNotifications(nextItems);
+    };
+
+    window.addEventListener(
+      LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+      handleLocalNotificationsUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+        handleLocalNotificationsUpdated,
+      );
+    };
+  }, [localNotifications]);
+
+  useEffect(() => {
     if (isCashier || suppressForReleaseNotices) return undefined;
 
     let active = true;
@@ -284,10 +365,7 @@ const CertifyNavbar = () => {
     return () => {
       active = false;
       window.removeEventListener("focus", loadNotifications);
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityRefresh,
-      );
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
       window.clearInterval(intervalId);
     };
   }, [isCashier, suppressForReleaseNotices, username]);
@@ -336,9 +414,7 @@ const CertifyNavbar = () => {
         if (!active) return;
 
         const all = Array.isArray(data) ? data : data.items || [];
-        const releasing = all.filter(
-          (item) => item.status === "FOR_RELEASING",
-        );
+        const releasing = all.filter((item) => item.status === "FOR_RELEASING");
         const stageMap = getDelayAlertStageMap();
         const stageBuckets = {
           breach: [],
@@ -420,10 +496,7 @@ const CertifyNavbar = () => {
     return () => {
       active = false;
       window.removeEventListener("focus", evaluateDelayAlerts);
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityRefresh,
-      );
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
       window.clearInterval(intervalId);
     };
   }, [isCashier, suppressForReleaseNotices, username]);
@@ -917,8 +990,8 @@ const CertifyNavbar = () => {
                   </div>
                 )}
                 <div className="text-[11px] text-gray-500">
-                  Sending a delay notice with a custom reason will also pause the
-                  release timer.
+                  Sending a delay notice with a custom reason will also pause
+                  the release timer.
                 </div>
               </>
             )}

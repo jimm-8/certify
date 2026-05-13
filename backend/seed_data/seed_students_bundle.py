@@ -41,8 +41,52 @@ def normalize_year_level(value):
     return int(digits) if digits else None
 
 
+def academic_year_key(value):
+    text = str(value or "").strip()
+    head = text.split("-")[0]
+    try:
+        return int(head)
+    except ValueError:
+        return -1
+
+
+def semester_key(value):
+    order = {"1st": 1, "2nd": 2, "Midterm": 3, "Elective": 4}
+    return order.get(str(value or "").strip(), 99)
+
+
+def first_enrollment_year_map(enrollments):
+    first_by_student = {}
+    for enrollment in enrollments:
+        sr_code = enrollment.get("sr_code")
+        if not sr_code:
+            continue
+        current = (
+            academic_year_key(enrollment.get("academic_year")),
+            normalize_year_level(enrollment.get("year_level")) or -1,
+            semester_key(enrollment.get("semester")),
+            str(enrollment.get("date_enrolled") or ""),
+        )
+        existing = first_by_student.get(sr_code)
+        if existing is None or current < existing:
+            first_by_student[sr_code] = current
+    return {sr_code: item[0] for sr_code, item in first_by_student.items()}
+
+
+def choose_curriculum_id(curriculum_options, first_year):
+    eligible = [
+        item for item in curriculum_options if academic_year_key(item["academic_year"]) <= first_year
+    ]
+    if eligible:
+        return max(eligible, key=lambda item: academic_year_key(item["academic_year"]))["id"]
+    if curriculum_options:
+        return min(curriculum_options, key=lambda item: academic_year_key(item["academic_year"]))["id"]
+    return None
+
+
 def main():
     data = {k: load_json(v) for k, v in FILES.items()}
+    first_enrollment_year_by_student = first_enrollment_year_map(data["enrollments"])
 
     conn = psycopg2.connect(
         dbname=DB_NAME,
@@ -70,6 +114,7 @@ def main():
                     """
                 )
                 curriculum_lookup = {}
+                curricula_by_program = {}
                 for curriculum_id, program_code, curriculum_name, academic_year in cur.fetchall():
                     code_key = (program_code or "").strip().lower()
                     name_key = (curriculum_name or "").strip().lower()
@@ -78,6 +123,10 @@ def main():
                         curriculum_lookup[("name", code_key, name_key)] = curriculum_id
                     if code_key and year_key:
                         curriculum_lookup[("year", code_key, year_key)] = curriculum_id
+                    if code_key:
+                        curricula_by_program.setdefault(code_key, []).append(
+                            {"id": curriculum_id, "academic_year": year_key}
+                        )
 
                 # Students
                 for s in data["students"]:
@@ -96,6 +145,13 @@ def main():
                         curriculum_id = curriculum_lookup.get(("name", program_code, curriculum_name))
                     if not curriculum_id and curriculum_year:
                         curriculum_id = curriculum_lookup.get(("year", program_code, curriculum_year))
+                    if not curriculum_id:
+                        first_year = first_enrollment_year_by_student.get(s.get("sr_code"))
+                        if first_year is not None:
+                            curriculum_id = choose_curriculum_id(
+                                curricula_by_program.get(program_code, []),
+                                first_year,
+                            )
 
                     cur.execute(
                         """

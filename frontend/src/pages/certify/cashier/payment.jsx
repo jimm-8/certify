@@ -114,32 +114,44 @@ export default function PaymentTagging() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const fetchRequestsSnapshot = async () => {
+    const [allData, unpaidData] = await Promise.all([
+      requestService.getAllRequests({ page: 1, limit: 200 }),
+      paymentService.getUnpaidRequests({ page: 1, limit: 200 }),
+    ]);
+    const allRequests = filterCertifyEligibleRequests(
+      Array.isArray(allData) ? allData : allData.items || [],
+    );
+    const unpaidList = Array.isArray(unpaidData)
+      ? unpaidData
+      : unpaidData.items || [];
+    const unpaidSet = new Set(unpaidList.map((r) => r.id));
+    const refs = allRequests.map((r) => r.reference_number).filter(Boolean);
+    const paymentInfo = await paymentService.getPaymentsByReferences(refs);
+    const map = {};
+    (paymentInfo?.items || []).forEach((item) => {
+      map[item.reference_number] = item;
+    });
+
+    return {
+      requests: allRequests,
+      unpaidSet,
+      paymentMap: map,
+    };
+  };
+
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const [allData, unpaidData] = await Promise.all([
-        requestService.getAllRequests({ page: 1, limit: 200 }),
-        paymentService.getUnpaidRequests({ page: 1, limit: 200 }),
-      ]);
-      const allRequests = filterCertifyEligibleRequests(
-        Array.isArray(allData) ? allData : allData.items || [],
-      );
-      const unpaidList = Array.isArray(unpaidData)
-        ? unpaidData
-        : unpaidData.items || [];
-      const unpaidSet = new Set(unpaidList.map((r) => r.id));
-      const refs = allRequests.map((r) => r.reference_number).filter(Boolean);
-      const paymentInfo = await paymentService.getPaymentsByReferences(refs);
-      const map = {};
-      (paymentInfo?.items || []).forEach((item) => {
-        map[item.reference_number] = item;
-      });
-      setUnpaidIds(unpaidSet);
-      setPaymentMap(map);
-      setRequests(allRequests);
+      const snapshot = await fetchRequestsSnapshot();
+      setUnpaidIds(snapshot.unpaidSet);
+      setPaymentMap(snapshot.paymentMap);
+      setRequests(snapshot.requests);
       setLastUpdatedAt(Date.now());
+      return snapshot;
     } catch (err) {
       console.error("Failed to fetch requests:", err);
+      throw err;
     } finally {
       if (!opts.silent) setLoading(false);
     }
@@ -167,6 +179,19 @@ export default function PaymentTagging() {
       style: "currency",
       currency: "PHP",
     }).format(num);
+  };
+
+  const isTimeoutLikeError = (error) =>
+    error?.code === "ECONNABORTED" ||
+    error?.name === "AbortError" ||
+    /timeout/i.test(String(error?.message || ""));
+
+  const wasPaymentRecorded = (snapshot, row) => {
+    if (!snapshot || !row?.id) return false;
+    const recordedPayment = row.reference_number
+      ? snapshot.paymentMap[row.reference_number]
+      : null;
+    return Boolean(recordedPayment) || !snapshot.unpaidSet.has(row.id);
   };
 
   const handleRecordPayment = async (row, orNumber) => {
@@ -200,7 +225,37 @@ export default function PaymentTagging() {
       );
     } catch (err) {
       console.error("Failed to record payment:", err);
-      showFeedback("Payment Failed", "Failed to record payment.", "error");
+      if (isTimeoutLikeError(err)) {
+        showFeedback(
+          "Checking Payment Status",
+          "The server took too long to reply, so we're verifying whether the payment was still recorded.",
+          "info",
+          {
+            loading: true,
+            confirmLabel: "Checking...",
+          },
+        );
+
+        try {
+          const snapshot = await fetchRequests({ silent: true });
+          if (wasPaymentRecorded(snapshot, row)) {
+            showFeedback(
+              "Payment Recorded",
+              "Payment was recorded successfully. The page has been refreshed to reflect the latest status.",
+              "success",
+            );
+            return;
+          }
+        } catch (refreshError) {
+          console.error("Failed to verify payment after timeout:", refreshError);
+        }
+      }
+
+      showFeedback(
+        "Payment Failed",
+        "Failed to record payment. Please check the request status before retrying.",
+        "error",
+      );
     } finally {
       setActionLoading((prev) => ({ ...prev, [row.id]: false }));
     }
@@ -291,7 +346,7 @@ export default function PaymentTagging() {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
-      width: "260px",
+      width: "220px",
     },
     {
       name: "Certificate Type",
@@ -360,7 +415,7 @@ export default function PaymentTagging() {
       name: "OR No.",
       selector: (row) => paymentMap[row.reference_number]?.or_number || "",
       sortable: false,
-      width: "150px",
+      width: "130px",
       cell: (row) =>
         unpaidIds.has(row.id)
           ? "-"
@@ -369,6 +424,7 @@ export default function PaymentTagging() {
     {
       name: "Action",
       button: true,
+      width: "150px",
       cell: (row) => {
         const status = String(row.status || "").toUpperCase();
         const isUnpaid = unpaidIds.has(row.id);
@@ -381,7 +437,7 @@ export default function PaymentTagging() {
           <button
             onClick={() => openOrModal(row)}
             disabled={!canRecord || actionLoading[row.id]}
-            className={`px-3 py-1.5 text-xs font-medium text-nowrap rounded-md border transition-colors ${
+            className={`px-2 py-1.5 text-xs font-medium whitespace-nowrap rounded-md border transition-colors ${
               canRecord
                 ? "bg-[#ee1133] border-[#ee1133] text-white hover:bg-red-700"
                 : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"

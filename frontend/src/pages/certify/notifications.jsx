@@ -5,6 +5,7 @@ import requestService from "../../services/requestService";
 import {
   getLocalNotifications,
   getNotificationMeta,
+  LOCAL_NOTIFICATIONS_UPDATED_EVENT,
   mergeNotifications,
   NOTIFICATION_ACTIONS,
 } from "../../utils/notificationCenter";
@@ -47,6 +48,27 @@ const Notifications = () => {
       active = false;
     };
   }, [username]);
+
+  useEffect(() => {
+    const handleLocalNotificationsUpdated = (event) => {
+      const nextItems = Array.isArray(event.detail?.items)
+        ? event.detail.items
+        : getLocalNotifications();
+      setLocalLogs(nextItems);
+    };
+
+    window.addEventListener(
+      LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+      handleLocalNotificationsUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+        handleLocalNotificationsUpdated,
+      );
+    };
+  }, []);
 
   const notifications = useMemo(
     () => mergeNotifications(logs, localLogs),
