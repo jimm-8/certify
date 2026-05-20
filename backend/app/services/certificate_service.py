@@ -30,7 +30,12 @@ from app.services.settings_service import get_bool_setting
 
 
 def generate_certificate_pdf(
-    db: Session, request_id: int, user_name: str = "System"
+    db: Session,
+    request_id: int,
+    user_name: str = "System",
+    rasterize: bool = False,
+    persist_to_request: bool = True,
+    output_format: str = "pdf",
 ) -> str:
     """
     Generate PDF certificate for a request.
@@ -287,9 +292,9 @@ def generate_certificate_pdf(
             return 1
         if normalized == "2nd":
             return 2
-        if normalized == "summer":
+        if normalized == "midterm":
             return 3
-        return 9
+        return 0
 
     def _ay_start(ay: str) -> int:
         text = str(ay or "").strip()
@@ -310,8 +315,8 @@ def generate_certificate_pdf(
             enrollments,
             key=lambda row: (
                 _ay_start(getattr(row, "academic_year", "")),
-                _semester_order(getattr(row, "semester", "")),
                 getattr(row, "year_level", 0) or 0,
+                _semester_order(getattr(row, "semester", "")),
             ),
         )
         print(f"[DEBUG] All enrollments for student:")
@@ -567,19 +572,39 @@ def generate_certificate_pdf(
         data["course_credits"] = first.get("units", "")
         data["course_description"] = first.get("course_description", "")
 
+    output_format = str(output_format or "pdf").strip().lower()
+    if output_format not in {"pdf", "png"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported certificate output format: {output_format}",
+        )
+
     output_dir = "uploads/certificates"
     os.makedirs(output_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{request.reference_number}_{timestamp}.pdf"
+    filename_suffix = "_printsafe" if rasterize and not persist_to_request else ""
+    filename = (
+        f"{request.reference_number}_{timestamp}{filename_suffix}.{output_format}"
+    )
     pdf_path = os.path.join(output_dir, filename)
     generation_started_at = datetime.now()
     generation_started_timer = perf_counter()
 
     try:
-        pdf_bytes = CertificateEngine.generate(resolved_key, data)
+        pdf_bytes = CertificateEngine.generate(
+            resolved_key,
+            data,
+            rasterize=rasterize,
+            output_format=output_format,
+        )
         with open(pdf_path, "wb") as file:
             file.write(pdf_bytes)
     except Exception as exc:
+        if output_format != "pdf":
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to generate certificate {output_format}: {str(exc)}",
+            ) from exc
         # Fallback: render a simplified PDF without the HTML renderer.
         try:
             from app.utils.template_engine import CertificateTemplateEngine
@@ -614,6 +639,9 @@ def generate_certificate_pdf(
             ) from fallback_exc
 
     generation_completed_at = datetime.now()
+    if not persist_to_request:
+        return pdf_path
+
     request.pdf_path = pdf_path
     request.pdf_generated_at = generation_completed_at
     request.pdf_generation_time_ms = max(

@@ -43,6 +43,23 @@ const escapePowerShell = (value) => String(value || "").replace(/'/g, "''");
 
 const isFinalState = (state) => ["completed", "failed"].includes(state);
 
+function cleanupJobFile(job) {
+  const sourcePath = job?.sourcePath;
+  if (!sourcePath) return;
+
+  try {
+    if (fs.existsSync(sourcePath)) {
+      fs.unlinkSync(sourcePath);
+    }
+  } catch (error) {
+    if (!job.detail) {
+      job.detail = "Temporary print file cleanup failed.";
+    }
+  } finally {
+    job.sourcePath = null;
+  }
+}
+
 const createJobPayload = (job) => ({
   job_id: job.id,
   status: job.state,
@@ -115,6 +132,7 @@ function markJobFailed(job, error) {
   job.state = "failed";
   job.error = String(error?.message || error || "Print job failed");
   job.completedAt = new Date().toISOString();
+  cleanupJobFile(job);
 }
 
 function markJobCompleted(job, detail) {
@@ -123,6 +141,7 @@ function markJobCompleted(job, detail) {
   job.error = null;
   job.detail = detail || job.detail;
   job.completedAt = new Date().toISOString();
+  cleanupJobFile(job);
 }
 
 async function observeTrackedJob(job, beforeIds) {
@@ -240,6 +259,7 @@ app.post("/print", async (req, res) => {
       completedAt: null,
       error: null,
       detail: "Sending print job to the local printer.",
+      sourcePath: tmpFile,
     };
     trackedJobs.set(job.id, job);
 
@@ -261,14 +281,6 @@ app.post("/print", async (req, res) => {
     return res.status(202).json(createJobPayload(job));
   } catch (err) {
     return res.status(500).json({ error: String(err.message || err) });
-  } finally {
-    if (tmpFile) {
-      try {
-        fs.unlinkSync(tmpFile);
-      } catch (error) {
-        // ignore cleanup errors
-      }
-    }
   }
 });
 

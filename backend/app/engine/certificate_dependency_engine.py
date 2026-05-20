@@ -481,7 +481,8 @@ class CertificateDependencyEngine:
         semester_order = case(
             (Enrollment.semester == "1st", 1),
             (Enrollment.semester == "2nd", 2),
-            else_=9,
+            (Enrollment.semester == "Midterm", 3),
+            else_=0,
         )
         return EnrollmentRepository(db).latest_for_student(sr_code, semester_order)
 
@@ -551,7 +552,8 @@ class CertificateDependencyEngine:
         semester_order = case(
             (Enrollment.semester == "1st", 1),
             (Enrollment.semester == "2nd", 2),
-            else_=9,
+            (Enrollment.semester == "Midterm", 3),
+            else_=0,
         )
         rows = (
             CourseRepository(db)

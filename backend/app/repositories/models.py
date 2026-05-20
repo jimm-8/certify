@@ -237,8 +237,8 @@ class EnrollmentRepository(BaseRepository[Enrollment]):
             self.for_student(sr_code)
             .order_by(
                 Enrollment.academic_year.desc(),
-                semester_order.desc(),
                 Enrollment.year_level.desc(),
+                semester_order.desc(),
             )
             .first()
         )

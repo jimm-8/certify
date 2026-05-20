@@ -129,7 +129,9 @@ export const getAnomalySoundPlayedRequestIds = () => {
 export const saveAnomalySoundPlayedRequestIds = (requestIds) => {
   if (typeof window === "undefined") return;
   const normalized = Array.from(
-    new Set((requestIds || []).map((value) => Number(value)).filter(Number.isFinite)),
+    new Set(
+      (requestIds || []).map((value) => Number(value)).filter(Number.isFinite),
+    ),
   ).sort((left, right) => left - right);
   window.localStorage.setItem(
     ANOMALY_SOUND_PLAYED_STORAGE_KEY,
@@ -176,7 +178,11 @@ export const appendLocalNotification = (notification, options = {}) => {
   return next;
 };
 
-export const upsertLocalNotification = (notification, matcher, options = {}) => {
+export const upsertLocalNotification = (
+  notification,
+  matcher,
+  options = {},
+) => {
   const current = getLocalNotifications();
   const matchIndex = current.findIndex((item) =>
     typeof matcher === "function" ? matcher(item) : item.id === notification.id,
@@ -217,7 +223,10 @@ export const getDelayAlertStageMap = () => {
 
 export const saveDelayAlertStageMap = (value) => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(DELAY_ALERT_STAGE_STORAGE_KEY, JSON.stringify(value));
+  window.localStorage.setItem(
+    DELAY_ALERT_STAGE_STORAGE_KEY,
+    JSON.stringify(value),
+  );
 };
 
 export const clearNotificationStorage = () => {
@@ -337,8 +346,7 @@ export const createDelayAlertNotification = ({
   const highestElapsedMs = Math.max(
     ...requests.map((request) => getForReleasingElapsedMs(request)),
   );
-  const remainingMs =
-    STAGE_DEFINITIONS.breach.thresholdMs - highestElapsedMs;
+  const remainingMs = STAGE_DEFINITIONS.breach.thresholdMs - highestElapsedMs;
 
   return {
     id: Date.now() * 10 + stageMeta.severity,
@@ -518,7 +526,8 @@ export const getNotificationMeta = (item) => {
     };
   }
 
-  const stageMeta = STAGE_DEFINITIONS[item.field_name] || STAGE_DEFINITIONS.early;
+  const stageMeta =
+    STAGE_DEFINITIONS[item.field_name] || STAGE_DEFINITIONS.early;
   return {
     title: stageMeta.title,
     badge: item.old_value || "For Release",

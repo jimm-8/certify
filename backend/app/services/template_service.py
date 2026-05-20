@@ -346,7 +346,8 @@ class CertificateTemplateService:
                     case(
                         (Enrollment.semester == "1st", 1),
                         (Enrollment.semester == "2nd", 2),
-                        else_=9,
+                        (Enrollment.semester == "Midterm", 3),
+                        else_=0,
                     ).desc(),
                     Enrollment.year_level.desc(),
                     Course.course_code.asc(),
@@ -391,7 +392,8 @@ class CertificateTemplateService:
             semester_order = case(
                 (Enrollment.semester == "1st", 1),
                 (Enrollment.semester == "2nd", 2),
-                else_=9,
+                (Enrollment.semester == "Midterm", 3),
+                else_=0,
             )
 
             first_enrollment = (
@@ -400,8 +402,8 @@ class CertificateTemplateService:
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(
                     Enrollment.academic_year.asc(),
-                    semester_order.asc(),
                     Enrollment.year_level.asc(),
+                    semester_order.asc(),
                 )
                 .first()
             )
@@ -411,8 +413,8 @@ class CertificateTemplateService:
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(
                     Enrollment.academic_year.desc(),
-                    semester_order.desc(),
                     Enrollment.year_level.desc(),
+                    semester_order.desc(),
                 )
                 .first()
             )
@@ -586,7 +588,8 @@ class CertificateTemplateService:
             semester_order = case(
                 (Enrollment.semester == "1st", 1),
                 (Enrollment.semester == "2nd", 2),
-                else_=9,
+                (Enrollment.semester == "Midterm", 3),
+                else_=0,
             )
 
             first_row = (
@@ -595,8 +598,8 @@ class CertificateTemplateService:
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(
                     Enrollment.academic_year.asc(),
-                    semester_order.asc(),
                     Enrollment.year_level.asc(),
+                    semester_order.asc(),
                 )
                 .first()
             )
@@ -606,8 +609,8 @@ class CertificateTemplateService:
                 .filter(Enrollment.student_id == sr_code)
                 .order_by(
                     Enrollment.academic_year.desc(),
-                    semester_order.desc(),
                     Enrollment.year_level.desc(),
+                    semester_order.desc(),
                 )
                 .first()
             )
