@@ -1,6 +1,8 @@
-import { render, screen } from "@testing-library/react";
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import Ready from "../ready";
 import requestService from "../../../services/requestService";
 import settingsService from "../../../services/settingsService";
@@ -30,6 +32,7 @@ vi.mock("../../../services/paymentService", () => ({
 
 describe("Ready page", () => {
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
     window.localStorage.clear();
   });
@@ -67,7 +70,14 @@ describe("Ready page", () => {
     requestService.downloadCertificate.mockResolvedValue(
       new Blob(["test"], { type: "application/pdf" }),
     );
-    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
+    paymentService.getPaymentsByReferences.mockResolvedValue({
+      items: [
+        {
+          reference_number: request.reference_number,
+          payment_status: "PAID",
+        },
+      ],
+    });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: true });
 
     render(<Ready />);
@@ -100,7 +110,14 @@ describe("Ready page", () => {
       ...request,
       status: "RELEASED",
     });
-    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
+    paymentService.getPaymentsByReferences.mockResolvedValue({
+      items: [
+        {
+          reference_number: request.reference_number,
+          payment_status: "PAID",
+        },
+      ],
+    });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: true });
 
     render(<Ready />);
@@ -133,14 +150,47 @@ describe("Ready page", () => {
     requestService.downloadCertificate.mockResolvedValue(
       new Blob(["test"], { type: "application/pdf" }),
     );
+    paymentService.getPaymentsByReferences.mockResolvedValue({
+      items: [
+        {
+          reference_number: request.reference_number,
+          payment_status: "PAID",
+        },
+      ],
+    });
+    settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: false });
+
+    render(<Ready />);
+
+    const viewButtons = await screen.findAllByTitle(/View Details/i);
+    await user.click(viewButtons[0]);
+
+    expect(requestService.downloadCertificate).toHaveBeenCalledWith(request.id);
+  });
+
+  it("hides unpaid for releasing requests from ready tab", async () => {
+    const request = {
+      id: 14,
+      status: "FOR_RELEASING",
+      reference_number: "REF-140",
+      certificate_type_name: "Certification",
+      student_name: "Katherine",
+      program: "BSCS",
+      purpose: "Board Exam",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    requestService.getAllRequests.mockResolvedValue([request]);
+    requestService.getCertificateTypes.mockResolvedValue([]);
     paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
     settingsService.getWetSignature.mockResolvedValue({ use_wet_signature: false });
 
     render(<Ready />);
 
-    const viewButton = await screen.findByTitle(/View Details/i);
-    await user.click(viewButton);
-
-    expect(requestService.downloadCertificate).toHaveBeenCalledWith(request.id);
+    expect(
+      await screen.findByText(/No requests ready for releasing/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/REF-140/i)).not.toBeInTheDocument();
   });
 });

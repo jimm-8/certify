@@ -5,6 +5,7 @@ import RequestModal from "../../components/common/requestModal";
 import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import { syncAutoValidationNotifications } from "../../utils/notificationCenter";
+import { getTokenPayload } from "../../utils/auth";
 import {
   BsSearch,
   BsCalendar3,
@@ -157,6 +158,8 @@ const Checking = () => {
     total: 0,
     done: false,
   });
+  const lastAutoQueueAttemptRef = useRef(0);
+  const ownerUsername = getTokenPayload()?.sub || "";
 
   const showFeedback = (title, message, tone = "default", options = {}) => {
     setFeedbackModal({
@@ -240,11 +243,15 @@ const Checking = () => {
   };
 
   const fetchRequestsSnapshot = async () => {
-    const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+    const data = await requestService.getAllRequests({
+      page: 1,
+      limit: 100,
+      ownerUsername,
+    });
     const all = filterCertifyEligibleRequests(
       Array.isArray(data) ? data : data.items || [],
     );
-    const approved = all.filter((r) => r.status === "APPROVED");
+    const approved = all.filter((r) => r.status === "PROCESSING");
     let map = {};
 
     if (approved.length) {
@@ -274,9 +281,21 @@ const Checking = () => {
     };
   };
 
+  const maybeRefreshAutoQueue = async () => {
+    const now = Date.now();
+    if (now - lastAutoQueueAttemptRef.current < 30000) return;
+    lastAutoQueueAttemptRef.current = now;
+    try {
+      await requestService.autoQueueApprovedRequests();
+    } catch (error) {
+      console.error("Auto-queue refresh failed:", error);
+    }
+  };
+
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
+      await maybeRefreshAutoQueue();
       const snapshot = await fetchRequestsSnapshot();
       setRequests(snapshot.approved);
       setValidationMap(snapshot.validationMap);
@@ -292,12 +311,12 @@ const Checking = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);
@@ -375,14 +394,9 @@ const Checking = () => {
       setSelectedRequest(req);
       return;
     }
-    const nextStatus = "PROCESSING";
     setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: true }));
     try {
-      await requestService.updateStatus(
-        req.id,
-        nextStatus,
-        "Request moved to processing",
-      );
+      await requestService.generateCertificate(req.id);
       await fetchRequests({ silent: true });
     } catch (error) {
       console.error("Failed to advance request:", error);
@@ -487,28 +501,23 @@ const Checking = () => {
 
   const handleModalApprove = async (req) => {
     if (!req) return;
-    const nextStatus = "PROCESSING";
     setModalLoading(true);
     showFeedback(
-      "Submitting Request",
-      "Please wait while the certificate request is being submitted.",
+      "Generating Certificate",
+      "Please wait while the certificate is being generated.",
       "info",
       {
         loading: true,
-        confirmLabel: "Submitting...",
+        confirmLabel: "Generating...",
       },
     );
     try {
-      await requestService.updateStatus(
-        req.id,
-        nextStatus,
-        "Request moved to processing",
-      );
+      await requestService.generateCertificate(req.id);
       await fetchRequests({ silent: true });
       setSelectedRequest(null);
       showFeedback(
-        "Request Submitted",
-        "Certificate request submitted successfully.",
+        "Certificate Generated",
+        "Certificate request moved to tracker successfully.",
         "success",
       );
     } catch (error) {
@@ -516,7 +525,7 @@ const Checking = () => {
       if (isTimeoutLikeError(error)) {
         showFeedback(
           "Checking Request Status",
-          "The server took too long to reply, so we're verifying whether the request was still submitted.",
+          "The server took too long to reply, so we're verifying whether the certificate was still generated.",
           "info",
           {
             loading: true,
@@ -528,8 +537,8 @@ const Checking = () => {
           if (wasRequestAdvanced(snapshot, req)) {
             setSelectedRequest(null);
             showFeedback(
-              "Request Submitted",
-              "Certificate request was submitted successfully. The page has been refreshed to reflect the latest status.",
+              "Certificate Generated",
+              "Certificate request was generated successfully. The page has been refreshed to reflect the latest status.",
               "success",
             );
             return;
@@ -542,8 +551,8 @@ const Checking = () => {
         }
       }
       showFeedback(
-        "Submission Failed",
-        getErrorDetail(error, "Failed to submit the certificate request."),
+        "Generation Failed",
+        getErrorDetail(error, "Failed to generate the certificate request."),
         "error",
       );
     } finally {
@@ -629,11 +638,7 @@ const Checking = () => {
       });
       for (let i = 0; i < filteredRequests.length; i += 1) {
         const request = filteredRequests[i];
-        await requestService.updateStatus(
-          request.id,
-          "PROCESSING",
-          "Request moved to processing",
-        );
+        await requestService.generateCertificate(request.id);
         showBulkDialog({
           title: "Processing Requests",
           message: `${i + 1} of ${filteredRequests.length} request${filteredRequests.length !== 1 ? "s" : ""} processed.`,
@@ -644,7 +649,7 @@ const Checking = () => {
       fetchRequests();
       showBulkDialog({
         title: "Bulk Process Complete",
-        message: `${filteredRequests.length} request${filteredRequests.length !== 1 ? "s were" : " was"} moved to processing.`,
+        message: `${filteredRequests.length} request${filteredRequests.length !== 1 ? "s were" : " was"} moved to tracker.`,
         tone: "success",
         current: filteredRequests.length,
         total: filteredRequests.length,
@@ -794,7 +799,7 @@ const Checking = () => {
             {bulkApproveLoading && (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )}
-            Process All
+            Generate All
           </button>
         </div>
 
@@ -896,8 +901,9 @@ const Checking = () => {
       {/* Validation Summary */}
       <div className="mb-2 -mt-2 flex items-center justify-between gap-2">
         <div className="text-[11px] text-gray-500">
-          Auto-validation flags missing or inconsistent data for registrar
-          review.
+          This tab shows the requests currently assigned to your checking queue.
+          When a request leaves this queue, the next queued request enters
+          automatically when a slot is free.
         </div>
         <div className="flex items-center gap-3 text-[11px]">
           <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">

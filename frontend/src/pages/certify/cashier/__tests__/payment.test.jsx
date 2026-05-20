@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -155,5 +156,50 @@ describe("Payment tagging page", () => {
     expect(
       screen.queryByText(/failed to record payment/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("allows recording payment for for releasing requests", async () => {
+    const user = userEvent.setup();
+
+    requestService.getAllRequests.mockResolvedValue([
+      {
+        id: 22,
+        reference_number: "REF-220",
+        student_name: "Marie Curie",
+        certificate_type_name: "Certification",
+        created_at: new Date().toISOString(),
+        status: "FOR_RELEASING",
+        request_cost: 30,
+      },
+    ]);
+    paymentService.getUnpaidRequests.mockResolvedValue([{ id: 22 }]);
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
+    paymentService.createPayment.mockResolvedValue({});
+
+    render(<PaymentTagging />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /record payment/i }),
+      ).toBeEnabled();
+    });
+
+    const recordButton = screen.getByRole("button", {
+      name: /record payment/i,
+    });
+
+    await user.click(recordButton);
+    await user.type(screen.getByPlaceholderText(/or number/i), "220001");
+    await user.click(screen.getAllByRole("button", { name: /^record payment$/i })[1]);
+    await user.click(await screen.findByRole("button", { name: /submit payment/i }));
+
+    await waitFor(() => {
+      expect(paymentService.createPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request_id: 22,
+          or_number: "220001",
+        }),
+      );
+    });
   });
 });

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import case
+from sqlalchemy import and_, case, func, or_
 from fastapi import HTTPException, status
 from typing import Optional
 import secrets
@@ -27,9 +27,7 @@ from app.models.certificate_request import (
 )
 from app.models.certificate import Certificate
 from app.models.audit_log import AuditLog
-from app.models.payment import Payment
-from app.models.student import Student
-from app.models.program import Program
+from app.models.user import User
 from app.repositories import (
     AuditLogRepository,
     CertificateRepository,
@@ -38,6 +36,7 @@ from app.repositories import (
     ProgramRepository,
     StudentRepository,
 )
+from app.services.request_review_service import request_requires_manual_review
 
 STATUS_AUDIT_ACTIONS = {
     RequestStatus.APPROVED: "REQUEST_APPROVED",
@@ -68,6 +67,9 @@ CERTIFY_ONLY_STATUSES = {
     RequestStatus.FOR_RELEASING,
     RequestStatus.RELEASED,
 }
+
+PROCESSING_QUEUE_DEFAULT_LIMIT = 5
+PROCESSING_ELIGIBLE_ROLES = {"registrar_staff", "registrar_head", "superadmin"}
 
 
 def can_transition_to(current_status: RequestStatus, new_status: RequestStatus) -> bool:
@@ -107,12 +109,252 @@ def clear_auto_print_tracking(request: CertificateRequest) -> None:
     request.auto_print_confirmed_at = None
 
 
+def _is_paid_payment(payment) -> bool:
+    return bool(payment and str(getattr(payment, "payment_status", "") or "").upper() == "PAID")
+
+
+async def trigger_for_releasing_flow(
+    db: Session,
+    request: CertificateRequest,
+    student_repo: StudentRepository | None = None,
+    program_repo: ProgramRepository | None = None,
+) -> None:
+    payment_repo = PaymentRepository(db)
+    payment = payment_repo.get_by_reference(request.reference_number or "")
+    payment_is_recorded = _is_paid_payment(payment)
+
+    if not request.for_releasing_started_at:
+        request.for_releasing_started_at = datetime.now()
+
+    signing_available = get_signing_available(db)
+    skip_ready_email = False
+
+    if not signing_available:
+        db.commit()
+        db.refresh(request)
+        if not request.release_hold_active:
+            was_sent = await send_signatory_unavailable_notice_and_hold(db, request)
+            if was_sent:
+                print(
+                    f"Auto signatory delay notice sent to {request.requestor_email}"
+                )
+        return
+
+    if not skip_ready_email and not request.ready_email_sent_at:
+        student_repo = student_repo or StudentRepository(db)
+        program_repo = program_repo or ProgramRepository(db)
+        campus_telNo = None
+        campus_email = None
+        student = None
+        if request.sr_code:
+            student = student_repo.get_by_sr_code(request.sr_code)
+        campus = None
+        if student is not None:
+            campus = student.campus or (student.program.campus if student.program else None)
+        if campus is None and request.program:
+            program = program_repo.get_by_name(request.program)
+            campus = program.campus if program else None
+        if campus is not None:
+            campus_telNo = campus.campus_telNo
+            campus_email = campus.campus_email
+
+        email_service = EmailService()
+        await email_service.send_ready_for_release(
+            to_email=request.requestor_email,
+            reference_number=request.reference_number,
+            requestor_name=request.requestor_name,
+            student_name=request.student_name,
+            certificate_type=request.certificate_type_name,
+            submitted_date=request.created_at or datetime.now(),
+            payment_amount=request.request_cost,
+            pin=request.pin,
+            tracking_url=os.getenv("TRACK_URL", "http://localhost:5173/track"),
+            campus_email=campus_email,
+            campus_telNo=campus_telNo,
+        )
+        request.ready_email_sent_at = datetime.now()
+        print(f"Release email sent to {request.requestor_email}")
+
+    if payment_is_recorded:
+        stop_processing_hold(request)
+        if not request.auto_print_requested_at:
+            request.auto_print_requested_at = datetime.now()
+        if request.auto_print_status not in {
+            AutoPrintStatus.SUBMITTED.value,
+            AutoPrintStatus.SENDING.value,
+            AutoPrintStatus.COMPLETED.value,
+        }:
+            request.auto_print_status = AutoPrintStatus.REQUESTED.value
+            request.auto_print_job_id = None
+            request.auto_print_error = None
+            request.auto_print_confirmed_at = None
+
+    db.commit()
+    db.refresh(request)
+
+
+def get_processing_queue_counts(db: Session) -> dict[str, int]:
+    rows = (
+        db.query(
+            CertificateRequest.owner_username,
+            func.count(CertificateRequest.id),
+        )
+        .filter(
+            CertificateRequest.status == RequestStatus.PROCESSING,
+            CertificateRequest.owner_username.is_not(None),
+        )
+        .group_by(CertificateRequest.owner_username)
+        .all()
+    )
+    return {str(username): int(count) for username, count in rows if username}
+
+
+def get_request_queue_context(
+    db: Session,
+    request: CertificateRequest,
+) -> tuple[Optional[int], Optional[int], Optional[str]]:
+    created_at = request.created_at
+    if created_at is None:
+        return None, None, None
+
+    if request.request_type != RequestType.CERTIFICATE.value or request.status not in {
+        RequestStatus.APPROVED,
+        RequestStatus.PROCESSING,
+    }:
+        return None, None, None
+
+    processing_query = db.query(CertificateRequest).filter(
+        CertificateRequest.request_type == RequestType.CERTIFICATE.value,
+        CertificateRequest.status == RequestStatus.PROCESSING,
+    )
+    waiting_query = db.query(CertificateRequest).filter(
+        CertificateRequest.request_type == RequestType.CERTIFICATE.value,
+        CertificateRequest.status == RequestStatus.APPROVED,
+        CertificateRequest.owner_username.is_(None),
+    )
+
+    processing_total = processing_query.count()
+    waiting_total = waiting_query.count()
+    queue_total = processing_total + waiting_total
+
+    if request.status == RequestStatus.PROCESSING:
+        queue_position = processing_query.filter(
+            or_(
+                CertificateRequest.created_at < created_at,
+                and_(
+                    CertificateRequest.created_at == created_at,
+                    CertificateRequest.id <= request.id,
+                ),
+            )
+        ).count()
+    else:
+        waiting_position = waiting_query.filter(
+            or_(
+                CertificateRequest.created_at < created_at,
+                and_(
+                    CertificateRequest.created_at == created_at,
+                    CertificateRequest.id <= request.id,
+                ),
+            )
+        ).count()
+        queue_position = processing_total + waiting_position
+
+    return queue_position or None, queue_total or None, "overall"
+
+
+def get_available_processing_assignee(db: Session) -> tuple[User | None, dict[str, int]]:
+    queue_counts = get_processing_queue_counts(db)
+    eligible_users = (
+        db.query(User)
+        .filter(
+            User.is_active == True,
+            User.can_process_certificates == True,
+            User.role.in_(PROCESSING_ELIGIBLE_ROLES),
+        )
+        .order_by(User.username.asc())
+        .all()
+    )
+
+    ranked: list[tuple[int, str, User]] = []
+    for user in eligible_users:
+        current_count = queue_counts.get(user.username, 0)
+        queue_limit = max(int(user.processing_queue_limit or 0), 0)
+        if queue_limit <= 0:
+            continue
+        if current_count >= queue_limit:
+            continue
+        ranked.append((current_count, user.username or "", user))
+
+    if not ranked:
+        return None, queue_counts
+
+    ranked.sort(key=lambda item: (item[0], item[1]))
+    return ranked[0][2], queue_counts
+
+
+async def auto_queue_approved_requests(
+    db: Session,
+    user_name: str = "System",
+) -> dict[str, int]:
+    request_repo = CertificateRequestRepository(db)
+    approved_requests = (
+        request_repo.query()
+        .filter(
+            CertificateRequest.request_type == RequestType.CERTIFICATE.value,
+            CertificateRequest.status == RequestStatus.APPROVED,
+        )
+        .order_by(CertificateRequest.created_at.asc(), CertificateRequest.id.asc())
+        .all()
+    )
+
+    queued_count = 0
+    review_count = 0
+    blocked_count = 0
+
+    for request in approved_requests:
+        if request.owner_username:
+            continue
+
+        needs_manual_review = request_requires_manual_review(db, request)
+
+        assignee, queue_counts = get_available_processing_assignee(db)
+        if assignee is None:
+            blocked_count += 1
+            break
+
+        await update_request_status(
+            db=db,
+            request_id=request.id,
+            new_status=RequestStatus.PROCESSING,
+            user_name=assignee.username,
+            notes=(
+                f"Automatically assigned to {assignee.username} queue."
+                if not needs_manual_review
+                else (
+                    f"Automatically assigned to {assignee.username} queue "
+                    "for manual review."
+                )
+            ),
+        )
+        queue_counts[assignee.username] = queue_counts.get(assignee.username, 0) + 1
+        queued_count += 1
+        if needs_manual_review:
+            review_count += 1
+
+    return {
+        "queued": queued_count,
+        "needs_review": review_count,
+        "blocked": blocked_count,
+    }
+
+
 async def update_request_status(
     db: Session,
     request_id: int,
     new_status: RequestStatus,
     user_name: str = "System",
     notes: Optional[str] = None,
+    trigger_auto_queue: bool = True,
 ) -> CertificateRequest:
     """
     Update request status with validation and audit logging
@@ -153,50 +395,10 @@ async def update_request_status(
             detail="Only certificate requests can enter the Certify workflow.",
         )
 
-    # Require payment before releasing
-    if new_status == RequestStatus.FOR_RELEASING:
-        ref = request.reference_number or ""
-        payment = payment_repo.get_by_reference(ref)
-        if not payment:
-            try:
-                campus_telNo = None
-                campus_email = None
-                student = None
-                if request.sr_code:
-                    student = student_repo.get_by_sr_code(request.sr_code)
-                campus = None
-                if student is not None:
-                    campus = student.campus or (
-                        student.program.campus if student.program else None
-                    )
-                if campus is None and request.program:
-                    program = program_repo.get_by_name(request.program)
-                    campus = program.campus if program else None
-                if campus is not None:
-                    campus_telNo = campus.campus_telNo
-                    campus_email = campus.campus_email
-
-                email_service = EmailService()
-                await email_service.send_payment_missing_notice(
-                    to_email=request.requestor_email,
-                    reference_number=request.reference_number,
-                    requestor_name=request.requestor_name,
-                    student_name=request.student_name,
-                    certificate_type=request.certificate_type_name,
-                    request_cost=request.request_cost,
-                    campus_email=campus_email,
-                    campus_telNo=campus_telNo,
-                )
-            except Exception as e:
-                print(f"Payment-missing email failed: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot change status. No payment found for this reference number.",
-            )
-
     # Store old status for audit
     old_status = request.status
     audit_user_name = user_name or request.owner_username or "System"
+    auto_moved_to_for_releasing = False
 
     if new_status == RequestStatus.PROCESSING:
         claimed_owner = user_name if user_name and user_name != "System" else None
@@ -267,68 +469,103 @@ async def update_request_status(
     audit_repo.add(audit_log)
 
     if new_status == RequestStatus.PROCESSING:
+        requires_manual_review = request_requires_manual_review(db, request)
         if not request.control_num:
             request.control_num = generate_or_number(db)
-        try:
-            from app.services.certificate_service import generate_certificate_pdf
-
-            pdf_path = generate_certificate_pdf(db, request_id, user_name)
-
-            # Save PDF path to request
-            request.pdf_path = pdf_path
-
-            # Compute cost based on actual PDF pages
-            try:
-                reader = PdfReader(pdf_path)
-                page_count = len(reader.pages)
-            except Exception:
-                page_count = None
-
-            if page_count:
-                old_cost = request.request_cost
-                request.request_cost = compute_request_cost(
-                    request.certificate_type_name, pages=page_count
-                )
-                if old_cost != request.request_cost:
-                    audit_repo.add(
-                        AuditLog(
-                            action="DATA_UPDATED",
-                            entity_type="certificate_request",
-                            entity_id=request_id,
-                            field_name="request_cost",
-                            old_value=str(old_cost) if old_cost is not None else None,
-                            new_value=str(request.request_cost),
-                            user_name=audit_user_name,
-                            notes=f"Updated request cost based on {page_count} PDF page(s).",
-                        )
-                    )
-
-            if page_count is None and not (
-                is_course_description(request.certificate_type_name)
-                or is_certification_of_grades(request.certificate_type_name)
-            ):
-                request.request_cost = compute_request_cost(
-                    request.certificate_type_name
-                )
-
-            # Add note about auto-generation
+        if requires_manual_review:
             audit_repo.add(
                 AuditLog(
                     action="NOTE_ADDED",
                     entity_type="certificate_request",
                     entity_id=request_id,
                     field_name="notes",
-                    new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
+                    new_value=(
+                        "Queued for manual review. Certificate generation must be "
+                        "completed manually from the tracker."
+                    ),
                     user_name=audit_user_name,
                 )
             )
-        except Exception as e:
-            db.commit()
-            db.refresh(request)
-            print(f"Auto-generation failed: {e}")
-            # Don't fail the status update if PDF generation fails
+        else:
+            try:
+                from app.services.certificate_service import generate_certificate_pdf
 
-    if new_status == RequestStatus.RELEASED:
+                pdf_path = generate_certificate_pdf(db, request_id, user_name)
+
+                # Save PDF path to request
+                request.pdf_path = pdf_path
+
+                # Compute cost based on actual PDF pages
+                try:
+                    reader = PdfReader(pdf_path)
+                    page_count = len(reader.pages)
+                except Exception:
+                    page_count = None
+
+                if page_count:
+                    old_cost = request.request_cost
+                    request.request_cost = compute_request_cost(
+                        request.certificate_type_name, pages=page_count
+                    )
+                    if old_cost != request.request_cost:
+                        audit_repo.add(
+                            AuditLog(
+                                action="DATA_UPDATED",
+                                entity_type="certificate_request",
+                                entity_id=request_id,
+                                field_name="request_cost",
+                                old_value=str(old_cost) if old_cost is not None else None,
+                                new_value=str(request.request_cost),
+                                user_name=audit_user_name,
+                                notes=f"Updated request cost based on {page_count} PDF page(s).",
+                            )
+                        )
+
+                if page_count is None and not (
+                    is_course_description(request.certificate_type_name)
+                    or is_certification_of_grades(request.certificate_type_name)
+                ):
+                    request.request_cost = compute_request_cost(
+                        request.certificate_type_name
+                    )
+
+                # Add note about auto-generation
+                audit_repo.add(
+                    AuditLog(
+                        action="NOTE_ADDED",
+                        entity_type="certificate_request",
+                        entity_id=request_id,
+                        field_name="notes",
+                        new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
+                        user_name=audit_user_name,
+                    )
+                )
+
+                request.status = RequestStatus.FOR_RELEASING
+                auto_moved_to_for_releasing = True
+                audit_repo.add(
+                    AuditLog(
+                        action=STATUS_AUDIT_ACTIONS.get(
+                            RequestStatus.FOR_RELEASING, "STATUS_CHANGED"
+                        ),
+                        entity_type="certificate_request",
+                        entity_id=request_id,
+                        field_name="status",
+                        old_value=RequestStatus.PROCESSING.value,
+                        new_value=RequestStatus.FOR_RELEASING.value,
+                        user_name=audit_user_name,
+                        notes="Certificate PDF completed. Awaiting payment before release.",
+                    )
+                )
+            except Exception as e:
+                db.commit()
+                db.refresh(request)
+                print(f"Auto-generation failed: {e}")
+                # Don't fail the status update if PDF generation fails
+
+    final_status = request.status
+
+    if final_status == RequestStatus.RELEASED:
         clear_auto_print_tracking(request)
 
         # Persist released requests into certificates table (idempotent)
@@ -350,99 +587,28 @@ async def update_request_status(
     db.commit()
     db.refresh(request)
 
-    if new_status == RequestStatus.PROCESSING and request.request_cost is not None:
+    if final_status == RequestStatus.FOR_RELEASING:
         try:
-            campus_email = None
-            campus_telNo = None
-            student = None
-            if request.sr_code:
-                student = student_repo.get_by_sr_code(request.sr_code)
-            campus = None
-            if student is not None:
-                campus = student.campus or (
-                    student.program.campus if student.program else None
-                )
-            if campus is None and request.program:
-                program = program_repo.get_by_name(request.program)
-                campus = program.campus if program else None
-            if campus is not None:
-                campus_email = campus.campus_email
-                campus_telNo = campus.campus_telNo
-
-            email_service = EmailService()
-            await email_service.send_request_confirmation(
-                to_email=request.requestor_email,
-                reference_number=request.reference_number,
-                pin=request.pin,
-                requestor_name=request.requestor_name,
-                student_name=request.student_name,
-                certificate_type=request.certificate_type_name,
-                submitted_date=request.created_at,
-                request_cost=request.request_cost,
-                campus_email=campus_email,
-                campus_telNo=campus_telNo,
+            await trigger_for_releasing_flow(
+                db,
+                request,
+                student_repo=student_repo,
+                program_repo=program_repo,
             )
-            print(f"Confirmation email sent to {request.requestor_email}")
-        except Exception as e:
-            print(f"Confirmation email failed: {e}")
-
-    if new_status == RequestStatus.FOR_RELEASING:
-        try:
-            stop_processing_hold(request)
-            request.for_releasing_started_at = datetime.now()
-            request.auto_print_requested_at = datetime.now()
-            request.auto_print_status = AutoPrintStatus.REQUESTED.value
-            request.auto_print_job_id = None
-            request.auto_print_error = None
-            request.auto_print_confirmed_at = None
-            signing_available = get_signing_available(db)
-            # When wet signature is enabled, ready email is sent manually
-            skip_ready_email = get_bool_setting(db, "use_wet_signature", False)
-            if not signing_available:
-                db.commit()
-                db.refresh(request)
-                was_sent = await send_signatory_unavailable_notice_and_hold(
-                    db,
-                    request,
-                )
-                if was_sent:
-                    print(
-                        f"Auto signatory delay notice sent to {request.requestor_email}"
-                    )
-            elif skip_ready_email:
-                db.commit()
-                db.refresh(request)
-            elif not skip_ready_email:
-                campus_telNo = None
-                student = None
-                if request.sr_code:
-                    student = student_repo.get_by_sr_code(request.sr_code)
-                campus = None
-                if student is not None:
-                    campus = student.campus or (
-                        student.program.campus if student.program else None
-                    )
-                if campus is None and request.program:
-                    program = program_repo.get_by_name(request.program)
-                    campus = program.campus if program else None
-                if campus is not None:
-                    campus_telNo = campus.campus_telNo
-
-                email_service = EmailService()
-                await email_service.send_ready_for_release(
-                    to_email=request.requestor_email,
-                    reference_number=request.reference_number,
-                    requestor_name=request.requestor_name,
-                    student_name=request.student_name,
-                    certificate_type=request.certificate_type_name,
-                    campus_telNo=campus_telNo,
-                )
-                request.ready_email_sent_at = datetime.now()
-                db.commit()
-                db.refresh(request)
-                print(f"Release email sent to {request.requestor_email}")
         except Exception as e:
             print(f"Release email failed: {e}")
+
+    if (
+        trigger_auto_queue
+        and (
+            (old_status == RequestStatus.PROCESSING and final_status != RequestStatus.PROCESSING)
+            or auto_moved_to_for_releasing
+        )
+    ):
+        try:
+            await auto_queue_approved_requests(db, user_name="System")
+        except Exception as exc:
+            print(f"[AutoQueue] Failed to refill freed slot: {exc}")
 
     return request
 

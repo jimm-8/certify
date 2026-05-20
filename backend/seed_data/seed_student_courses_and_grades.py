@@ -406,17 +406,9 @@ def main():
                 for _student_id, sr_code, program_id, explicit_curriculum_id in students:
                     if explicit_curriculum_id:
                         chosen = curriculum_by_id.get(explicit_curriculum_id)
-                        if chosen is None:
-                            raise ValueError(
-                                f"Student {sr_code} references missing curriculum_id {explicit_curriculum_id}"
-                            )
-                        if chosen["program_id"] != program_id:
-                            raise ValueError(
-                                f"Student {sr_code} curriculum_id {explicit_curriculum_id} "
-                                f"does not belong to the student's program"
-                            )
-                        curriculum_by_student[sr_code] = chosen
-                        continue
+                        if chosen is not None and chosen["program_id"] == program_id:
+                            curriculum_by_student[sr_code] = chosen
+                            continue
 
                     enrollments = enrollments_by_student.get(sr_code, [])
                     if not enrollments:

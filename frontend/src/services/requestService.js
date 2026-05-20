@@ -190,6 +190,15 @@ const requestService = {
       throw error;
     }
   },
+  generateCertificate: async (requestId) => {
+    try {
+      const response = await api.post(`/requests/${requestId}/generate-certificate`);
+      return response.data;
+    } catch (error) {
+      console.error("Error generating certificate:", error);
+      throw error;
+    }
+  },
   // send ready email
   sendReadyEmail: async (requestId) => {
     try {
@@ -199,6 +208,19 @@ const requestService = {
       return response.data;
     } catch (error) {
       console.error("Error sending email:", error);
+      throw error;
+    }
+  },
+  autoQueueApprovedRequests: async () => {
+    try {
+      const response = await api.post("/requests/auto-queue");
+      return response.data;
+    } catch (error) {
+      console.error("Error auto-queueing approved requests:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw error;
     }
   },
@@ -283,6 +305,21 @@ const requestService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching programs:", error);
+      throw error;
+    }
+  },
+
+  getCourseOptionsForOdr: async ({ srCode = "", studentName = "" } = {}) => {
+    try {
+      const response = await api.get("/requests/course-options", {
+        params: {
+          sr_code: srCode || undefined,
+          student_name: studentName || undefined,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching ODR course options:", error);
       throw error;
     }
   },

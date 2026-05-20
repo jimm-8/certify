@@ -207,6 +207,9 @@ const OdrNewRequest = () => {
         major: savedFormData.major || null,
         year_graduated: savedFormData.yearGraduated || null,
         signature_data: signatureData.split(",")[1],
+        course_description_selection:
+          savedFormData.courseDescriptionSelection || [],
+        grade_selection: savedFormData.gradeSelection || [],
         request_cost: parsedCost,
       };
 
@@ -567,6 +570,7 @@ const OdrNewRequest = () => {
                 ref={formRef}
                 programs={programs}
                 selectedOffice={selectedOffice}
+                selectedCertType={selectedCertType}
               />
             </div>
             <hr className="m-2 sm:m-5 -translate-y-10" />

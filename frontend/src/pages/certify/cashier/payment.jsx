@@ -429,7 +429,7 @@ export default function PaymentTagging() {
         const status = String(row.status || "").toUpperCase();
         const isUnpaid = unpaidIds.has(row.id);
         const canRecord =
-          status === "PROCESSING" &&
+          (status === "PROCESSING" || status === "FOR_RELEASING") &&
           isUnpaid &&
           row.request_cost !== null &&
           row.request_cost !== undefined;

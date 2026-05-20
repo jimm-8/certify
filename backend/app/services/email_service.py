@@ -33,7 +33,7 @@ class EmailService:
         campus_telNo: str | None = None,
         track_url: str | None = None,
     ):
-        subject = f"Certificate Request Confirmation - {reference_number}"
+        subject = f"Certificate Request Update - {reference_number}"
         contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
         contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
         tracking_url = track_url or os.getenv(
@@ -145,13 +145,12 @@ class EmailService:
 
         <div class="container">
             <div class="header">
-            <strong>We have received your request!</strong>
+            <strong>Certificate Request Update</strong>
             </div>
 
             <div class="content">
             <p>Dear {requestor_name},</p>
-            <p>Your certificate request for {student_name} has been successfully transfered to Certify and is now being processed. Please review your request
-                details below and follow the instructions to complete your payment.</p>
+            <p>Your certificate request for {student_name} is now in the processing queue. We will notify you again once your certificate is ready for release.</p>
 
             <div class="request-card">
                 <div class="card-header">Request Details</div>
@@ -159,7 +158,7 @@ class EmailService:
                 <p><strong>Student Name:</strong> <span class="variable">{student_name}</span></p>
                 <p><strong>Certificate Type:</strong> {certificate_type}</p>
                 <p><strong>Submitted Date:</strong> {submitted_date.strftime("%B %d, %Y at %I:%M %p")}</p>
-                <p><strong>Status:</strong> <span style="color: #d39e00; font-weight: bold;">Pending Review</span></p>
+                <p><strong>Status:</strong> <span style="color: #d39e00; font-weight: bold;">Queued for Processing</span></p>
                 </div>
             </div>
 
@@ -217,24 +216,19 @@ class EmailService:
         """
 
         text_body = f"""
-        We have received your request!
+        Certificate Request Update
 
         Dear {requestor_name},
-        Your certificate request for {student_name} has been successfully submitted.
+        Your certificate request for {student_name} is now in the processing queue.
 
         Request Details:
         - Student Name: {student_name}
         - Certificate Type: {certificate_type}
         - Submitted: {submitted_date.strftime("%B %d, %Y at %I:%M %p")}
-        - Status: Pending Review
+        - Status: Queued for Processing
+        - Estimated Amount: Php {payment_amount}
 
-        Payment Instructions:
-        1) Proceed to the Cashier's Office and state your purpose.
-        2) Provide your Reference Number to the cashier for payment.
-        3) Wait for an email confirmation when your certificate is ready.
-        Amount to pay: Php {payment_amount}
-
-        Important Reminder:
+        Tracking Details:
         Reference No.: {reference_number}
         PIN: {pin}
 
@@ -639,11 +633,25 @@ Please keep your reference number for tracking and future follow-ups.
         requestor_name: str,
         student_name: str,
         certificate_type: str,
+        submitted_date: datetime,
+        payment_amount: float | int | str | None,
+        pin: str,
+        tracking_url: str | None = None,
+        campus_email: str | None = None,
         campus_telNo: str | None = None,
     ):
-        subject = f"Your Certificate is Ready for Pickup – {reference_number}"
+        subject = f"Your Certificate is Ready for Release - {reference_number}"
+        tracking_url = tracking_url or os.getenv(
+            "TRACK_URL", "http://localhost:5173/track"
+        )
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
         contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
         safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        payment_amount = (
+            f"{float(payment_amount):.2f}"
+            if payment_amount is not None and str(payment_amount).strip() != ""
+            else "0.00"
+        )
 
         html_body = f"""
         <!DOCTYPE html>
@@ -745,42 +753,61 @@ Please keep your reference number for tracking and future follow-ups.
 
         <div class="container">
             <div class="header">
-            <strong>Your Certificate is Ready!</strong>
+            <strong>Your Certificate is Ready for Release</strong>
             </div>
 
             <div class="content">
-            <p>Dear {safe_requestor_name},</p>
-            <p>Great news! Your certificate request is now <strong style="color: #DE1B1B;">READY FOR PICKUP</strong> at the
-                Registrar's Office.</p>
-
+            <p>Dear {requestor_name},</p>
+            <p>Great news! Your certificate request for {student_name} is now <strong style="color: #DE1B1B;">READY FOR RELEASE</strong> at the Registrar's Office.  Kindly settle the payment to claim your requested document.</p>
+            <p>
+                <strong>Take Note:</strong> If someone else will claim the document on behalf of the owner, please ensure that a valid authorization letter is presented during claiming.
+            </p>
 
             <div class="request-card">
-                <div class="card-header">Request Summary</div>
+                <div class="card-header">Request Details</div>
                 <div class="card-content">
-                <p><strong>Reference Number:</strong> <span class="variable"> {reference_number}</span></p>
-                <p><strong>Certificate for:</strong> {student_name}</p>
-                <p><strong>Submitted Type:</strong> {certificate_type}</p>
+                <p><strong>Student Name:</strong> <span class="variable">{student_name}</span></p>
+                <p><strong>Certificate Type:</strong> {certificate_type}</p>
+                <p><strong>Submitted Date:</strong> {submitted_date.strftime("%B %d, %Y at %I:%M %p")}</p>
                 </div>
             </div>
 
             <div class="request-card">
-                <div class="card-header">Claiming Instructions</div>
+                <div class="card-header">Payment Instructions</div>
                 <div class="card-content">
-                <p>Step 1: Proceed to the <strong>Registrar's Office</strong> and state your purpose.</p>
-                <p>Step 2: Present <strong>this</strong> email along with your <strong>Official Receipt</strong> for
-                    verification</p>
-                <p>Receive your document and sign the log book to complete the process.</p>
+                    <p style="text-align: center;">
+                        The total amount is computed as follows:
+                        <br>
+                        <strong>Based on the certificate type, number of page(s), and Documentary Stamp Tax (DST)</strong>
+                    </p>
+
+                    <p style="text-align: center;">
+                        You will pay a total of <strong>Php {payment_amount}</strong>.
+                    </p>
+
+                    <p>Step 1: Proceed to the Cashier's Office and inform the cashier that your payment is for <strong>“Certify Request”</strong>.</p>
+                    <p>Step 2: Once payment is confirmed, your request will be automatically processed and queued for printing.</p>
+                    <p>Step 4: After payment, you may proceed directly to the Registrar's Office to claim your certificate.</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Important Reminder</div>
+                <div class="card-content">
+                <p><strong>Reference No.:</strong> <span class="variable">{reference_number}</span></p>
+                <p><strong>PIN:</strong> {pin}</p>
                 </div>
                 <p class="note">
-                <i>Note:</i> Registrar may ask you to present documents supporting your request. Such as valid ID's,
-                Authorization Letter, etc.
+                <i>Note:</i> You will need both the reference number and PIN to track your request.
                 </p>
             </div>
 
+            <a href="{tracking_url}" class="button">Track Your Request</a>
+
             <div class="request-card">
-                <div class="card-header">Office Hours</div>
+                <div class="card-header">Need Help?</div>
                 <div class="card-content">
-                <p>Monday to Friday: 8:00 AM to 5:00 PM</p>
+                <p><strong>Email:</strong> <span class="variable">{contact_email}</span></p>
                 <p><strong>Tel Nos.:</strong> {contact_phone}</p>
                 </div>
             </div>
@@ -798,15 +825,20 @@ Please keep your reference number for tracking and future follow-ups.
         """
 
         text_body = f"""
-        Your Certificate is Ready for Pickup!
+        Your Certificate is Ready for Release!
 
         Dear {safe_requestor_name},
 
-        Your certificate request is now ready for pickup at the Registrar's Office.
+        Your certificate request is now ready for release at the Registrar's Office.
 
         Reference No: {reference_number}
         Student Name: {student_name}
         Certificate: {certificate_type}
+        Submitted Date: {submitted_date.strftime("%B %d, %Y at %I:%M %p")}
+        Payment Amount: Php {payment_amount}
+        PIN: {pin}
+        Track your request at: {tracking_url}
+        Contact Email: {contact_email}
 
         Please bring a valid ID and your reference number when claiming.
         Office Hours: Monday to Friday, 8:00 AM - 5:00 PM

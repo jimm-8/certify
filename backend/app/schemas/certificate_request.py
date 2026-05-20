@@ -97,6 +97,14 @@ class CertificateRequestCreate(BaseModel):
     
     # Signature (base64 encoded image data)
     signature_data: Optional[str] = Field(None, description="Base64 encoded signature image")
+    course_description_selection: list[str] = Field(
+        default_factory=list,
+        description="Selected course codes for course description requests",
+    )
+    grade_selection: list[str] = Field(
+        default_factory=list,
+        description="Selected course-grade keys for certification of grades requests",
+    )
 
     @model_validator(mode="after")
     def validate_request_kind(self):
@@ -165,6 +173,9 @@ class CertificateRequestTrackResponse(BaseModel):
     student_name: str
     submitted_date: datetime
     updated_date: Optional[datetime] = None
+    queue_position: Optional[int] = None
+    queue_total: Optional[int] = None
+    queue_scope: Optional[str] = None
     
     class Config:
         from_attributes = True

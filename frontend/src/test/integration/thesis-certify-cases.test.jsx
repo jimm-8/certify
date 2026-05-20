@@ -22,6 +22,7 @@ vi.mock("../../services/requestService", () => ({
   default: {
     createRequest: vi.fn(),
     getPrograms: vi.fn(),
+    getCourseOptionsForOdr: vi.fn(),
     getAllRequests: vi.fn(),
     getCertificateTypes: vi.fn(),
     updateStatus: vi.fn(),
@@ -191,6 +192,8 @@ vi.mock("../../pages/odr/odr_reqest_form", () => {
         program: "BSCS",
         major: "",
         yearGraduated: "2025",
+        courseDescriptionSelection: [],
+        gradeSelection: [],
       }),
     }));
 

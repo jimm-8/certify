@@ -18,7 +18,7 @@ from app.schemas.payment import (
     PaymentInfo,
     PaymentInfoListResponse,
 )
-from app.services.request_service import update_request_status
+from app.services.request_service import trigger_for_releasing_flow
 from app.repositories import CertificateRequestRepository, PaymentRepository
 import anyio
 from app.api.v1.auth import require_permissions
@@ -120,15 +120,11 @@ def create_payment(
                 ),
             )
 
-    # Auto-advance to FOR_RELEASING once payment is detected
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
         anyio.from_thread.run(
-            update_request_status,
+            trigger_for_releasing_flow,
             db,
-            request.id,
-            RequestStatus.FOR_RELEASING,
-            request.owner_username or "System",
-            "Payment recorded and request moved to for releasing",
+            request,
         )
     return payment
 
@@ -272,15 +268,11 @@ def create_payment_by_reference(
                 ),
             )
 
-    # Auto-advance to FOR_RELEASING once payment is detected
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
         anyio.from_thread.run(
-            update_request_status,
+            trigger_for_releasing_flow,
             db,
-            request.id,
-            RequestStatus.FOR_RELEASING,
-            request.owner_username or "System",
-            "Payment recorded and request moved to for releasing",
+            request,
         )
     return payment
 

@@ -11,13 +11,13 @@ import formatApiError from "../../utils/formatApiError";
 
 const tabs = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutGrid size={15} /> },
-  { key: "received", label: "Received Request", icon: <Inbox size={15} /> },
+  { key: "received", label: "Checking Queue", icon: <Inbox size={15} /> },
   {
     key: "processing",
-    label: "Under Processing",
+    label: "For Release",
     icon: <LuRefreshCw size={15} />,
   },
-  { key: "ready", label: "For Release", icon: <PackageCheck size={15} /> },
+  { key: "ready", label: "For Pickup", icon: <PackageCheck size={15} /> },
   {
     key: "history",
     label: "History",

@@ -20,7 +20,7 @@ from app.models.certificate_request import (
     RequestStatus,
 )
 from app.repositories.models import CertificateRequestRepository
-from app.services.request_service import update_request_status
+from app.services.request_service import trigger_for_releasing_flow, update_request_status
 
 
 def _make_session_factory(tmp_path):
@@ -147,3 +147,43 @@ def test_processing_claim_conflicts_when_another_user_wins(tmp_path, monkeypatch
 
     assert exc_info.value.status_code == 409
     assert "winner_user" in exc_info.value.detail
+
+
+def test_for_releasing_flow_sends_ready_email_even_when_unpaid(tmp_path, monkeypatch):
+    Session = _make_session_factory(tmp_path)
+    db = Session()
+    request = _seed_request(db)
+    request.status = RequestStatus.FOR_RELEASING
+    db.commit()
+    db.refresh(request)
+
+    sent = {"called": False, "kwargs": None}
+
+    async def fake_send_ready_for_release(self, **kwargs):
+        sent["called"] = True
+        sent["kwargs"] = kwargs
+
+    monkeypatch.setattr(
+        "app.services.request_service.get_signing_available",
+        lambda _db: True,
+    )
+    monkeypatch.setattr(
+        "app.services.request_service.get_bool_setting",
+        lambda _db, _key, _default=False: False,
+    )
+    monkeypatch.setattr(
+        "app.services.request_service.EmailService.send_ready_for_release",
+        fake_send_ready_for_release,
+    )
+
+    asyncio.run(trigger_for_releasing_flow(db, request))
+    db.refresh(request)
+    db.close()
+
+    assert sent["called"] is True
+    assert request.ready_email_sent_at is not None
+    assert sent["kwargs"]["submitted_date"] == request.created_at
+    assert str(sent["kwargs"]["payment_amount"]) == str(request.request_cost)
+    assert sent["kwargs"]["pin"] == request.pin
+    assert sent["kwargs"]["tracking_url"]
+    assert "contact_email" not in sent["kwargs"]

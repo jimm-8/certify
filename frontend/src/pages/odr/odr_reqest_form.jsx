@@ -1,17 +1,31 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FaExclamationCircle } from "react-icons/fa";
+import requestService from "../../services/requestService";
 
-// Reusable inline field error
 const FieldError = ({ message }) =>
   message ? (
-    <p className="flex items-center gap-1 text-red-500 text-xs mt-1">
+    <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
       <FaExclamationCircle className="shrink-0" />
       {message}
     </p>
   ) : null;
 
+const formatYearLevel = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return String(value || "");
+  if (num % 100 >= 11 && num % 100 <= 13) return `${num}th Year`;
+  const suffix = { 1: "st", 2: "nd", 3: "rd" }[num % 10] || "th";
+  return `${num}${suffix} Year`;
+};
+
+const isCourseDescriptionType = (certificateName = "") =>
+  certificateName.toLowerCase().includes("course description");
+
+const isCertificationOfGradesType = (certificateName = "") =>
+  certificateName.toLowerCase().includes("grades");
+
 const OdrRequestForm = React.forwardRef(
-  ({ programs = [], selectedOffice = "" }, ref) => {
+  ({ programs = [], selectedOffice = "", selectedCertType = null }, ref) => {
     const currentYear = new Date().getFullYear();
     const [formData, setFormData] = useState({
       name: "",
@@ -26,17 +40,32 @@ const OdrRequestForm = React.forwardRef(
       major: "",
       yearGraduated: "",
     });
-
-    // Per-field error state
     const [errors, setErrors] = useState({});
     const [programSearch, setProgramSearch] = useState("");
     const [showProgramDropdown, setShowProgramDropdown] = useState(false);
+    const [courseOptions, setCourseOptions] = useState([]);
+    const [courseLookupLoading, setCourseLookupLoading] = useState(false);
+    const [courseLookupError, setCourseLookupError] = useState("");
+    const [courseSearch, setCourseSearch] = useState("");
+    const [gradeSearch, setGradeSearch] = useState("");
+    const [courseYearFilter, setCourseYearFilter] = useState("");
+    const [courseSemesterFilter, setCourseSemesterFilter] = useState("");
+    const [gradeYearFilter, setGradeYearFilter] = useState("");
+    const [gradeSemesterFilter, setGradeSemesterFilter] = useState("");
+    const [selectedCourseCodes, setSelectedCourseCodes] = useState([]);
+    const [selectedGradeKeys, setSelectedGradeKeys] = useState([]);
+
+    const certificateName = selectedCertType?.name || "";
+    const requiresCourseDescriptionSelection =
+      isCourseDescriptionType(certificateName);
+    const requiresGradeSelection = isCertificationOfGradesType(certificateName);
+    const needsCourseSelection =
+      requiresCourseDescriptionSelection || requiresGradeSelection;
 
     const programOptions = useMemo(() => {
       return [...new Set(programs.map((p) => p.name).filter(Boolean))].sort();
     }, [programs]);
 
-    // ← now programOptions exists when filteredPrograms references it
     const filteredPrograms = useMemo(() => {
       if (!programSearch) return programOptions;
       return programOptions.filter((p) =>
@@ -74,10 +103,109 @@ const OdrRequestForm = React.forwardRef(
       ].sort();
     }, [programs, formData.program]);
 
-    // Validate a single field and return an error string (or "")
+    const courseDescriptionOptions = useMemo(() => {
+      return courseOptions.filter((row, idx, arr) => {
+        const code = row?.course_code;
+        if (!code) return false;
+        return arr.findIndex((item) => item?.course_code === code) === idx;
+      });
+    }, [courseOptions]);
+
+    const yearLevels = useMemo(
+      () =>
+        Array.from(
+          new Set(
+            courseOptions
+              .map((row) => row.year_level)
+              .filter((val) => String(val || "").trim() !== ""),
+          ),
+        ).sort((a, b) => Number(a) - Number(b)),
+      [courseOptions],
+    );
+
+    const semesters = useMemo(
+      () =>
+        Array.from(
+          new Set(
+            courseOptions
+              .map((row) => row.semester)
+              .filter((val) => String(val || "").trim() !== ""),
+          ),
+        ),
+      [courseOptions],
+    );
+
+    const filteredCourseDescriptionOptions = useMemo(() => {
+      const query = courseSearch.trim().toLowerCase();
+      return courseDescriptionOptions.filter((row) => {
+        if (
+          courseYearFilter &&
+          String(row.year_level) !== String(courseYearFilter)
+        ) {
+          return false;
+        }
+        if (
+          courseSemesterFilter &&
+          String(row.semester) !== String(courseSemesterFilter)
+        ) {
+          return false;
+        }
+        if (!query) return true;
+        const haystack = [
+          row.course_code,
+          row.course_title,
+          row.units,
+          row.grade,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query);
+      });
+    }, [
+      courseDescriptionOptions,
+      courseSearch,
+      courseYearFilter,
+      courseSemesterFilter,
+    ]);
+
+    const filteredGradeOptions = useMemo(() => {
+      const query = gradeSearch.trim().toLowerCase();
+      return courseOptions.filter((row) => {
+        const haystack = [
+          row.course_code,
+          row.course_title,
+          row.grade,
+          row.units,
+          row.academic_year,
+          row.semester,
+          row.year_level,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (query && !haystack.includes(query)) return false;
+        if (
+          gradeYearFilter &&
+          String(row.year_level) !== String(gradeYearFilter)
+        ) {
+          return false;
+        }
+        if (
+          gradeSemesterFilter &&
+          String(row.semester) !== String(gradeSemesterFilter)
+        ) {
+          return false;
+        }
+        return true;
+      });
+    }, [courseOptions, gradeSearch, gradeYearFilter, gradeSemesterFilter]);
+
+    const buildGradeKey = (row) =>
+      `${row.course_code || ""}||${row.academic_year || ""}||${row.semester || ""}`;
+
     const validateField = (name, value) => {
       const trimmed = typeof value === "string" ? value.trim() : value;
-
       const requiredFields = [
         "name",
         "currentAddress",
@@ -121,21 +249,22 @@ const OdrRequestForm = React.forwardRef(
 
       if (name === "emailAddress" && trimmed) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(trimmed))
+        if (!emailRegex.test(trimmed)) {
           return "Please enter a valid email address.";
+        }
       }
 
       if (name === "contactNumber" && trimmed) {
         const phoneRegex = /^(09|\+639)\d{9}$/;
-        if (!phoneRegex.test(trimmed.replace(/\s/g, "")))
+        if (!phoneRegex.test(trimmed.replace(/\s/g, ""))) {
           return "Enter a valid PH mobile number (e.g. 09XXXXXXXXX).";
+        }
       }
 
       if (name === "yearGraduated" && trimmed) {
         if (!/^\d{4}$/.test(trimmed)) {
           return "Year graduated must be a 4-digit year.";
         }
-
         if (Number(trimmed) > currentYear) {
           return `Year graduated cannot be later than ${currentYear}.`;
         }
@@ -144,21 +273,36 @@ const OdrRequestForm = React.forwardRef(
       return "";
     };
 
-    // Validate all fields and return field-level error map
     const validateAll = () => {
       const newErrors = {};
       Object.keys(formData).forEach((key) => {
         const err = validateField(key, formData[key]);
         if (err) newErrors[key] = err;
       });
+
+      if (
+        requiresCourseDescriptionSelection &&
+        selectedCourseCodes.length === 0
+      ) {
+        newErrors.courseSelection =
+          "Please select at least one course to include in the request.";
+      }
+      if (requiresGradeSelection && selectedGradeKeys.length === 0) {
+        newErrors.gradeSelection =
+          "Please select at least one course grade to include in the request.";
+      }
+      if (needsCourseSelection && courseOptions.length === 0) {
+        newErrors.courseLookup =
+          courseLookupError ||
+          "Load the student's available courses before continuing.";
+      }
+
       return newErrors;
     };
 
     const handleChange = (e) => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
-
-      // Clear error as user types / selects
       if (errors[name]) {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
@@ -170,14 +314,67 @@ const OdrRequestForm = React.forwardRef(
       setErrors((prev) => ({ ...prev, [name]: err }));
     };
 
-    // Called by parent via ref
+    const loadCourseOptions = async () => {
+      if (!needsCourseSelection) return;
+
+      const srCode = formData.srcCode.trim();
+      const studentName = formData.fullname.trim();
+      if (!srCode && !studentName) {
+        setCourseOptions([]);
+        setCourseLookupError(
+          "Enter the student's SR code or full name before loading courses.",
+        );
+        setErrors((prev) => ({
+          ...prev,
+          courseLookup:
+            "Enter the student's SR code or full name before loading courses.",
+        }));
+        return;
+      }
+
+      setCourseLookupLoading(true);
+      setCourseLookupError("");
+      setErrors((prev) => ({ ...prev, courseLookup: "" }));
+
+      try {
+        const response = await requestService.getCourseOptionsForOdr({
+          srCode,
+          studentName,
+        });
+        const items = Array.isArray(response?.courses) ? response.courses : [];
+        setCourseOptions(items);
+        setSelectedCourseCodes((prev) =>
+          prev.filter((code) => items.some((row) => row.course_code === code)),
+        );
+        setSelectedGradeKeys((prev) =>
+          prev.filter((key) => items.some((row) => buildGradeKey(row) === key)),
+        );
+      } catch (error) {
+        const detail =
+          error?.response?.data?.detail ||
+          "Unable to load the student's available courses.";
+        setCourseOptions([]);
+        setSelectedCourseCodes([]);
+        setSelectedGradeKeys([]);
+        setCourseLookupError(detail);
+        setErrors((prev) => ({ ...prev, courseLookup: detail }));
+      } finally {
+        setCourseLookupLoading(false);
+      }
+    };
+
     const getFormData = () => {
       const newErrors = validateAll();
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         throw new Error("Please fix the highlighted fields before continuing.");
       }
-      return formData;
+
+      return {
+        ...formData,
+        courseDescriptionSelection: selectedCourseCodes,
+        gradeSelection: selectedGradeKeys,
+      };
     };
 
     React.useImperativeHandle(ref, () => ({ getFormData }));
@@ -204,37 +401,73 @@ const OdrRequestForm = React.forwardRef(
       majorOptions,
     ]);
 
-    // Helper: classes for input based on error state
+    useEffect(() => {
+      if (!needsCourseSelection) {
+        setCourseOptions([]);
+        setCourseLookupError("");
+        setSelectedCourseCodes([]);
+        setSelectedGradeKeys([]);
+        setCourseSearch("");
+        setGradeSearch("");
+        setCourseYearFilter("");
+        setCourseSemesterFilter("");
+        setGradeYearFilter("");
+        setGradeSemesterFilter("");
+        setErrors((prev) => ({
+          ...prev,
+          courseLookup: "",
+          courseSelection: "",
+          gradeSelection: "",
+        }));
+      }
+    }, [needsCourseSelection]);
+
     const inputClass = (field) =>
-      `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 h-10 transition-colors ${
+      `h-10 w-full rounded border px-3 py-2 transition-colors focus:outline-none focus:ring-2 ${
         errors[field]
           ? "border-red-400 bg-red-50 focus:ring-red-300"
           : "border-gray-300 focus:ring-teal-500"
       }`;
 
     const textareaClass = (field) =>
-      `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 transition-colors ${
+      `w-full rounded border px-3 py-2 transition-colors focus:outline-none focus:ring-2 ${
         errors[field]
           ? "border-red-400 bg-red-50 focus:ring-red-300"
           : "border-gray-300 focus:ring-teal-500"
       }`;
 
+    const toggleCourse = (code) => {
+      setSelectedCourseCodes((prev) =>
+        prev.includes(code)
+          ? prev.filter((item) => item !== code)
+          : [...prev, code],
+      );
+      setErrors((prev) => ({ ...prev, courseSelection: "" }));
+    };
+
+    const toggleGrade = (key) => {
+      setSelectedGradeKeys((prev) =>
+        prev.includes(key)
+          ? prev.filter((item) => item !== key)
+          : [...prev, key],
+      );
+      setErrors((prev) => ({ ...prev, gradeSelection: "" }));
+    };
+
     return (
       <>
-        {/* ── Requesting Individual's Information ─────────────── */}
-        <div className="max-w-4xl m-5">
-          <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
+        <div className="m-5 max-w-4xl">
+          <div className="flex h-12 items-center rounded-t-sm bg-[#17A2B8] px-6 text-white">
             <h2 className="text-lg uppercase">
               Requesting Individual's Information
             </h2>
           </div>
 
-          <div className="bg-[#F8F8FF] rounded-b-sm p-6">
-            {/* Name */}
+          <div className="rounded-b-sm bg-[#F8F8FF] p-6">
             <div className="mb-6">
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Name <span className="text-red-500">*</span>
               </label>
@@ -250,11 +483,10 @@ const OdrRequestForm = React.forwardRef(
               <FieldError message={errors.name} />
             </div>
 
-            {/* Current Address */}
             <div className="mb-6">
               <label
                 htmlFor="currentAddress"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Current Address <span className="text-red-500">*</span>
               </label>
@@ -270,11 +502,10 @@ const OdrRequestForm = React.forwardRef(
               <FieldError message={errors.currentAddress} />
             </div>
 
-            {/* Relationship to the student */}
             <div className="mb-6">
               <label
                 htmlFor="relationshipToStudent"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Relationship to the student{" "}
                 <span className="text-red-500">*</span>
@@ -290,18 +521,17 @@ const OdrRequestForm = React.forwardRef(
                 className={inputClass("relationshipToStudent")}
               />
               <datalist id="relationshipOptions">
-                {relationshipOptions.map((option, index) => (
-                  <option key={index} value={option} />
+                {relationshipOptions.map((option) => (
+                  <option key={option} value={option} />
                 ))}
               </datalist>
               <FieldError message={errors.relationshipToStudent} />
             </div>
 
-            {/* Contact Number */}
             <div className="mb-6">
               <label
                 htmlFor="contactNumber"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Contact Number <span className="text-red-500">*</span>
               </label>
@@ -317,11 +547,10 @@ const OdrRequestForm = React.forwardRef(
               <FieldError message={errors.contactNumber} />
             </div>
 
-            {/* Email Address */}
             <div className="mb-6">
               <label
                 htmlFor="emailAddress"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -332,26 +561,21 @@ const OdrRequestForm = React.forwardRef(
                 value={formData.emailAddress}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 transition-colors ${
-                  errors.emailAddress
-                    ? "border-red-400 bg-red-50 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-teal-500"
-                }`}
+                className={inputClass("emailAddress")}
               />
               <FieldError message={errors.emailAddress} />
               {!errors.emailAddress && (
                 <p className="mt-1 text-xs text-gray-500">
-                  * Valid and active email is required. The Reference No. for
+                  * Valid and active email is required. The reference number for
                   request tracking will be sent to this email address.
                 </p>
               )}
             </div>
 
-            {/* Purpose of request */}
             <div className="mb-6">
               <label
                 htmlFor="purposeOfRequest"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Purpose/s of request <span className="text-red-500">*</span>
               </label>
@@ -365,31 +589,23 @@ const OdrRequestForm = React.forwardRef(
                 className={textareaClass("purposeOfRequest")}
               />
               <FieldError message={errors.purposeOfRequest} />
-              {!errors.purposeOfRequest && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Use the exact wording provided by the requester. This field
-                  accepts both purpose and any special processing instruction.
-                </p>
-              )}
             </div>
           </div>
         </div>
 
-        {/* ── Student Information ──────────────────────────────── */}
-        <div className="max-w-4xl -translate-y-6 m-5">
-          <div className="bg-[#17A2B8] text-white px-6 h-12 rounded-t-sm flex items-center">
+        <div className="m-5 max-w-4xl -translate-y-6">
+          <div className="flex h-12 items-center rounded-t-sm bg-[#17A2B8] px-6 text-white">
             <h2 className="text-lg uppercase">Student Information</h2>
           </div>
 
-          <div className="bg-[#F8F8FF] rounded-b-sm p-6">
-            {/* SRCODE (optional) */}
+          <div className="rounded-b-sm bg-[#F8F8FF] p-6">
             <div className="mb-6">
               <label
                 htmlFor="srcCode"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 SRCODE{" "}
-                <span className="text-gray-400 font-normal">(Optional)</span>
+                <span className="font-normal text-gray-400">(Optional)</span>
               </label>
               <input
                 type="text"
@@ -397,15 +613,14 @@ const OdrRequestForm = React.forwardRef(
                 name="srcCode"
                 value={formData.srcCode}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
+                className="h-10 w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
 
-            {/* Fullname */}
             <div className="mb-6">
               <label
                 htmlFor="fullname"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Full Name <span className="text-red-500">*</span>
               </label>
@@ -421,12 +636,10 @@ const OdrRequestForm = React.forwardRef(
               <FieldError message={errors.fullname} />
             </div>
 
-            {/* Program */}
-            {/* Program */}
             <div className="mb-6">
               <label
                 htmlFor="program"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Program <span className="text-red-500">*</span>
               </label>
@@ -441,7 +654,6 @@ const OdrRequestForm = React.forwardRef(
                   onChange={(e) => {
                     setProgramSearch(e.target.value);
                     setShowProgramDropdown(true);
-                    // Clear selection if user edits after picking
                     setFormData((prev) => ({
                       ...prev,
                       program: "",
@@ -451,9 +663,7 @@ const OdrRequestForm = React.forwardRef(
                   }}
                   onFocus={() => setShowProgramDropdown(true)}
                   onBlur={() => {
-                    // Delay so click on option registers first
                     setTimeout(() => setShowProgramDropdown(false), 150);
-                    // Validate that a real option was selected
                     const err = validateField("program", formData.program);
                     setErrors((prev) => ({ ...prev, program: err }));
                   }}
@@ -461,7 +671,7 @@ const OdrRequestForm = React.forwardRef(
                 />
 
                 {showProgramDropdown && filteredPrograms.length > 0 && (
-                  <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded mt-1 max-h-52 overflow-y-auto shadow-md">
+                  <ul className="absolute z-10 mt-1 max-h-52 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-md">
                     {filteredPrograms.map((name) => (
                       <li
                         key={name}
@@ -479,7 +689,7 @@ const OdrRequestForm = React.forwardRef(
                             major: "",
                           }));
                         }}
-                        className="px-3 py-2 text-sm cursor-pointer hover:bg-teal-50 hover:text-teal-700"
+                        className="cursor-pointer px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-700"
                       >
                         {name}
                       </li>
@@ -487,19 +697,16 @@ const OdrRequestForm = React.forwardRef(
                   </ul>
                 )}
               </div>
-
               <FieldError message={errors.program} />
             </div>
 
-            {/* Major */}
             <div className="mb-6">
               <label
                 htmlFor="major"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Major
               </label>
-
               <input
                 type="text"
                 id="major"
@@ -511,7 +718,7 @@ const OdrRequestForm = React.forwardRef(
                 disabled={majorOptions.length === 0}
                 className={`${inputClass("major")} ${
                   majorOptions.length === 0
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    ? "cursor-not-allowed bg-gray-100 text-gray-400"
                     : ""
                 }`}
               />
@@ -523,11 +730,10 @@ const OdrRequestForm = React.forwardRef(
               <FieldError message={errors.major} />
             </div>
 
-            {/* Year Graduated */}
             <div className="mb-6">
               <label
                 htmlFor="yearGraduated"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Year Graduated
               </label>
@@ -540,10 +746,244 @@ const OdrRequestForm = React.forwardRef(
                 onBlur={handleBlur}
                 inputMode="numeric"
                 maxLength={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 h-10"
+                className="h-10 w-full rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
               <FieldError message={errors.yearGraduated} />
             </div>
+
+            {needsCourseSelection && (
+              <div className="mt-8 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+                      {requiresCourseDescriptionSelection
+                        ? "Course Description Selection"
+                        : "Certification of Grades Selection"}
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Select the courses that should be included in this request
+                      before submission.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadCourseOptions}
+                    disabled={courseLookupLoading}
+                    className="rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-60"
+                  >
+                    {courseLookupLoading
+                      ? "Loading..."
+                      : "Load Available Courses"}
+                  </button>
+                </div>
+
+                <FieldError message={errors.courseLookup} />
+
+                {courseOptions.length > 0 &&
+                  requiresCourseDescriptionSelection && (
+                    <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Search courses..."
+                          value={courseSearch}
+                          onChange={(e) => setCourseSearch(e.target.value)}
+                          className="flex-1 rounded-md border border-blue-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-200"
+                        />
+                        <select
+                          value={courseYearFilter}
+                          onChange={(e) => setCourseYearFilter(e.target.value)}
+                          className="rounded-md border border-blue-200 bg-white px-2 py-1.5 text-xs"
+                        >
+                          <option value="">All Year Levels</option>
+                          {yearLevels.map((lvl) => (
+                            <option key={lvl} value={lvl}>
+                              {formatYearLevel(lvl)}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={courseSemesterFilter}
+                          onChange={(e) =>
+                            setCourseSemesterFilter(e.target.value)
+                          }
+                          className="rounded-md border border-blue-200 bg-white px-2 py-1.5 text-xs"
+                        >
+                          <option value="">All Semesters</option>
+                          {semesters.map((sem) => (
+                            <option key={sem} value={sem}>
+                              {sem}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedCourseCodes(
+                              filteredCourseDescriptionOptions.map(
+                                (row) => row.course_code,
+                              ),
+                            )
+                          }
+                          className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-medium text-blue-700"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCourseCodes([])}
+                          className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-medium text-blue-700"
+                        >
+                          Clear
+                        </button>
+                      </div>
+
+                      <div className="mt-3 max-h-48 overflow-y-auto rounded-md border border-blue-100 bg-white">
+                        {filteredCourseDescriptionOptions.length === 0 ? (
+                          <div className="px-3 py-2 text-xs text-gray-500">
+                            No courses found.
+                          </div>
+                        ) : (
+                          filteredCourseDescriptionOptions.map((row) => {
+                            const checked = selectedCourseCodes.includes(
+                              row.course_code,
+                            );
+                            return (
+                              <label
+                                key={row.course_code}
+                                className="flex cursor-pointer items-start gap-3 border-b border-blue-50 px-3 py-2 last:border-0"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="mt-0.5"
+                                  checked={checked}
+                                  onChange={() => toggleCourse(row.course_code)}
+                                />
+                                <div>
+                                  <div className="text-xs font-medium text-gray-800">
+                                    {row.course_code} - {row.course_title}
+                                  </div>
+                                  <div className="text-[11px] text-gray-500">
+                                    Units: {row.units || "-"} | Grade:{" "}
+                                    {row.grade || "-"}
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      <p className="mt-2 text-[11px] text-blue-700">
+                        Selected: {selectedCourseCodes.length}
+                      </p>
+                      <FieldError message={errors.courseSelection} />
+                    </div>
+                  )}
+
+                {courseOptions.length > 0 && requiresGradeSelection && (
+                  <div className="mt-4 rounded-lg border border-purple-100 bg-purple-50 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search courses..."
+                        value={gradeSearch}
+                        onChange={(e) => setGradeSearch(e.target.value)}
+                        className="flex-1 rounded-md border border-purple-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-purple-200"
+                      />
+                      <select
+                        value={gradeYearFilter}
+                        onChange={(e) => setGradeYearFilter(e.target.value)}
+                        className="rounded-md border border-purple-200 bg-white px-2 py-1.5 text-xs"
+                      >
+                        <option value="">All Year Levels</option>
+                        {yearLevels.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            {formatYearLevel(lvl)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={gradeSemesterFilter}
+                        onChange={(e) => setGradeSemesterFilter(e.target.value)}
+                        className="rounded-md border border-purple-200 bg-white px-2 py-1.5 text-xs"
+                      >
+                        <option value="">All Semesters</option>
+                        {semesters.map((sem) => (
+                          <option key={sem} value={sem}>
+                            {sem}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedGradeKeys(
+                            filteredGradeOptions.map((row) =>
+                              buildGradeKey(row),
+                            ),
+                          )
+                        }
+                        className="rounded-md border border-purple-200 bg-white px-3 py-1.5 text-[11px] font-medium text-purple-700"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedGradeKeys([])}
+                        className="rounded-md border border-purple-200 bg-white px-3 py-1.5 text-[11px] font-medium text-purple-700"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="mt-3 max-h-52 overflow-y-auto rounded-md border border-purple-100 bg-white">
+                      {filteredGradeOptions.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-gray-500">
+                          No courses found.
+                        </div>
+                      ) : (
+                        filteredGradeOptions.map((row) => {
+                          const key = buildGradeKey(row);
+                          const checked = selectedGradeKeys.includes(key);
+                          return (
+                            <label
+                              key={key}
+                              className="flex cursor-pointer items-start gap-3 border-b border-purple-50 px-3 py-2 last:border-0"
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={checked}
+                                onChange={() => toggleGrade(key)}
+                              />
+                              <div>
+                                <div className="text-xs font-medium text-gray-800">
+                                  {row.course_code} - {row.course_title}
+                                </div>
+                                <div className="text-[11px] text-gray-500">
+                                  Units: {row.units || "-"} | Grade:{" "}
+                                  {row.grade || "-"} |{" "}
+                                  {row.year_level
+                                    ? formatYearLevel(row.year_level)
+                                    : row.academic_year || "-"}{" "}
+                                  | {row.semester || "-"}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <p className="mt-2 text-[11px] text-purple-700">
+                      Selected: {selectedGradeKeys.length}
+                    </p>
+                    <FieldError message={errors.gradeSelection} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </>

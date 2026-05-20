@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Tracker from "../tracker";
 import requestService from "../../../services/requestService";
+import paymentService from "../../../services/paymentService";
 
 vi.mock("../../../utils/auth", () => ({
   getTokenPayload: vi.fn(() => ({ sub: "processor1" })),
@@ -12,9 +13,17 @@ vi.mock("../../../utils/auth", () => ({
 
 vi.mock("../../../services/requestService", () => ({
   default: {
+    autoQueueApprovedRequests: vi.fn(),
     getAllRequests: vi.fn(),
     getCertificateTypes: vi.fn(),
-    updateStatus: vi.fn(),
+    validateRequests: vi.fn(),
+    generateCertificate: vi.fn(),
+  },
+}));
+
+vi.mock("../../../services/paymentService", () => ({
+  default: {
+    getPaymentsByReferences: vi.fn(),
   },
 }));
 
@@ -29,7 +38,10 @@ vi.mock("../../../components/common/bulkStatusModal", () => ({
 describe("Tracker page", () => {
   beforeEach(() => {
     requestService.getAllRequests.mockResolvedValue([]);
+    requestService.autoQueueApprovedRequests.mockResolvedValue({});
     requestService.getCertificateTypes.mockResolvedValue([]);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
   });
 
   afterEach(() => {
@@ -46,11 +58,11 @@ describe("Tracker page", () => {
     });
   });
 
-  it("moves processing request to for releasing", async () => {
+  it("shows unpaid for releasing requests in tracker", async () => {
     const user = userEvent.setup();
     const request = {
       id: 11,
-      status: "PROCESSING",
+      status: "FOR_RELEASING",
       reference_number: "REF-11",
       certificate_type_name: "Certification",
       student_name: "Ada",
@@ -62,21 +74,17 @@ describe("Tracker page", () => {
 
     requestService.getAllRequests.mockResolvedValue([request]);
     requestService.getCertificateTypes.mockResolvedValue([]);
-    requestService.updateStatus.mockResolvedValue({
-      ...request,
-      status: "FOR_RELEASING",
-    });
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
 
     render(<Tracker />);
 
-    const action = await screen.findByTitle(/Mark as For Releasing/i);
+    expect(await screen.findByText(/Awaiting Payment/i)).toBeInTheDocument();
+
+    const action = await screen.findByTitle(/View Details/i);
     await user.click(action);
 
     await waitFor(() => {
-      expect(requestService.updateStatus).toHaveBeenCalledWith(
-        request.id,
-        "FOR_RELEASING",
-      );
+      expect(screen.getByText(/Ada/i)).toBeInTheDocument();
     });
   });
 });

@@ -9,9 +9,6 @@ import requestService from "../../../services/requestService";
 vi.mock("../../../services/requestService", () => ({
   default: {
     getRequestNotes: vi.fn(),
-    getRequestTakenCourses: vi.fn(),
-    updateCourseDescriptionSelection: vi.fn(),
-    updateGradeSelection: vi.fn(),
   },
 }));
 
@@ -121,7 +118,7 @@ describe("RequestModal", () => {
     );
   });
 
-  it("requires course selection before approving course description", async () => {
+  it("approves a course description request without prompting for course selection", async () => {
     const user = userEvent.setup();
     const request = {
       id: 22,
@@ -129,17 +126,6 @@ describe("RequestModal", () => {
       certificate_type_name: "Course Description",
       requestor_email: "student@example.com",
     };
-
-    requestService.getRequestTakenCourses.mockResolvedValue([
-      {
-        course_code: "CS101",
-        course_title: "Intro",
-        units: 3,
-        grade: "1.5",
-      },
-    ]);
-    requestService.updateCourseDescriptionSelection.mockResolvedValue({});
-
     const onApprove = vi.fn();
 
     render(
@@ -151,17 +137,13 @@ describe("RequestModal", () => {
       />
     );
 
-    const approve = await screen.findByRole("button", { name: /approve/i });
-    expect(approve).toBeDisabled();
+    expect(
+      screen.queryByText(/course description selection/i),
+    ).not.toBeInTheDocument();
 
-    const checkbox = await screen.findByRole("checkbox");
-    await user.click(checkbox);
-
-    expect(approve).toBeEnabled();
-    await user.click(approve);
+    await user.click(screen.getByRole("button", { name: /approve/i }));
 
     await waitFor(() => {
-      expect(requestService.updateCourseDescriptionSelection).toHaveBeenCalled();
       expect(onApprove).toHaveBeenCalledWith(request);
     });
   });

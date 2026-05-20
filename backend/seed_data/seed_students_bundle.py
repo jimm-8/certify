@@ -2,6 +2,9 @@ import json
 import os
 import psycopg2
 from dotenv import load_dotenv
+from .seed_student_courses_and_grades import (
+    main as seed_student_courses_and_grades_main,
+)
 
 load_dotenv()
 
@@ -346,3 +349,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    seed_student_courses_and_grades_main()
+    print("Completed bundled seeding, including student_courses and grades.")

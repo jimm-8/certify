@@ -7,6 +7,7 @@ import RequestTracker from "./tracker";
 import Ready from "./ready";
 import History from "./history";
 import requestService from "../../services/requestService";
+import paymentService from "../../services/paymentService";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import { getTokenPayload } from "../../utils/auth";
 
@@ -64,13 +65,34 @@ const CertifyPage = () => {
         const ownedRequests = filterCertifyEligibleRequests(
           Array.isArray(ownedData) ? ownedData : ownedData.items || [],
         );
+        const forReleasingRequests = ownedRequests.filter(
+          (r) => r.status === "FOR_RELEASING",
+        );
+        const readyRefs = forReleasingRequests
+          .map((r) => r.reference_number)
+          .filter(Boolean);
+        const paymentInfo =
+          readyRefs.length > 0
+            ? await paymentService.getPaymentsByReferences(readyRefs)
+            : { items: [] };
+        const paidReadyRefs = new Set(
+          (paymentInfo?.items || [])
+            .filter(
+              (item) =>
+                String(item?.payment_status || "").toUpperCase() === "PAID",
+            )
+            .map((item) => item.reference_number),
+        );
 
         const nextCounts = {
-          received: requests.filter((r) => r.status === "APPROVED").length,
-          processing: ownedRequests.filter((r) => r.status === "PROCESSING")
+          received: ownedRequests.filter((r) => r.status === "PROCESSING")
             .length,
-          ready: ownedRequests.filter((r) => r.status === "FOR_RELEASING")
-            .length,
+          processing: forReleasingRequests.filter(
+            (r) => !paidReadyRefs.has(r.reference_number),
+          ).length,
+          ready: forReleasingRequests.filter((r) =>
+            paidReadyRefs.has(r.reference_number),
+          ).length,
           history: requests.filter((r) => r.status === "RELEASED").length,
         };
 

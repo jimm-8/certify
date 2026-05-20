@@ -579,6 +579,30 @@ class CertificateDependencyEngine:
             .all()
         )
 
+        if not rows:
+            rows = (
+                CourseRepository(db)
+                .query_with(
+                    Course.course_code,
+                    Course.course_title,
+                    Course.units,
+                    Course.course_description,
+                    Enrollment.academic_year,
+                    Enrollment.semester,
+                    Enrollment.year_level,
+                )
+                .join(StudentCourse, StudentCourse.course_id == Course.id)
+                .join(Enrollment, Enrollment.id == StudentCourse.enrollment_id)
+                .filter(Enrollment.student_id == sr_code)
+                .order_by(
+                    Enrollment.academic_year.desc(),
+                    semester_order.desc(),
+                    Enrollment.year_level.desc(),
+                    Course.course_code.asc(),
+                )
+                .all()
+            )
+
         def _year_level_label(value: str | int | None) -> str:
             try:
                 level = int(str(value or "").strip())
@@ -593,20 +617,46 @@ class CertificateDependencyEngine:
             }
             return labels.get(level, f"{level}th Year")
 
-        return [
-            {
-                "course_code": str(code or ""),
-                "course_title": str(title or ""),
-                "units": str(units or ""),
-                "course_description": str(description or ""),
-                "grade": str(grade or ""),
-                "academic_year": str(academic_year or ""),
-                "semester": str(semester or ""),
-                "year_level": str(year_level or ""),
-                "year_level_label": _year_level_label(year_level),
-            }
-            for code, title, units, description, grade, academic_year, semester, year_level in rows
-        ]
+        formatted_rows = []
+        for row in rows:
+            if len(row) == 8:
+                (
+                    code,
+                    title,
+                    units,
+                    description,
+                    grade,
+                    academic_year,
+                    semester,
+                    year_level,
+                ) = row
+            else:
+                (
+                    code,
+                    title,
+                    units,
+                    description,
+                    academic_year,
+                    semester,
+                    year_level,
+                ) = row
+                grade = ""
+
+            formatted_rows.append(
+                {
+                    "course_code": str(code or ""),
+                    "course_title": str(title or ""),
+                    "units": str(units or ""),
+                    "course_description": str(description or ""),
+                    "grade": str(grade or ""),
+                    "academic_year": str(academic_year or ""),
+                    "semester": str(semester or ""),
+                    "year_level": str(year_level or ""),
+                    "year_level_label": _year_level_label(year_level),
+                }
+            )
+
+        return formatted_rows
 
     @staticmethod
     def _get_nstp_record(db: Session, sr_code: Optional[str]):

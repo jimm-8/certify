@@ -8,10 +8,12 @@ import requestService from "../../../services/requestService";
 
 vi.mock("../../../services/requestService", () => ({
   default: {
+    autoQueueApprovedRequests: vi.fn(),
     getAllRequests: vi.fn(),
     getCertificateTypes: vi.fn(),
     validateRequests: vi.fn(),
     updateStatus: vi.fn(),
+    generateCertificate: vi.fn(),
     sendCheckingEmail: vi.fn(),
     sendRejectionEmail: vi.fn(),
   },
@@ -34,6 +36,7 @@ vi.mock("../../../components/common/requestModal", () => ({
 describe("Checking page", () => {
   beforeEach(() => {
     requestService.getAllRequests.mockResolvedValue([]);
+    requestService.autoQueueApprovedRequests.mockResolvedValue({});
     requestService.getCertificateTypes.mockResolvedValue([]);
     requestService.validateRequests.mockResolvedValue({ results: [] });
   });
@@ -42,17 +45,17 @@ describe("Checking page", () => {
     vi.clearAllMocks();
   });
 
-  it("shows empty state when no approved requests", async () => {
+  it("shows empty state when no assigned processing requests", async () => {
     render(<Checking />);
     expect(await screen.findByText(/No requests found/i)).toBeInTheDocument();
   });
 
-  it("processes approved requests in bulk", async () => {
+  it("generates assigned processing requests in bulk", async () => {
     const user = userEvent.setup();
     const approved = [
       {
         id: 1,
-        status: "APPROVED",
+        status: "PROCESSING",
         certificate_type_name: "Certification",
         student_name: "Ada",
         program: "BSCS",
@@ -62,7 +65,7 @@ describe("Checking page", () => {
       },
       {
         id: 2,
-        status: "APPROVED",
+        status: "PROCESSING",
         certificate_type_name: "Good Moral",
         student_name: "Grace",
         program: "BSIT",
@@ -74,30 +77,22 @@ describe("Checking page", () => {
 
     requestService.getAllRequests.mockResolvedValue(approved);
     requestService.validateRequests.mockResolvedValue({ results: [] });
-    requestService.updateStatus.mockResolvedValue({});
+    requestService.generateCertificate.mockResolvedValue({});
 
     render(<Checking />);
 
     const button = (await screen.findAllByRole("button", {
-      name: /process all/i,
+      name: /generate all/i,
     })).find((item) => !item.disabled);
 
     await user.click(button);
 
     await waitFor(() => {
-      expect(requestService.updateStatus).toHaveBeenCalledTimes(2);
+      expect(requestService.generateCertificate).toHaveBeenCalledTimes(2);
     });
 
-    expect(requestService.updateStatus).toHaveBeenCalledWith(
-      1,
-      "PROCESSING",
-      "Request moved to processing",
-    );
-    expect(requestService.updateStatus).toHaveBeenCalledWith(
-      2,
-      "PROCESSING",
-      "Request moved to processing",
-    );
+    expect(requestService.generateCertificate).toHaveBeenCalledWith(1);
+    expect(requestService.generateCertificate).toHaveBeenCalledWith(2);
   });
 
   it("closes the request modal only after approval succeeds and shows loading then submitted feedback", async () => {
@@ -105,7 +100,7 @@ describe("Checking page", () => {
     const approved = [
       {
         id: 1,
-        status: "APPROVED",
+      status: "PROCESSING",
         certificate_type_name: "Certification",
         student_name: "Ada",
         program: "BSCS",
@@ -118,7 +113,7 @@ describe("Checking page", () => {
     requestService.getAllRequests.mockResolvedValue(approved);
     requestService.validateRequests.mockResolvedValue({ results: [] });
     let resolveUpdate;
-    requestService.updateStatus.mockImplementation(
+    requestService.generateCertificate.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveUpdate = resolve;
@@ -133,18 +128,14 @@ describe("Checking page", () => {
 
     expect(screen.getByRole("button", { name: /modal approve/i })).toBeInTheDocument();
     expect(
-      await screen.findByText(/please wait while the certificate request is being submitted/i),
+      await screen.findByText(/please wait while the certificate is being generated/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/working\.\.\./i)).toBeInTheDocument();
 
     resolveUpdate({});
 
     await waitFor(() => {
-      expect(requestService.updateStatus).toHaveBeenCalledWith(
-        1,
-        "PROCESSING",
-        "Request moved to processing",
-      );
+      expect(requestService.generateCertificate).toHaveBeenCalledWith(1);
     });
 
     await waitFor(() => {
@@ -153,7 +144,7 @@ describe("Checking page", () => {
       ).not.toBeInTheDocument();
     });
     expect(
-      await screen.findByText(/certificate request submitted successfully/i),
+      await screen.findByText(/certificate request moved to tracker successfully/i),
     ).toBeInTheDocument();
   });
 
@@ -162,7 +153,7 @@ describe("Checking page", () => {
     const approved = [
       {
         id: 1,
-        status: "APPROVED",
+      status: "PROCESSING",
         certificate_type_name: "Certification",
         student_name: "Ada",
         program: "BSCS",
@@ -174,10 +165,10 @@ describe("Checking page", () => {
 
     requestService.getAllRequests.mockResolvedValue(approved);
     requestService.validateRequests.mockResolvedValue({ results: [] });
-    requestService.updateStatus.mockRejectedValue({
+    requestService.generateCertificate.mockRejectedValue({
       response: {
         data: {
-          detail: "Request was already claimed by janine_aguisanda.",
+          detail: "Certificate generation failed.",
         },
       },
     });
@@ -189,9 +180,9 @@ describe("Checking page", () => {
     await user.click(await screen.findByRole("button", { name: /modal approve/i }));
 
     expect(
-      await screen.findByText(/request was already claimed by janine_aguisanda\./i),
+      await screen.findByText(/certificate generation failed\./i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/submission failed/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /generation failed/i })).toBeInTheDocument();
   });
 
   it("reconciles modal approval timeout when the request was already advanced", async () => {
@@ -229,7 +220,7 @@ describe("Checking page", () => {
 
     expect(
       await screen.findByText(
-        /certificate request was submitted successfully\. the page has been refreshed to reflect the latest status\./i,
+        /certificate request was generated successfully\. the page has been refreshed to reflect the latest status\./i,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/submission failed/i)).not.toBeInTheDocument();
