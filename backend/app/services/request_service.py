@@ -113,6 +113,114 @@ def _is_paid_payment(payment) -> bool:
     return bool(payment and str(getattr(payment, "payment_status", "") or "").upper() == "PAID")
 
 
+async def auto_generate_processing_request(
+    db: Session,
+    request: CertificateRequest,
+    user_name: str = "System",
+    trigger_auto_queue: bool = True,
+) -> CertificateRequest:
+    if request.status != RequestStatus.PROCESSING:
+        return request
+
+    if request_requires_manual_review(db, request):
+        return request
+
+    request_repo = CertificateRequestRepository(db)
+    audit_repo = AuditLogRepository(db)
+    student_repo = StudentRepository(db)
+    program_repo = ProgramRepository(db)
+
+    if not request.control_num:
+        request.control_num = generate_or_number(db)
+
+    try:
+        from app.services.certificate_service import generate_certificate_pdf
+
+        pdf_path = generate_certificate_pdf(db, request.id, user_name)
+        request.pdf_path = pdf_path
+
+        try:
+            reader = PdfReader(pdf_path)
+            page_count = len(reader.pages)
+        except Exception:
+            page_count = None
+
+        if page_count:
+            old_cost = request.request_cost
+            request.request_cost = compute_request_cost(
+                request.certificate_type_name, pages=page_count
+            )
+            if old_cost != request.request_cost:
+                audit_repo.add(
+                    AuditLog(
+                        action="DATA_UPDATED",
+                        entity_type="certificate_request",
+                        entity_id=request.id,
+                        field_name="request_cost",
+                        old_value=str(old_cost) if old_cost is not None else None,
+                        new_value=str(request.request_cost),
+                        user_name=user_name,
+                        notes=f"Updated request cost based on {page_count} PDF page(s).",
+                    )
+                )
+
+        if page_count is None and not (
+            is_course_description(request.certificate_type_name)
+            or is_certification_of_grades(request.certificate_type_name)
+        ):
+            request.request_cost = compute_request_cost(request.certificate_type_name)
+
+        audit_repo.add(
+            AuditLog(
+                action="NOTE_ADDED",
+                entity_type="certificate_request",
+                entity_id=request.id,
+                field_name="notes",
+                new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
+                user_name=user_name,
+            )
+        )
+
+        old_status = request.status
+        request.status = RequestStatus.FOR_RELEASING
+        audit_repo.add(
+            AuditLog(
+                action=STATUS_AUDIT_ACTIONS.get(
+                    RequestStatus.FOR_RELEASING, "STATUS_CHANGED"
+                ),
+                entity_type="certificate_request",
+                entity_id=request.id,
+                field_name="status",
+                old_value=old_status.value,
+                new_value=RequestStatus.FOR_RELEASING.value,
+                user_name=user_name,
+                notes="Certificate PDF completed. Awaiting payment before release.",
+            )
+        )
+
+        db.commit()
+        db.refresh(request)
+
+        await trigger_for_releasing_flow(
+            db,
+            request,
+            student_repo=student_repo,
+            program_repo=program_repo,
+        )
+
+        if trigger_auto_queue:
+            try:
+                await auto_queue_approved_requests(db, user_name="System")
+            except Exception as exc:
+                print(f"[AutoQueue] Failed to refill freed slot: {exc}")
+    except Exception as exc:
+        db.commit()
+        db.refresh(request)
+        print(f"Auto-generation failed: {exc}")
+
+    return request
+
+
 async def trigger_for_releasing_flow(
     db: Session,
     request: CertificateRequest,
@@ -469,99 +577,14 @@ async def update_request_status(
     audit_repo.add(audit_log)
 
     if new_status == RequestStatus.PROCESSING:
-        requires_manual_review = request_requires_manual_review(db, request)
-        if not request.control_num:
-            request.control_num = generate_or_number(db)
-        if requires_manual_review:
-            audit_repo.add(
-                AuditLog(
-                    action="NOTE_ADDED",
-                    entity_type="certificate_request",
-                    entity_id=request_id,
-                    field_name="notes",
-                    new_value=(
-                        "Queued for manual review. Certificate generation must be "
-                        "completed manually from the tracker."
-                    ),
-                    user_name=audit_user_name,
-                )
-            )
-        else:
-            try:
-                from app.services.certificate_service import generate_certificate_pdf
-
-                pdf_path = generate_certificate_pdf(db, request_id, user_name)
-
-                # Save PDF path to request
-                request.pdf_path = pdf_path
-
-                # Compute cost based on actual PDF pages
-                try:
-                    reader = PdfReader(pdf_path)
-                    page_count = len(reader.pages)
-                except Exception:
-                    page_count = None
-
-                if page_count:
-                    old_cost = request.request_cost
-                    request.request_cost = compute_request_cost(
-                        request.certificate_type_name, pages=page_count
-                    )
-                    if old_cost != request.request_cost:
-                        audit_repo.add(
-                            AuditLog(
-                                action="DATA_UPDATED",
-                                entity_type="certificate_request",
-                                entity_id=request_id,
-                                field_name="request_cost",
-                                old_value=str(old_cost) if old_cost is not None else None,
-                                new_value=str(request.request_cost),
-                                user_name=audit_user_name,
-                                notes=f"Updated request cost based on {page_count} PDF page(s).",
-                            )
-                        )
-
-                if page_count is None and not (
-                    is_course_description(request.certificate_type_name)
-                    or is_certification_of_grades(request.certificate_type_name)
-                ):
-                    request.request_cost = compute_request_cost(
-                        request.certificate_type_name
-                    )
-
-                # Add note about auto-generation
-                audit_repo.add(
-                    AuditLog(
-                        action="NOTE_ADDED",
-                        entity_type="certificate_request",
-                        entity_id=request_id,
-                        field_name="notes",
-                        new_value=f"Certificate automatically generated: {os.path.basename(pdf_path)}",
-                        user_name=audit_user_name,
-                    )
-                )
-
-                request.status = RequestStatus.FOR_RELEASING
-                auto_moved_to_for_releasing = True
-                audit_repo.add(
-                    AuditLog(
-                        action=STATUS_AUDIT_ACTIONS.get(
-                            RequestStatus.FOR_RELEASING, "STATUS_CHANGED"
-                        ),
-                        entity_type="certificate_request",
-                        entity_id=request_id,
-                        field_name="status",
-                        old_value=RequestStatus.PROCESSING.value,
-                        new_value=RequestStatus.FOR_RELEASING.value,
-                        user_name=audit_user_name,
-                        notes="Certificate PDF completed. Awaiting payment before release.",
-                    )
-                )
-            except Exception as e:
-                db.commit()
-                db.refresh(request)
-                print(f"Auto-generation failed: {e}")
-                # Don't fail the status update if PDF generation fails
+        auto_generated_request = await auto_generate_processing_request(
+            db=db,
+            request=request,
+            user_name=audit_user_name,
+            trigger_auto_queue=trigger_auto_queue,
+        )
+        if auto_generated_request.status == RequestStatus.FOR_RELEASING:
+            auto_moved_to_for_releasing = True
 
     final_status = request.status
 
