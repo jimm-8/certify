@@ -4,7 +4,7 @@
 
 <h1 align="center">CERTIFY</h1>
 <p align="center">
-Automated Web-Based Certification Management System
+AN AUTOMATED WEB-BASED CERTIFICATION MANAGEMENT SYSTEM FOR BATANGAS STATE UNIVERSITY – ALANGILAN CAMPUS 
 </p>
 
 <p align="center">
@@ -19,6 +19,11 @@ Automated Web-Based Certification Management System
 ## About the System
 
 CERTIFY is a web-based automated certification management system developed for Batangas State University – Alangilan Campus. The system automates the generation of academic certifications requested by students, reducing manual workload and improving efficiency in the registrar’s office.
+
+### Project Information
+
+**Academic Year:** 2025-2026  
+**System Version:** v1.0
 
 ---
 
