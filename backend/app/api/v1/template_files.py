@@ -11,6 +11,7 @@ from app.schemas.templates import (
     TemplateListResponse,
     TemplateUpdateRequest,
 )
+from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/templates", tags=["templates"])
 
@@ -81,7 +82,7 @@ def update_template(
     payload: TemplateUpdateRequest,
     target: str | None = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("templates.manage")),
+    ctx: dict = Depends(require_permissions("templates.manage")),
 ):
     if target == "defaults":
         defaults_dir = _templates_defaults_dir()
@@ -92,6 +93,13 @@ def update_template(
     if not path.exists() or path.suffix.lower() not in {".html", ".htm"}:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     path.write_text(payload.content, encoding="utf-8")
+    log_action(
+        db,
+        action="TEMPLATE_EDITED",
+        entity_type="template",
+        user_name=ctx["user"].username,
+        notes=f"Edited template {path.name}.",
+    )
     return {"name": path.name, "content": payload.content}
 
 

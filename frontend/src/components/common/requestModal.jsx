@@ -41,16 +41,16 @@ const statusConfig = {
 };
 
 const DetailRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
+  <div className="flex items-start gap-3 border-b border-gray-100 py-2 last:border-0">
     <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-50 text-gray-400">
       <Icon size={13} />
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
         {label}
       </p>
-      <p className="text-sm text-gray-800 font-medium break-words">
-        {value || "—"}
+      <p className="break-words text-sm font-medium text-gray-800">
+        {value || "-"}
       </p>
     </div>
   </div>
@@ -72,28 +72,6 @@ const RequestModal = ({
   const [declineNotes, setDeclineNotes] = useState("");
   const [notes, setNotes] = useState([]);
   const [rejectionEmailNotes, setRejectionEmailNotes] = useState("");
-  const [courseOptions, setCourseOptions] = useState([]);
-  const [courseLoading, setCourseLoading] = useState(false);
-  const [courseError, setCourseError] = useState("");
-  const [courseSearch, setCourseSearch] = useState("");
-  const [selectedCourseCodes, setSelectedCourseCodes] = useState([]);
-  const [savingSelection, setSavingSelection] = useState(false);
-  const [selectionTouched, setSelectionTouched] = useState(false);
-  const [courseYearFilter, setCourseYearFilter] = useState("");
-  const [courseSemesterFilter, setCourseSemesterFilter] = useState("");
-  const [gradeSearch, setGradeSearch] = useState("");
-  const [selectedGradeKeys, setSelectedGradeKeys] = useState([]);
-  const [gradeSelectionTouched, setGradeSelectionTouched] = useState(false);
-  const [savingGradesSelection, setSavingGradesSelection] = useState(false);
-  const [yearFilter, setYearFilter] = useState("");
-  const [semesterFilter, setSemesterFilter] = useState("");
-
-  const isCourseDescription = (request?.certificate_type_name || "")
-    .toLowerCase()
-    .includes("course description");
-  const isCertificationOfGrades = (request?.certificate_type_name || "")
-    .toLowerCase()
-    .includes("grades");
 
   useEffect(() => {
     if (!request) return;
@@ -108,20 +86,9 @@ const RequestModal = ({
       setDeclineNotes("");
       setNotes([]);
       setRejectionEmailNotes("");
-      setCourseOptions([]);
-      setCourseError("");
-      setCourseSearch("");
-      setSelectedCourseCodes([]);
-      setSelectionTouched(false);
-      setCourseYearFilter("");
-      setCourseSemesterFilter("");
-      setGradeSearch("");
-      setSelectedGradeKeys([]);
-      setGradeSelectionTouched(false);
-      setYearFilter("");
-      setSemesterFilter("");
       return;
     }
+
     if (request.status === "REJECTED") {
       setShowDeclineInput(false);
       requestService
@@ -132,128 +99,17 @@ const RequestModal = ({
   }, [request]);
 
   useEffect(() => {
-    if (!request) return;
-    if (request.status !== "REJECTED") return;
+    if (!request || request.status !== "REJECTED") return;
     const latest = notes.length ? notes[0]?.note : "";
     setRejectionEmailNotes(latest || "");
   }, [request, notes]);
 
-  useEffect(() => {
-    if (!request || (!isCourseDescription && !isCertificationOfGrades)) return;
-
-    const parseSelection = (value) => {
-      if (!value) return [];
-      if (Array.isArray(value)) return value;
-      try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        return [];
-      }
-    };
-
-    if (isCourseDescription) {
-      setSelectedCourseCodes(
-        parseSelection(request.course_description_selection),
-      );
-      setSelectionTouched(false);
-    }
-    if (isCertificationOfGrades) {
-      setSelectedGradeKeys(parseSelection(request.grade_selection));
-      setGradeSelectionTouched(false);
-    }
-    setCourseError("");
-    setCourseLoading(true);
-    requestService
-      .getRequestTakenCourses(request.id)
-      .then((data) => {
-        const items = Array.isArray(data) ? data : [];
-        setCourseOptions(items);
-      })
-      .catch((err) => {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to load courses.";
-        setCourseError(detail);
-      })
-      .finally(() => setCourseLoading(false));
-  }, [request, isCourseDescription, isCertificationOfGrades]);
-
-  const handleDeclineClick = () => {
-    if (!showDeclineInput) {
-      setShowDeclineInput(true);
-      return;
-    }
-    setShowDeclineInput(false);
-  };
-
-  /* lock body scroll while open */
   useEffect(() => {
     document.body.style.overflow = request ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [request]);
-
-  useEffect(() => {
-    if (readOnly || !isCertificationOfGrades || !request) return;
-    const query = gradeSearch.trim().toLowerCase();
-    const buildKey = (row) =>
-      `${row.course_code || ""}||${row.academic_year || ""}||${row.semester || ""}`;
-    const keys = courseOptions
-      .filter((row) => {
-        if (query) {
-          const haystack = [
-            row.course_code,
-            row.course_title,
-            row.grade,
-            row.units,
-            row.academic_year,
-            row.semester,
-            row.year_level,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          if (!haystack.includes(query)) return false;
-        }
-        if (yearFilter && String(row.year_level) !== String(yearFilter)) {
-          return false;
-        }
-        if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
-          return false;
-        }
-        return true;
-      })
-      .map((row) => buildKey(row));
-    setSelectedGradeKeys(keys);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [yearFilter, semesterFilter]);
-
-  useEffect(() => {
-    if (readOnly || !isCourseDescription || !request) return;
-    const codes = courseDescriptionOptions
-      .filter((row) => {
-        if (
-          courseYearFilter &&
-          String(row.year_level) !== String(courseYearFilter)
-        ) {
-          return false;
-        }
-        if (
-          courseSemesterFilter &&
-          String(row.semester) !== String(courseSemesterFilter)
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .map((row) => row.course_code);
-    setSelectedCourseCodes(codes);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseYearFilter, courseSemesterFilter]);
 
   if (!request) return null;
 
@@ -334,6 +190,29 @@ const RequestModal = ({
         );
         return;
       }
+      if (lower.includes("no latin honor record found")) {
+        pushUnique(
+          "No latin honor record was found. Request cannot be processed as an honor graduate certificate until the latin honor is verified.",
+        );
+        return;
+      }
+      if (lower.includes("requested gwa certificate")) {
+        pushUnique(
+          "GWA certificates are only for graduated students. Please confirm the student's graduation record first.",
+        );
+        return;
+      }
+      if (lower.includes("requested cav certificate")) {
+        pushUnique(
+          "CAV certificates are only for graduated students. Please confirm the student's graduation record first.",
+        );
+        return;
+      }
+      if (lower.includes("requested honor graduate certificate")) {
+        pushUnique(
+          "Honor graduate certificates require a matching graduation record and latin honor record. Please verify both first.",
+        );
+      }
     });
 
     if (!suggestions.length && flags.length) {
@@ -350,100 +229,8 @@ const RequestModal = ({
     if (e.target === overlayRef.current) onClose?.();
   };
 
-  const selectionRequired = isCourseDescription && !readOnly;
-  const gradesSelectionRequired = isCertificationOfGrades && !readOnly;
-  const hasSelection = selectedCourseCodes.length > 0;
-  const hasGradesSelection = selectedGradeKeys.length > 0;
-
-  const courseDescriptionOptions = courseOptions.filter((row, idx, arr) => {
-    const code = row?.course_code;
-    if (!code) return false;
-    return arr.findIndex((r) => r?.course_code === code) === idx;
-  });
-
-  const filteredCourses = courseDescriptionOptions.filter((row) => {
-    const query = courseSearch.trim().toLowerCase();
-    if (
-      courseYearFilter &&
-      String(row.year_level) !== String(courseYearFilter)
-    ) {
-      return false;
-    }
-    if (
-      courseSemesterFilter &&
-      String(row.semester) !== String(courseSemesterFilter)
-    ) {
-      return false;
-    }
-    if (!query) return true;
-    const haystack = [row.course_code, row.course_title, row.grade, row.units]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  });
-
-  const filteredGrades = courseOptions.filter((row) => {
-    const query = gradeSearch.trim().toLowerCase();
-    const haystack = [
-      row.course_code,
-      row.course_title,
-      row.grade,
-      row.units,
-      row.academic_year,
-      row.semester,
-      row.year_level,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    if (query && !haystack.includes(query)) return false;
-    if (yearFilter && String(row.year_level) !== String(yearFilter)) {
-      return false;
-    }
-    if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
-      return false;
-    }
-    return true;
-  });
-
-  const buildGradeKey = (row) =>
-    `${row.course_code || ""}||${row.academic_year || ""}||${row.semester || ""}`;
-
-  const toggleCourse = (code) => {
-    setSelectionTouched(true);
-    setSelectedCourseCodes((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  };
-
-  const toggleGrade = (key) => {
-    setGradeSelectionTouched(true);
-    setSelectedGradeKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
-  };
-
-  const handleSelectAll = () => {
-    setSelectionTouched(true);
-    const allCodes = filteredCourses.map((row) => row.course_code);
-    setSelectedCourseCodes(allCodes);
-  };
-
-  const handleSelectAllGrades = () => {
-    setGradeSelectionTouched(true);
-    const keys = filteredGrades.map((row) => buildGradeKey(row));
-    setSelectedGradeKeys(keys);
-  };
-
-  const handleClearAll = () => {
-    setSelectionTouched(true);
-    setSelectedCourseCodes([]);
-  };
-
-  const handleClearAllGrades = () => {
-    setGradeSelectionTouched(true);
-    setSelectedGradeKeys([]);
+  const handleDeclineClick = () => {
+    setShowDeclineInput((current) => !current);
   };
 
   const appendDeclineNote = (text) => {
@@ -457,146 +244,41 @@ const RequestModal = ({
     });
   };
 
-  const handleSelectByFilter = () => {
-    setGradeSelectionTouched(true);
-    const query = gradeSearch.trim().toLowerCase();
-    const keys = courseOptions
-      .filter((row) => {
-        if (query) {
-          const haystack = [
-            row.course_code,
-            row.course_title,
-            row.grade,
-            row.units,
-            row.academic_year,
-            row.semester,
-            row.year_level,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          if (!haystack.includes(query)) return false;
-        }
-        if (yearFilter && String(row.year_level) !== String(yearFilter)) {
-          return false;
-        }
-        if (semesterFilter && String(row.semester) !== String(semesterFilter)) {
-          return false;
-        }
-        return true;
-      })
-      .map((row) => buildGradeKey(row));
-    setSelectedGradeKeys(keys);
-  };
-
-  const yearLevels = Array.from(
-    new Set(
-      courseOptions
-        .map((row) => row.year_level)
-        .filter((val) => String(val || "").trim() !== ""),
-    ),
-  ).sort((a, b) => Number(a) - Number(b));
-
-  const semesters = Array.from(
-    new Set(
-      courseOptions
-        .map((row) => row.semester)
-        .filter((val) => String(val || "").trim() !== ""),
-    ),
-  );
-
-  const formatYearLevel = (value) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return String(value);
-    if (num % 100 >= 11 && num % 100 <= 13) return `${num}th Year`;
-    const suffix = { 1: "st", 2: "nd", 3: "rd" }[num % 10] || "th";
-    return `${num}${suffix} Year`;
-  };
-
   const handleApproveClick = async () => {
     if (!request || !onApprove) return;
-    if (selectionRequired) {
-      if (!hasSelection) return;
-      setSavingSelection(true);
-      setCourseError("");
-      try {
-        await requestService.updateCourseDescriptionSelection(
-          request.id,
-          selectedCourseCodes,
-          "Course description selection saved",
-        );
-      } catch (err) {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to save course selection.";
-        setCourseError(detail);
-        setSavingSelection(false);
-        return;
-      }
-      setSavingSelection(false);
-    }
-    if (gradesSelectionRequired) {
-      if (!hasGradesSelection) return;
-      setSavingGradesSelection(true);
-      setCourseError("");
-      try {
-        await requestService.updateGradeSelection(
-          request.id,
-          selectedGradeKeys,
-          "Certification of grades selection saved",
-        );
-      } catch (err) {
-        const detail =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to save grade selection.";
-        setCourseError(detail);
-        setSavingGradesSelection(false);
-        return;
-      }
-      setSavingGradesSelection(false);
-    }
     await onApprove(request);
   };
 
   return (
-    /* ── Backdrop ── */
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-[2px]"
       style={{ animation: "fadeIn 150ms ease" }}
     >
-      {/* ── Panel ── */}
       <div
-        className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200 overflow-auto"
+        className="relative w-full max-w-2xl overflow-auto rounded-xl border border-gray-200 bg-white shadow-2xl"
         style={{ animation: "slideUp 200ms ease" }}
       >
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-4 px-6 pt-3 pb-3 border-b border-gray-100">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 pb-3 pt-3">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
               Certificate Request
             </p>
-            <h2 className="text-base font-semibold text-gray-900 leading-tight">
+            <h2 className="text-base font-semibold leading-tight text-gray-900">
               {request.certificate_type_name || "Request Details"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 mt-2  shrink-0">
-            {/* Status badge */}
+          <div className="mt-2 flex shrink-0 items-center gap-2">
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ${sc.bg} ${sc.text} ${sc.ring}`}
+              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${sc.bg} ${sc.text} ${sc.ring}`}
             >
               {status}
             </span>
-            {/* Close */}
             <button
               onClick={onClose}
-              className="flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
               aria-label="Close"
             >
               <BsX size={18} />
@@ -604,15 +286,14 @@ const RequestModal = ({
           </div>
         </div>
 
-        {/* ── Body ── */}
-        <div className="px-7 py-2 max-h-[60vh] overflow-y-auto">
-          <div className="rounded-md border !border-amber-500 bg-amber-50 px-2 py-2">
+        <div className="max-h-[60vh] overflow-y-auto px-7 py-2">
+          <div className="rounded-md border border-amber-500 bg-amber-50 px-2 py-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-widest text-amber-500 font-semibold">
+              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500">
                 Validation Status
               </p>
               {hasValidationFlags ? (
-                <span className="inline-flex items-center ml-2 gap-1 text-xs font-semibold text-amber-700">
+                <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
                   <BsExclamationTriangleFill size={11} /> Needs Review
                 </span>
               ) : (
@@ -621,60 +302,33 @@ const RequestModal = ({
                 </span>
               )}
             </div>
-            <div className=" ml-2 text-xs text-amber-700">
+            <div className="ml-2 text-xs text-amber-700">
               {hasValidationFlags ? (
-                <ul className="list-disc pl-4 space-y-1">
+                <ul className="list-disc space-y-1 pl-4">
                   {normalizedValidation.map((flag, idx) => (
                     <li key={`${flag}-${idx}`}>{flag}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] ml-2 text-emerald-700">
+                <p className="ml-2 text-[11px] text-emerald-700">
                   No anomalies detected from the automatic checks.
                 </p>
               )}
             </div>
           </div>
-          <DetailRow
-            icon={BsHash}
-            label="Reference No."
-            value={request.reference_number}
-          />
-          <DetailRow
-            icon={BsHash}
-            label="SR-Code"
-            value={request.sr_code || "-"}
-          />
-          <DetailRow
-            icon={BsPersonFill}
-            label="Student Name"
-            value={request.student_name}
-          />
-          <DetailRow
-            icon={BsBookFill}
-            label="Program"
-            value={request.program}
-          />
-          <DetailRow
-            icon={BsBookFill}
-            label="Major"
-            value={request.major || "—"}
-          />
+
+          <DetailRow icon={BsHash} label="Reference No." value={request.reference_number} />
+          <DetailRow icon={BsHash} label="SR-Code" value={request.sr_code || "-"} />
+          <DetailRow icon={BsPersonFill} label="Student Name" value={request.student_name} />
+          <DetailRow icon={BsBookFill} label="Program" value={request.program} />
+          <DetailRow icon={BsBookFill} label="Major" value={request.major || "-"} />
           <DetailRow
             icon={BsBookFill}
             label="Year Graduated"
-            value={request.year_graduated}
+            value={request.year_graduated || "-"}
           />
-          <DetailRow
-            icon={BsFileEarmarkText}
-            label="Purpose"
-            value={request.purpose}
-          />
-          <DetailRow
-            icon={BsPersonFill}
-            label="Requestor Name"
-            value={request.requestor_name}
-          />
+          <DetailRow icon={BsFileEarmarkText} label="Purpose" value={request.purpose} />
+          <DetailRow icon={BsPersonFill} label="Requestor Name" value={request.requestor_name} />
           <DetailRow
             icon={BsPersonFill}
             label="Requestor Relationship"
@@ -690,12 +344,10 @@ const RequestModal = ({
                     month: "long",
                     day: "numeric",
                   })
-                : "—"
+                : "-"
             }
           />
-          {request.remarks && (
-            <DetailRow icon={BsTag} label="Remarks" value={request.remarks} />
-          )}
+          {request.remarks && <DetailRow icon={BsTag} label="Remarks" value={request.remarks} />}
           {request.updated_at && (
             <DetailRow
               icon={BsClock}
@@ -715,15 +367,16 @@ const RequestModal = ({
             value={
               request.signature_data ? (
                 <img
+                  loading="lazy"
                   src={
                     request.signature_data.startsWith("data:image")
                       ? request.signature_data
-                      : `data:image/png;base64,${request.signature_data}` // ✅ add prefix if missing
+                      : `data:image/png;base64,${request.signature_data}`
                   }
                   alt="Requestor Signature"
-                  className="w-48 h-20 object-contain border border-gray-200 rounded bg-white"
+                  className="h-20 w-48 rounded border border-gray-200 bg-white object-contain"
                   onError={(e) => {
-                    e.target.style.display = "none"; // hide if still broken
+                    e.target.style.display = "none";
                   }}
                 />
               ) : (
@@ -734,14 +387,14 @@ const RequestModal = ({
 
           {request.status === "REJECTED" && (
             <div className="mt-2 rounded-md border border-red-100 bg-red-50 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-red-400 font-semibold mb-2">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-red-400">
                 Reason for Rejection
               </p>
               {notes.length > 0 ? (
                 notes.map((n) => (
                   <div key={n.id} className="mb-2 last:mb-0">
                     <p className="text-xs text-red-700">{n.note}</p>
-                    <p className="text-[10px] text-red-400 mt-0.5">
+                    <p className="mt-0.5 text-[10px] text-red-400">
                       {new Date(n.created_at).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -749,329 +402,30 @@ const RequestModal = ({
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                      {n.user_name && ` · ${n.user_name}`}
+                      {n.user_name && ` | ${n.user_name}`}
                     </p>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-red-400 italic">
-                  No reason provided.
-                </p>
-              )}
-            </div>
-          )}
-
-          {isCourseDescription && (
-            <div className="mt-3 rounded-md border border-blue-100 bg-blue-50 px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-widest text-blue-400 font-semibold">
-                  Course Description Selection
-                </p>
-                {!readOnly && (
-                  <span className="text-[10px] text-blue-500">
-                    Select courses to include
-                  </span>
-                )}
-              </div>
-
-              {courseLoading && (
-                <div className="py-2 text-xs text-blue-500 flex items-center gap-2">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-blue-200 border-t-transparent" />
-                  Loading courses...
-                </div>
-              )}
-
-              {!courseLoading && courseError && (
-                <div className="mt-2 text-xs text-red-600">{courseError}</div>
-              )}
-
-              {!courseLoading && !courseError && (
-                <>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Search courses..."
-                      value={courseSearch}
-                      onChange={(e) => setCourseSearch(e.target.value)}
-                      className="flex-1 text-xs px-3 py-1.5 border border-blue-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-200"
-                      disabled={readOnly}
-                    />
-                    {!readOnly && (
-                      <>
-                        <button
-                          onClick={handleSelectAll}
-                          type="button"
-                          className="px-3 py-1.5 text-[11px] font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                        >
-                          Select All
-                        </button>
-                        <button
-                          onClick={handleClearAll}
-                          type="button"
-                          className="px-3 py-1.5 text-[11px] font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {!readOnly && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <select
-                        value={courseYearFilter}
-                        onChange={(e) => setCourseYearFilter(e.target.value)}
-                        className="text-xs px-2 py-1.5 border border-blue-200 rounded-md bg-white"
-                      >
-                        <option value="">All Year Levels</option>
-                        {yearLevels.map((lvl) => (
-                          <option key={lvl} value={lvl}>
-                            {formatYearLevel(lvl)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={courseSemesterFilter}
-                        onChange={(e) =>
-                          setCourseSemesterFilter(e.target.value)
-                        }
-                        className="text-xs px-2 py-1.5 border border-blue-200 rounded-md bg-white"
-                      >
-                        <option value="">All Semesters</option>
-                        {semesters.map((sem) => (
-                          <option key={sem} value={sem}>
-                            {sem}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-blue-100 bg-white">
-                    {filteredCourses.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-gray-500">
-                        No courses found.
-                      </div>
-                    ) : (
-                      filteredCourses.map((row) => {
-                        const code = row.course_code;
-                        const label = `${row.course_code || ""} - ${
-                          row.course_title || ""
-                        }`;
-                        const detail = `Units: ${row.units || "-"} | Grade: ${
-                          row.grade || "-"
-                        }`;
-                        const checked = selectedCourseCodes.includes(code);
-                        return (
-                          <label
-                            key={code}
-                            className={`flex items-start gap-3 px-3 py-2 border-b border-blue-50 last:border-0 ${
-                              readOnly ? "cursor-default" : "cursor-pointer"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5"
-                              checked={checked}
-                              onChange={() => toggleCourse(code)}
-                              disabled={readOnly}
-                            />
-                            <div>
-                              <div className="text-xs text-gray-800 font-medium">
-                                {label}
-                              </div>
-                              <div className="text-[11px] text-gray-500">
-                                {detail}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {!readOnly && (
-                    <div className="mt-2 text-[11px] text-blue-600">
-                      Selected: {selectedCourseCodes.length}
-                      {!hasSelection && selectionTouched && (
-                        <span className="text-red-500">
-                          {" "}
-                          â€” Please select at least one course.
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {isCertificationOfGrades && (
-            <div className="mt-3 rounded-md border border-purple-100 bg-purple-50 px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-widest text-purple-400 font-semibold">
-                  Certification of Grades Selection
-                </p>
-                {!readOnly && (
-                  <span className="text-[10px] text-purple-500">
-                    Select grades to include
-                  </span>
-                )}
-              </div>
-
-              {courseLoading && (
-                <div className="py-2 text-xs text-purple-500 flex items-center gap-2">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-purple-200 border-t-transparent" />
-                  Loading grades...
-                </div>
-              )}
-
-              {!courseLoading && courseError && (
-                <div className="mt-2 text-xs text-red-600">{courseError}</div>
-              )}
-
-              {!courseLoading && !courseError && (
-                <>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Search courses..."
-                      value={gradeSearch}
-                      onChange={(e) => setGradeSearch(e.target.value)}
-                      className="flex-1 text-xs px-3 py-1.5 border border-purple-200 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-200"
-                      disabled={readOnly}
-                    />
-                    {!readOnly && (
-                      <>
-                        <button
-                          onClick={handleSelectAllGrades}
-                          type="button"
-                          className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
-                        >
-                          Select All
-                        </button>
-                        <button
-                          onClick={handleClearAllGrades}
-                          type="button"
-                          className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {!readOnly && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <select
-                        value={yearFilter}
-                        onChange={(e) => setYearFilter(e.target.value)}
-                        className="text-xs px-2 py-1.5 border border-purple-200 rounded-md bg-white"
-                      >
-                        <option value="">All Year Levels</option>
-                        {yearLevels.map((lvl) => (
-                          <option key={lvl} value={lvl}>
-                            {formatYearLevel(lvl)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={semesterFilter}
-                        onChange={(e) => setSemesterFilter(e.target.value)}
-                        className="text-xs px-2 py-1.5 border border-purple-200 rounded-md bg-white"
-                      >
-                        <option value="">All Semesters</option>
-                        {semesters.map((sem) => (
-                          <option key={sem} value={sem}>
-                            {sem}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={handleSelectByFilter}
-                        type="button"
-                        className="px-3 py-1.5 text-[11px] font-medium text-purple-700 bg-white border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
-                      >
-                        Select Filter
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-purple-100 bg-white">
-                    {filteredGrades.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-gray-500">
-                        No courses found.
-                      </div>
-                    ) : (
-                      filteredGrades.map((row) => {
-                        const key = buildGradeKey(row);
-                        const checked = selectedGradeKeys.includes(key);
-                        const label = `${row.course_code || ""} - ${
-                          row.course_title || ""
-                        }`;
-                        const yearLabel = row.year_level
-                          ? formatYearLevel(row.year_level)
-                          : row.academic_year || "-";
-                        const detail = `Units: ${row.units || "-"} | Grade: ${
-                          row.grade || "-"
-                        } | ${yearLabel} | ${row.semester || "-"}`;
-                        return (
-                          <label
-                            key={key}
-                            className={`flex items-start gap-3 px-3 py-2 border-b border-purple-50 last:border-0 ${
-                              readOnly ? "cursor-default" : "cursor-pointer"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5"
-                              checked={checked}
-                              onChange={() => toggleGrade(key)}
-                              disabled={readOnly}
-                            />
-                            <div>
-                              <div className="text-xs text-gray-800 font-medium">
-                                {label}
-                              </div>
-                              <div className="text-[11px] text-gray-500">
-                                {detail}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {!readOnly && (
-                    <div className="mt-2 text-[11px] text-purple-600">
-                      Selected: {selectedGradeKeys.length}
-                      {!hasGradesSelection && gradeSelectionTouched && (
-                        <span className="text-red-500">
-                          {" "}
-                          â€” Please select at least one grade.
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </>
+                <p className="text-xs italic text-red-400">No reason provided.</p>
               )}
             </div>
           )}
 
           {showDeclineInput && (
             <div className="mb-3 mt-3">
-              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1.5">
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                 Reason for Rejection <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 {suggestedNotes.length > 0 && (
-                  <div className="absolute left-2 top-2 right-2 flex flex-wrap gap-2 max-h-16 overflow-y-auto pr-1 z-10 pointer-events-none">
+                  <div className="pointer-events-none absolute left-2 right-2 top-2 z-10 flex max-h-16 flex-wrap gap-2 overflow-y-auto pr-1">
                     {suggestedNotes.map((note, idx) => (
                       <button
                         key={`${note}-${idx}`}
                         type="button"
                         onClick={() => appendDeclineNote(note)}
-                        className="pointer-events-auto text-[11px] px-2 py-1 rounded-full border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                        className="pointer-events-auto rounded-full border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700 transition-colors hover:bg-red-100"
                       >
                         {note}
                       </button>
@@ -1083,7 +437,7 @@ const RequestModal = ({
                   value={declineNotes}
                   onChange={(e) => setDeclineNotes(e.target.value)}
                   placeholder="Enter the reason for rejecting this request. This will be included in the email sent to the student."
-                  className="w-full text-xs text-gray-700 border border-gray-300 rounded-md px-3 pt-12 pb-2 focus:outline-none focus:ring-1 focus:ring-red-300 focus:border-red-400 resize-none placeholder:text-gray-400 overflow-y-auto"
+                  className="w-full resize-none overflow-y-auto rounded-md border border-gray-300 px-3 pb-2 pt-12 text-xs text-gray-700 placeholder:text-gray-400 focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-300"
                 />
               </div>
             </div>
@@ -1091,7 +445,7 @@ const RequestModal = ({
 
           {isRejected && !readOnly && (
             <div className="mb-3">
-              <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1.5">
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                 Rejection Email Note
               </label>
               <textarea
@@ -1099,17 +453,13 @@ const RequestModal = ({
                 value={rejectionEmailNotes}
                 onChange={(e) => setRejectionEmailNotes(e.target.value)}
                 placeholder="Optional message to include in the rejection email."
-                className="w-full text-xs text-gray-700 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-300 focus:border-red-400 resize-none placeholder:text-gray-400"
+                className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 placeholder:text-gray-400 focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-300"
               />
             </div>
           )}
         </div>
 
-        {/* ── Footer ── */}
-        {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-          {/* Decline notes input — shown after clicking Decline */}
-
+        <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => {
@@ -1118,20 +468,16 @@ const RequestModal = ({
                 onClose();
               }}
               disabled={loading}
-              className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md !hover:bg-gray-600 transition-colors disabled:opacity-50"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition-colors disabled:opacity-50"
             >
               Close
             </button>
 
             {isRejected && !readOnly && (
               <button
-                onClick={() =>
-                  onSendRejectionEmail?.(request, rejectionEmailNotes)
-                }
-                disabled={
-                  loading || rejectionEmailLoading || !request?.requestor_email
-                }
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                onClick={() => onSendRejectionEmail?.(request, rejectionEmailNotes)}
+                disabled={loading || rejectionEmailLoading || !request?.requestor_email}
+                className="flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
                 {rejectionEmailLoading ? "..." : "Send Rejection Email"}
               </button>
@@ -1142,7 +488,7 @@ const RequestModal = ({
                 <button
                   onClick={handleDeclineClick}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
                 >
                   <BsXCircle size={13} />
                   {showDeclineInput ? "Cancel" : "Reject"}
@@ -1151,30 +497,18 @@ const RequestModal = ({
                 {showDeclineInput ? (
                   <button
                     onClick={() => onRejectAndSend?.(request, declineNotes)}
-                    disabled={
-                      loading || rejectionEmailLoading || !declineNotes.trim()
-                    }
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-red-600 border border-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={loading || rejectionEmailLoading || !declineNotes.trim()}
+                    className="flex items-center gap-1.5 rounded-md border border-red-600 bg-red-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                   >
                     {rejectionEmailLoading ? "..." : "Send Rejection Email"}
                   </button>
                 ) : (
                   <button
                     onClick={handleApproveClick}
-                    disabled={
-                      loading ||
-                      savingSelection ||
-                      savingGradesSelection ||
-                      (selectionRequired && !hasSelection) ||
-                      (gradesSelectionRequired && !hasGradesSelection)
-                    }
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#ee1133] border border-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={loading}
+                    className="flex items-center gap-1.5 rounded-md border border-[#ee1133] bg-[#ee1133] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                   >
-                    {loading || savingSelection ? (
-                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      <BsCheckCircle size={13} />
-                    )}
+                    <BsCheckCircle size={13} />
                     Approve
                   </button>
                 )}
@@ -1184,7 +518,6 @@ const RequestModal = ({
         </div>
       </div>
 
-      {/* ── Keyframe animations (injected once) ── */}
       <style>{`
         @keyframes fadeIn  { from { opacity: 0 }               to { opacity: 1 } }
         @keyframes slideUp { from { transform: translateY(12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }

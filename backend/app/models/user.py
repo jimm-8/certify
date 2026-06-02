@@ -15,6 +15,8 @@ class User(Base):
     permissions = Column(Text, nullable=True)
     campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    can_process_certificates = Column(Boolean, default=False, nullable=False)
+    processing_queue_limit = Column(Integer, default=5, nullable=False)
     full_name = Column(String(255), nullable=True)
     contact_number = Column(String(50), nullable=True)
     department = Column(String(255), nullable=True)

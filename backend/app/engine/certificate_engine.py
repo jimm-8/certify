@@ -47,7 +47,12 @@ class CertificateEngine:
     )
 
     @staticmethod
-    def generate(certificate_type: str, data: dict) -> bytes:
+    def generate(
+        certificate_type: str,
+        data: dict,
+        rasterize: bool = False,
+        output_format: str = "pdf",
+    ) -> bytes:
         """
         Generates a PDF certificate from an HTML template using Playwright.
         """
@@ -57,7 +62,15 @@ class CertificateEngine:
         import mimetypes
         import sys
         import re
+        from io import BytesIO
         from pathlib import Path
+        from reportlab.lib.units import inch
+        from reportlab.lib.utils import ImageReader
+        from reportlab.pdfgen import canvas
+
+        output_format = str(output_format or "pdf").strip().lower()
+        if output_format not in {"pdf", "png"}:
+            raise ValueError(f"Unsupported output format: {output_format}")
 
         # ----------------------------------------
         # 1. LOAD TEMPLATE
@@ -144,12 +157,37 @@ class CertificateEngine:
                 flags=re.IGNORECASE,
             )
 
+        def _extract_page_size_inches(html: str) -> tuple[float, float]:
+            match = re.search(
+                r"@page\s*\{[^}]*size\s*:\s*([\d.]+)in\s+([\d.]+)in",
+                html,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+            if match:
+                return (float(match.group(1)), float(match.group(2)))
+
+            if re.search(
+                r"@page\s*\{[^}]*size\s*:\s*legal",
+                html,
+                flags=re.IGNORECASE | re.DOTALL,
+            ):
+                return (8.5, 14.0)
+            if re.search(
+                r"@page\s*\{[^}]*size\s*:\s*letter",
+                html,
+                flags=re.IGNORECASE | re.DOTALL,
+            ):
+                return (8.5, 11.0)
+
+            return (8.5, 11.0)
+
         tpl_dir = Path(CertificateEngine.TEMPLATE_DIR).resolve()
         base_href = tpl_dir.as_uri()
         if not base_href.endswith("/"):
             base_href += "/"
         html_content = _inject_base_href(html_content, base_href)
         html_content = _inline_known_local_images(html_content, tpl_dir)
+        page_size_inches = _extract_page_size_inches(html_content)
 
         # Playwright needs a Proactor event loop on Windows for subprocesses.
         if sys.platform.startswith("win"):
@@ -162,27 +200,101 @@ class CertificateEngine:
             except Exception:
                 pass
 
-        async def _render_pdf_async(html: str, header_template: str = None) -> bytes:
+        async def _render_pdf_async(
+            html: str,
+            header_template: str = None,
+            rasterize_output: bool = False,
+        ) -> bytes:
             from playwright.async_api import async_playwright
+
+            async def _stabilize_page(page) -> None:
+                try:
+                    await page.wait_for_load_state("networkidle", timeout=10000)
+                except Exception:
+                    pass
+
+                try:
+                    await page.evaluate(
+                        """
+                        async () => {
+                          if (document.fonts && document.fonts.ready) {
+                            try { await document.fonts.ready; } catch (_) {}
+                          }
+
+                          const images = Array.from(document.images || []);
+                          await Promise.all(images.map(async (img) => {
+                            try {
+                              if (img.complete) {
+                                return;
+                              }
+                              if (typeof img.decode === "function") {
+                                await img.decode();
+                                return;
+                              }
+                            } catch (_) {}
+
+                            await new Promise((resolve) => {
+                              const done = () => resolve();
+                              img.addEventListener("load", done, { once: true });
+                              img.addEventListener("error", done, { once: true });
+                              setTimeout(done, 3000);
+                            });
+                          }));
+                        }
+                        """
+                    )
+                except Exception:
+                    pass
+
+                try:
+                    await page.wait_for_timeout(500)
+                except Exception:
+                    pass
 
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch()
+                viewport_width = max(816, int(round(page_size_inches[0] * 96)))
+                viewport_height = max(1056, int(round(page_size_inches[1] * 96)))
                 context = await browser.new_context(
-                    viewport={"width": 816, "height": 1056}
+                    viewport={"width": viewport_width, "height": viewport_height}
                 )
                 page = await context.new_page()
                 await page.set_content(html, wait_until="load")
-                try:
-                    await page.wait_for_load_state("networkidle", timeout=5000)
-                except Exception:
-                    pass
+                await _stabilize_page(page)
                 try:
                     await page.emulate_media(media="print")
                 except Exception:
                     pass
+                await _stabilize_page(page)
 
                 use_header = header_template is not None
                 top_margin = "1.8in" if use_header else "0in"
+
+                if output_format == "png":
+                    png_bytes = await page.screenshot(type="png", full_page=True)
+                    await browser.close()
+                    return png_bytes
+
+                if rasterize_output:
+                    png_bytes = await page.screenshot(type="png", full_page=True)
+                    await browser.close()
+
+                    pdf_buffer = BytesIO()
+                    pdf_width = page_size_inches[0] * inch
+                    pdf_height = page_size_inches[1] * inch
+                    pdf_canvas = canvas.Canvas(
+                        pdf_buffer,
+                        pagesize=(pdf_width, pdf_height),
+                    )
+                    pdf_canvas.drawImage(
+                        ImageReader(BytesIO(png_bytes)),
+                        0,
+                        0,
+                        width=pdf_width,
+                        height=pdf_height,
+                    )
+                    pdf_canvas.save()
+                    return pdf_buffer.getvalue()
 
                 try:
                     pdf_bytes = await page.pdf(
@@ -226,7 +338,11 @@ class CertificateEngine:
         header_template = None
 
         return _run_async(
-            _render_pdf_async(html_content, header_template=header_template)
+            _render_pdf_async(
+                html_content,
+                header_template=header_template,
+                rasterize_output=rasterize,
+            )
         )
 
     # ------------------------------------------------------------------

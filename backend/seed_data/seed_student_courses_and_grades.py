@@ -21,16 +21,74 @@ SEMESTER_ORDER = {"1st": 1, "2nd": 2, "Midterm": 3, "Elective": 4}
 
 BASE_DIR = os.path.dirname(__file__)
 FILES = [
+    os.path.join(BASE_DIR, "curriculum_courses_bsaee.json"),
+    os.path.join(BASE_DIR, "curriculum_courses_bsche.json"),
     os.path.join(BASE_DIR, "curriculum_courses_bscpe.json"),
     os.path.join(BASE_DIR, "curriculum_courses_bsee.json"),
+    os.path.join(BASE_DIR, "curriculum_courses_bsie.json"),
     os.path.join(BASE_DIR, "curriculum_courses_bsme.json"),
 ]
 ACADEMIC_SUMMARY_PATH = os.path.join(BASE_DIR, "academic_summary.json")
+
+PROGRAM_CODE_ALIASES = {
+    "bsaee": "BSAeE",
+    "bsace": "BSAeE",
+    "bsche": "BSChE",
+    "bscpe": "BSCpE",
+}
 
 
 def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def canonical_program_code(code):
+    raw = str(code or "").strip()
+    return PROGRAM_CODE_ALIASES.get(raw.lower(), raw)
+
+
+def extract_curriculum_payloads(path):
+    payload = load_json(path)
+    items = []
+    containers = ("old", "new", "current", "latest", "data", "items", "records")
+
+    if isinstance(payload, dict) and payload.get("courses"):
+        items.append(payload)
+    elif isinstance(payload, dict):
+        for key in containers:
+            value = payload.get(key)
+            if isinstance(value, list):
+                items.extend(item for item in value if isinstance(item, dict) and item.get("courses"))
+    elif isinstance(payload, list):
+        for outer in payload:
+            if isinstance(outer, dict) and outer.get("courses"):
+                items.append(outer)
+                continue
+            if isinstance(outer, dict):
+                for key in containers:
+                    value = outer.get(key)
+                    if isinstance(value, list):
+                        items.extend(
+                            item for item in value if isinstance(item, dict) and item.get("courses")
+                        )
+
+    unique = []
+    seen = set()
+    for item in items:
+        signature = (
+            canonical_program_code(item.get("program_code")),
+            str(item.get("curriculum_name") or "").strip().lower(),
+            str(item.get("academic_year") or "").strip(),
+        )
+        if signature in seen:
+            continue
+        seen.add(signature)
+        unique.append(item)
+
+    if not unique:
+        raise ValueError(f"Unsupported curriculum payload format: {os.path.basename(path)}")
+    return unique
 
 
 def normalize_year_level(value):
@@ -141,31 +199,32 @@ def generate_grades(rows, target_gwa):
 def load_program_configs():
     configs = []
     for path in FILES:
-        payload = load_json(path)
-        courses = payload.get("courses", [])
-        curriculum_map = defaultdict(list)
-        curriculum_total_units = 0
+        for payload in extract_curriculum_payloads(path):
+            courses = payload.get("courses", [])
+            curriculum_map = defaultdict(list)
+            curriculum_total_units = 0
 
-        for course in courses:
-            year_level = normalize_year_level(course.get("year_level"))
-            semester = str(course.get("semester_offered") or "").strip()
-            units = int(course.get("units") or 0)
-            curriculum_total_units += units
-            curriculum_map[(year_level, semester)].append(
+            for course in courses:
+                year_level = normalize_year_level(course.get("year_level"))
+                semester = str(course.get("semester_offered") or "").strip()
+                units = int(course.get("units") or 0)
+                curriculum_total_units += units
+                curriculum_map[(year_level, semester)].append(
+                    {
+                        "course_code": course.get("course_code"),
+                        "units": units,
+                    }
+                )
+
+            configs.append(
                 {
-                    "course_code": course.get("course_code"),
-                    "units": units,
+                    "program_code": canonical_program_code(payload.get("program_code")),
+                    "curriculum_name": str(payload.get("curriculum_name") or "").strip(),
+                    "academic_year": str(payload.get("academic_year") or "").strip(),
+                    "curriculum_total_units": curriculum_total_units,
+                    "curriculum_map": curriculum_map,
                 }
             )
-
-        configs.append(
-            {
-                "program_code": str(payload.get("program_code") or "").strip(),
-                "curriculum_name": str(payload.get("curriculum_name") or "").strip(),
-                "curriculum_total_units": curriculum_total_units,
-                "curriculum_map": curriculum_map,
-            }
-        )
     return configs
 
 
@@ -176,7 +235,9 @@ def choose_curriculum_for_student(curriculum_options, first_enrollment_year):
         if academic_year_key(item["academic_year"]) <= first_enrollment_year
     ]
     if not eligible:
-        return None
+        if not curriculum_options:
+            return None
+        return min(curriculum_options, key=lambda item: academic_year_key(item["academic_year"]))
     return max(eligible, key=lambda item: academic_year_key(item["academic_year"]))
 
 
@@ -212,16 +273,67 @@ def main():
             with conn.cursor() as cur:
                 curricula_by_program = defaultdict(list)
                 for config in configs:
-                    cur.execute(
-                        """
-                        SELECT c.id, p.id, c.academic_year
-                        FROM curriculums c
-                        JOIN programs p ON p.id = c.program_id
-                        WHERE p.code = %s AND c.name = %s
-                        """,
-                        (config["program_code"], config["curriculum_name"]),
-                    )
-                    row = cur.fetchone()
+                    row = None
+                    if config["academic_year"]:
+                        cur.execute(
+                            """
+                            SELECT c.id, p.id, c.academic_year
+                            FROM curriculums c
+                            JOIN programs p ON p.id = c.program_id
+                            WHERE p.code = %s
+                              AND LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
+                              AND COALESCE(c.academic_year, '') = %s
+                            ORDER BY c.id
+                            LIMIT 1
+                            """,
+                            (
+                                config["program_code"],
+                                config["curriculum_name"],
+                                config["academic_year"],
+                            ),
+                        )
+                        row = cur.fetchone()
+                    if not row:
+                        cur.execute(
+                            """
+                            SELECT c.id, p.id, c.academic_year
+                            FROM curriculums c
+                            JOIN programs p ON p.id = c.program_id
+                            WHERE p.code = %s
+                              AND LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
+                            ORDER BY c.id
+                            LIMIT 1
+                            """,
+                            (config["program_code"], config["curriculum_name"]),
+                        )
+                        row = cur.fetchone()
+                    if not row and config["academic_year"]:
+                        cur.execute(
+                            """
+                            SELECT c.id, p.id, c.academic_year
+                            FROM curriculums c
+                            JOIN programs p ON p.id = c.program_id
+                            WHERE p.code = %s
+                              AND COALESCE(c.academic_year, '') = %s
+                            ORDER BY c.id
+                            LIMIT 1
+                            """,
+                            (config["program_code"], config["academic_year"]),
+                        )
+                        row = cur.fetchone()
+                    if not row:
+                        cur.execute(
+                            """
+                            SELECT c.id, p.id, c.academic_year
+                            FROM curriculums c
+                            JOIN programs p ON p.id = c.program_id
+                            WHERE p.code = %s
+                            ORDER BY c.is_active DESC, c.id DESC
+                            LIMIT 1
+                            """,
+                            (config["program_code"],),
+                        )
+                        row = cur.fetchone()
                     if not row:
                         raise ValueError(
                             f"Curriculum not found for {config['program_code']} / {config['curriculum_name']}"
@@ -294,17 +406,9 @@ def main():
                 for _student_id, sr_code, program_id, explicit_curriculum_id in students:
                     if explicit_curriculum_id:
                         chosen = curriculum_by_id.get(explicit_curriculum_id)
-                        if chosen is None:
-                            raise ValueError(
-                                f"Student {sr_code} references missing curriculum_id {explicit_curriculum_id}"
-                            )
-                        if chosen["program_id"] != program_id:
-                            raise ValueError(
-                                f"Student {sr_code} curriculum_id {explicit_curriculum_id} "
-                                f"does not belong to the student's program"
-                            )
-                        curriculum_by_student[sr_code] = chosen
-                        continue
+                        if chosen is not None and chosen["program_id"] == program_id:
+                            curriculum_by_student[sr_code] = chosen
+                            continue
 
                     enrollments = enrollments_by_student.get(sr_code, [])
                     if not enrollments:

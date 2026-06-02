@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.payment import Payment
 from app.models.certificate_request import (
-    AutoPrintStatus,
     CertificateRequest,
     RequestStatus,
 )
@@ -19,10 +18,12 @@ from app.schemas.payment import (
     PaymentInfo,
     PaymentInfoListResponse,
 )
-from app.services.request_service import update_request_status
+from app.services.request_service import trigger_for_releasing_flow
 from app.repositories import CertificateRequestRepository, PaymentRepository
 import anyio
 from app.api.v1.auth import require_permissions
+from app.services.audit_service import log_action
+from app.services.release_hold_service import stop_processing_hold
 
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
@@ -42,7 +43,7 @@ def _payment_purpose_label(request: CertificateRequest) -> str:
 def create_payment(
     payload: PaymentCreate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("payments.create")),
+    ctx: dict = Depends(require_permissions("payments.create")),
 ):
     request_repo = CertificateRequestRepository(db)
     payment_repo = PaymentRepository(db)
@@ -82,28 +83,49 @@ def create_payment(
     db.commit()
     db.refresh(payment)
 
-    # Auto-advance to FOR_RELEASING once payment is detected
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+    log_action(
+        db,
+        action="PAYMENT_RECORDED",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        field_name="payment_status",
+        old_value="UNPAID",
+        new_value=payment_status.upper(),
+        user_name=ctx["user"].username if ctx.get("user") else "System",
+        notes=(
+            f"Recorded payment for {request.reference_number}"
+            + (
+                f" with OR number {payload.or_number.strip()}."
+                if payload.or_number
+                else "."
+            )
+        ),
+    )
+
+    if payment_status.upper() == "PAID":
+        hold_stopped = stop_processing_hold(request, now=paid_at or datetime.now())
+        if hold_stopped:
+            log_action(
+                db,
+                action="DATA_UPDATED",
+                entity_type="certificate_request",
+                entity_id=request.id,
+                field_name="processing_hold",
+                old_value="paused",
+                new_value="running",
+                user_name=ctx["user"].username if ctx.get("user") else "System",
+                notes=(
+                    f"Processing timer resumed for {request.reference_number} "
+                    "after payment was recorded."
+                ),
+            )
+
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
         anyio.from_thread.run(
-            update_request_status,
+            trigger_for_releasing_flow,
             db,
-            request.id,
-            RequestStatus.FOR_RELEASING,
-            "System",
-            "Auto-marked for releasing after payment",
+            request,
         )
-        db.refresh(request)
-        if (
-            request.status == RequestStatus.FOR_RELEASING
-            and request.auto_print_requested_at is None
-        ):
-            request.auto_print_requested_at = datetime.now()
-            request.auto_print_status = AutoPrintStatus.REQUESTED.value
-            request.auto_print_job_id = None
-            request.auto_print_error = None
-            request.auto_print_confirmed_at = None
-            db.commit()
-            db.refresh(request)
     return payment
 
 
@@ -118,13 +140,14 @@ def list_unpaid_requests(
     payment_repo = PaymentRepository(db)
 
     requests = request_repo.query().order_by(CertificateRequest.created_at.desc()).all()
-    unpaid = []
-    for req in requests:
-        if not req.reference_number:
-            continue
-        payment = payment_repo.get_by_reference(req.reference_number)
-        if not payment:
-            unpaid.append(req)
+    paid_by_reference = payment_repo.get_by_references(
+        [req.reference_number for req in requests if req.reference_number]
+    )
+    unpaid = [
+        req
+        for req in requests
+        if req.reference_number and req.reference_number not in paid_by_reference
+    ]
 
     return unpaid[skip : skip + limit]
 
@@ -208,28 +231,49 @@ def create_payment_by_reference(
     db.commit()
     db.refresh(payment)
 
-    # Auto-advance to FOR_RELEASING once payment is detected
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+    log_action(
+        db,
+        action="PAYMENT_RECORDED",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        field_name="payment_status",
+        old_value="UNPAID",
+        new_value=payment_status.upper(),
+        user_name="System",
+        notes=(
+            f"Recorded payment for {request.reference_number}"
+            + (
+                f" with OR number {payload.or_number.strip()}."
+                if payload.or_number
+                else "."
+            )
+        ),
+    )
+
+    if payment_status.upper() == "PAID":
+        hold_stopped = stop_processing_hold(request, now=paid_at or datetime.now())
+        if hold_stopped:
+            log_action(
+                db,
+                action="DATA_UPDATED",
+                entity_type="certificate_request",
+                entity_id=request.id,
+                field_name="processing_hold",
+                old_value="paused",
+                new_value="running",
+                user_name="System",
+                notes=(
+                    f"Processing timer resumed for {request.reference_number} "
+                    "after payment was recorded."
+                ),
+            )
+
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
         anyio.from_thread.run(
-            update_request_status,
+            trigger_for_releasing_flow,
             db,
-            request.id,
-            RequestStatus.FOR_RELEASING,
-            "System",
-            "Auto-marked for releasing after payment",
+            request,
         )
-        db.refresh(request)
-        if (
-            request.status == RequestStatus.FOR_RELEASING
-            and request.auto_print_requested_at is None
-        ):
-            request.auto_print_requested_at = datetime.now()
-            request.auto_print_status = AutoPrintStatus.REQUESTED.value
-            request.auto_print_job_id = None
-            request.auto_print_error = None
-            request.auto_print_confirmed_at = None
-            db.commit()
-            db.refresh(request)
     return payment
 
 
@@ -240,15 +284,17 @@ def list_payments_by_references(
     _: dict = Depends(require_permissions("payments.read")),
 ):
     payment_repo = PaymentRepository(db)
+    payments_by_reference = payment_repo.get_by_references(payload.reference_numbers or [])
     items = []
     for ref in payload.reference_numbers or []:
-        if not ref:
+        normalized_ref = str(ref or "").strip()
+        if not normalized_ref:
             continue
-        payment = payment_repo.get_by_reference(ref)
+        payment = payments_by_reference.get(normalized_ref)
         if payment:
             items.append(
                 PaymentInfo(
-                    reference_number=ref,
+                    reference_number=normalized_ref,
                     amount=(
                         float(payment.amount) if payment.amount is not None else None
                     ),

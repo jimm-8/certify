@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import rbacService from "../../services/rbacService";
 import { BsChevronLeft } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
+import FeedbackDialog from "../../components/common/feedbackDialog";
+import formatApiError from "../../utils/formatApiError";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
@@ -10,12 +12,25 @@ export default function RoleManagement() {
   const [selectedPerms, setSelectedPerms] = useState([]);
   const [filter, setFilter] = useState("");
   const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
   const navigate = useNavigate();
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const load = async () => {
     try {
-      setError("");
       const [rolesData, permsData] = await Promise.all([
         rbacService.listRoles(),
         rbacService.listPermissions(),
@@ -27,7 +42,11 @@ export default function RoleManagement() {
         setSelectedPerms(rolesData[0].permissions || []);
       }
     } catch (err) {
-      setError(err.response?.data || "Failed to load roles");
+      showFeedback(
+        "Load Failed",
+        formatApiError(err, "Failed to load roles."),
+        "error",
+      );
     }
   };
 
@@ -74,7 +93,11 @@ export default function RoleManagement() {
       setTimeout(() => setStatus(""), 1500);
     } catch (err) {
       setStatus("");
-      setError(err.response?.data || "Failed to update role");
+      showFeedback(
+        "Save Failed",
+        formatApiError(err, "Failed to update role."),
+        "error",
+      );
     }
   };
 
@@ -101,12 +124,6 @@ export default function RoleManagement() {
           Manage role access and fine-grained permissions for the system.
         </p>
       </div>
-
-      {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-          {String(error)}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
@@ -193,6 +210,15 @@ export default function RoleManagement() {
           )}
         </div>
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }

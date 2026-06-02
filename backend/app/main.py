@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, SessionLocal
 from fastapi.staticfiles import StaticFiles
+import os
 
 
 import app.models.certificate_request
@@ -24,26 +25,48 @@ app = FastAPI(
     version="1.0.0"
 )
 
+raw_allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000",
+)
+allowed_origins = [
+    origin.strip() for origin in raw_allowed_origins.split(",") if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ],
-    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https?://((localhost|127\.0\.0\.1)|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+AUDIT_LOG_EXCLUDED_PREFIXES = (
+    "/api/v1/requests/",
+    "/api/v1/payments/",
+    "/api/v1/reports/",
+    "/api/v1/templates/",
+)
+
+
+def _should_log_generic_api_action(request: Request) -> bool:
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return False
+
+    path = request.url.path
+    if path == "/api/v1/requests/":
+        return False
+
+    return not path.startswith(AUDIT_LOG_EXCLUDED_PREFIXES)
+
+
 @app.middleware("http")
 async def audit_logging_middleware(request: Request, call_next):
     response = await call_next(request)
 
-    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+    if _should_log_generic_api_action(request):
         auth_header = request.headers.get("Authorization")
         log_api_request(request.method, request.url.path, response.status_code, auth_header)
 

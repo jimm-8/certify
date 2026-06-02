@@ -6,6 +6,7 @@ import { getTokenPayload } from "../../utils/auth";
 import requestService from "../../services/requestService";
 import FeedbackDialog from "./feedbackDialog";
 import {
+  LOCAL_NOTIFICATIONS_UPDATED_EVENT,
   NOTIFICATION_STORAGE_KEY,
   DISMISSED_NOTIFICATION_STORAGE_KEY,
   NOTIFICATION_ACTIONS,
@@ -17,73 +18,86 @@ import {
   getDismissedNotificationIds,
   getLocalNotifications,
   getNotificationMeta,
+  getAnomalySoundPlayedRequestIds,
   mergeNotifications,
+  saveAnomalySoundPlayedRequestIds,
   saveDelayAlertStageMap,
   STAGE_DEFINITIONS,
 } from "../../utils/notificationCenter";
 
-const playSuccessNotification = () => {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
+let sharedAudioContext = null;
 
-  const ctx = new AudioCtx();
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
+const getSharedAudioContext = async () => {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    sharedAudioContext = new AudioCtx();
   }
 
-  [
-    [523, 0],
-    [659, 0.12],
-    [784, 0.24],
-  ].forEach(([freq, delay]) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime + delay + 0.5,
-    );
-    osc.start(ctx.currentTime + delay);
-    osc.stop(ctx.currentTime + delay + 0.5);
-  });
+  if (sharedAudioContext.state === "suspended") {
+    try {
+      await sharedAudioContext.resume();
+    } catch {
+      return null;
+    }
+  }
 
-  window.setTimeout(() => {
-    ctx.close().catch(() => {});
-  }, 900);
+  return sharedAudioContext;
+};
+
+const primeAudioPlayback = async () => {
+  const ctx = await getSharedAudioContext();
+  if (!ctx) return false;
+  return ctx.state === "running";
+};
+
+const playSuccessNotification = () => {
+  getSharedAudioContext().then((ctx) => {
+    if (!ctx) return;
+
+    [
+      [523, 0],
+      [659, 0.12],
+      [784, 0.24],
+    ].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + delay + 0.5,
+      );
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.5);
+    });
+  });
 };
 
 const playCriticalAlert = () => {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
+  getSharedAudioContext().then((ctx) => {
+    if (!ctx) return;
 
-  const ctx = new AudioCtx();
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
-  }
-
-  [0, 0.12, 0.24, 0.36].forEach((delay) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "square";
-    osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
-    gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      ctx.currentTime + delay + 0.09,
-    );
-    osc.start(ctx.currentTime + delay);
-    osc.stop(ctx.currentTime + delay + 0.1);
+    [0, 0.12, 0.24, 0.36].forEach((delay) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "square";
+      osc.frequency.setValueAtTime(1200, ctx.currentTime + delay);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + delay + 0.09,
+      );
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.1);
+    });
   });
-
-  window.setTimeout(() => {
-    ctx.close().catch(() => {});
-  }, 800);
 };
 
 const createCriticalAlertLoop = () => {
@@ -118,6 +132,19 @@ const FOR_RELEASE_NOTICE_ACTIONS = [
   "FOR_RELEASE_DELAY_ALERT",
   "REQUEST_DELAY_NOTICE_SENT",
 ];
+const AUTO_VALIDATION_NOTIFICATION_ACTION =
+  "REQUEST_AUTO_VALIDATION_REVIEW";
+
+const getAnomalyRequestIds = (items = []) =>
+  new Set(
+    items
+      .filter(
+        (item) =>
+          item?.action === AUTO_VALIDATION_NOTIFICATION_ACTION &&
+          Number.isFinite(Number(item?.entity_id)),
+      )
+      .map((item) => Number(item.entity_id)),
+  );
 
 const CertifyNavbar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -145,6 +172,9 @@ const CertifyNavbar = () => {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
   const latestNotificationIdRef = useRef(0);
+  const latestLocalNotificationMarkerRef = useRef("");
+  const latestAnomalyRequestIdsRef = useRef(new Set());
+  const soundedAnomalyRequestIdsRef = useRef(new Set());
   const hasLoadedNotificationsRef = useRef(false);
   const criticalAlertLoopRef = useRef(null);
   const location = useLocation();
@@ -210,6 +240,82 @@ const CertifyNavbar = () => {
     .join("");
 
   useEffect(() => {
+    const unlockAudio = () => {
+      primeAudioPlayback().catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio);
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
+
+  useEffect(() => {
+    const buildLocalNotificationMarker = (items) => {
+      const newest = items?.[0];
+      if (!newest) return "";
+      return `${newest.id}:${newest.created_at}:${newest.notes || ""}`;
+    };
+
+    latestLocalNotificationMarkerRef.current =
+      buildLocalNotificationMarker(localNotifications);
+    latestAnomalyRequestIdsRef.current = getAnomalyRequestIds(localNotifications);
+    soundedAnomalyRequestIdsRef.current = new Set(
+      getAnomalySoundPlayedRequestIds(),
+    );
+
+    const handleLocalNotificationsUpdated = (event) => {
+      const nextItems = Array.isArray(event.detail?.items)
+        ? event.detail.items
+        : getLocalNotifications();
+      const isSilentUpdate = Boolean(event.detail?.silent);
+      const nextMarker = buildLocalNotificationMarker(nextItems);
+      const nextAnomalyRequestIds = getAnomalyRequestIds(nextItems);
+      const unsoundedAnomalyRequestIds = Array.from(nextAnomalyRequestIds).filter(
+        (requestId) => !soundedAnomalyRequestIdsRef.current.has(requestId),
+      );
+      const hasNewAnomalyRequest = unsoundedAnomalyRequestIds.length > 0;
+
+      if (
+        nextMarker &&
+        nextMarker !== latestLocalNotificationMarkerRef.current &&
+        !isSilentUpdate &&
+        hasNewAnomalyRequest
+      ) {
+        playSuccessNotification();
+      }
+
+      if (hasNewAnomalyRequest) {
+        const nextSoundedIds = new Set(soundedAnomalyRequestIdsRef.current);
+        unsoundedAnomalyRequestIds.forEach((requestId) => {
+          nextSoundedIds.add(requestId);
+        });
+        soundedAnomalyRequestIdsRef.current = nextSoundedIds;
+        saveAnomalySoundPlayedRequestIds(Array.from(nextSoundedIds));
+      }
+
+      latestLocalNotificationMarkerRef.current = nextMarker;
+      latestAnomalyRequestIdsRef.current = nextAnomalyRequestIds;
+      setLocalNotifications(nextItems);
+    };
+
+    window.addEventListener(
+      LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+      handleLocalNotificationsUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+        handleLocalNotificationsUpdated,
+      );
+    };
+  }, [localNotifications]);
+
+  useEffect(() => {
     if (isCashier || suppressForReleaseNotices) return undefined;
 
     let active = true;
@@ -223,7 +329,11 @@ const CertifyNavbar = () => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
         const items = all
-          .filter((log) => NOTIFICATION_ACTIONS.includes(log.action))
+          .filter(
+            (log) =>
+              NOTIFICATION_ACTIONS.includes(log.action) &&
+              (!log.owner_username || log.owner_username === username),
+          )
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         const newestId = Number(items[0]?.id || 0);
         if (
@@ -241,14 +351,24 @@ const CertifyNavbar = () => {
       }
     };
 
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        loadNotifications();
+      }
+    };
+
     loadNotifications();
+    window.addEventListener("focus", loadNotifications);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
     const intervalId = window.setInterval(loadNotifications, 5000);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", loadNotifications);
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
       window.clearInterval(intervalId);
     };
-  }, [isCashier, suppressForReleaseNotices]);
+  }, [isCashier, suppressForReleaseNotices, username]);
 
   useEffect(() => {
     const shouldPlayLoop =
@@ -289,13 +409,12 @@ const CertifyNavbar = () => {
         const data = await requestService.getAllRequests({
           page: 1,
           limit: 100,
+          ownerUsername: username,
         });
         if (!active) return;
 
         const all = Array.isArray(data) ? data : data.items || [];
-        const releasing = all.filter(
-          (item) => item.status === "FOR_RELEASING",
-        );
+        const releasing = all.filter((item) => item.status === "FOR_RELEASING");
         const stageMap = getDelayAlertStageMap();
         const stageBuckets = {
           breach: [],
@@ -363,14 +482,24 @@ const CertifyNavbar = () => {
       }
     };
 
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        evaluateDelayAlerts();
+      }
+    };
+
     evaluateDelayAlerts();
+    window.addEventListener("focus", evaluateDelayAlerts);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
     const intervalId = window.setInterval(evaluateDelayAlerts, 60000);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", evaluateDelayAlerts);
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
       window.clearInterval(intervalId);
     };
-  }, [isCashier, suppressForReleaseNotices]);
+  }, [isCashier, suppressForReleaseNotices, username]);
 
   useEffect(() => {
     if (!suppressForReleaseNotices) return;
@@ -861,8 +990,8 @@ const CertifyNavbar = () => {
                   </div>
                 )}
                 <div className="text-[11px] text-gray-500">
-                  Sending a delay notice with a custom reason will also pause the
-                  release timer.
+                  Sending a delay notice with a custom reason will also pause
+                  the release timer.
                 </div>
               </>
             )}

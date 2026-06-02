@@ -237,8 +237,8 @@ class EnrollmentRepository(BaseRepository[Enrollment]):
             self.for_student(sr_code)
             .order_by(
                 Enrollment.academic_year.desc(),
-                semester_order.desc(),
                 Enrollment.year_level.desc(),
+                semester_order.desc(),
             )
             .first()
         )
@@ -282,8 +282,41 @@ class PaymentRepository(BaseRepository[Payment]):
     def __init__(self, db: Session):
         super().__init__(db, Payment)
 
+    @staticmethod
+    def _normalize_reference(reference_number: str) -> str:
+        return str(reference_number or "").strip()
+
+    @classmethod
+    def _reference_match_rank(cls, payment_purpose: str, reference_number: str):
+        purpose = str(payment_purpose or "").strip()
+        ref = cls._normalize_reference(reference_number)
+        if not purpose or not ref:
+            return None
+
+        if purpose == ref:
+            return 0
+
+        if f" {ref} - " in purpose:
+            return 1
+
+        if ref in purpose:
+            return 2
+
+        return None
+
+    @classmethod
+    def _payment_sort_key(cls, payment: Payment, reference_number: str):
+        match_rank = cls._reference_match_rank(payment.purpose, reference_number)
+        return (
+            -(match_rank if match_rank is not None else 99),
+            payment.date_of_payment or payment.paid_at or payment.created_at,
+            payment.paid_at or payment.created_at,
+            payment.created_at,
+            payment.id or 0,
+        )
+
     def get_by_reference(self, reference_number: str):
-        ref = str(reference_number or "").strip()
+        ref = self._normalize_reference(reference_number)
         if not ref:
             return None
 
@@ -311,6 +344,55 @@ class PaymentRepository(BaseRepository[Payment]):
             )
             .first()
         )
+
+    def get_by_references(self, reference_numbers: list[str]) -> dict[str, Payment]:
+        refs = []
+        seen = set()
+        for reference_number in reference_numbers or []:
+            ref = self._normalize_reference(reference_number)
+            if ref and ref not in seen:
+                refs.append(ref)
+                seen.add(ref)
+        if not refs:
+            return {}
+
+        filters = []
+        for ref in refs:
+            filters.extend(
+                [
+                    Payment.purpose == ref,
+                    Payment.purpose.ilike(f"% {ref} - %"),
+                    Payment.purpose.ilike(f"%{ref}%"),
+                ]
+            )
+
+        candidates = (
+            self.query()
+            .filter(or_(*filters))
+            .order_by(
+                Payment.date_of_payment.desc(),
+                Payment.paid_at.desc(),
+                Payment.created_at.desc(),
+                Payment.id.desc(),
+            )
+            .all()
+        )
+
+        matches: dict[str, Payment] = {}
+        for ref in refs:
+            best_payment = None
+            best_key = None
+            for payment in candidates:
+                match_rank = self._reference_match_rank(payment.purpose, ref)
+                if match_rank is None:
+                    continue
+                key = self._payment_sort_key(payment, ref)
+                if best_key is None or key > best_key:
+                    best_key = key
+                    best_payment = payment
+            if best_payment:
+                matches[ref] = best_payment
+        return matches
 
 
 class PermissionRepository(BaseRepository[Permission]):

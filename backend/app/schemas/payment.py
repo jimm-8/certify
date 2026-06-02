@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
+
+
+SevenDigitOrNumber = constr(pattern=r"^\d{7}$")
 
 
 class PaymentCreate(BaseModel):
@@ -9,7 +12,9 @@ class PaymentCreate(BaseModel):
     amount: Optional[float] = Field(None, description="Payment amount")
     payment_method: Optional[str] = Field(None, description="Payment method")
     payment_status: Optional[str] = Field("PAID", description="Payment status")
-    or_number: Optional[str] = Field(None, description="Official receipt number")
+    or_number: Optional[SevenDigitOrNumber] = Field(
+        None, description="Official receipt number as a 7-digit number"
+    )
 
 
 class PaymentByReferenceCreate(BaseModel):
@@ -18,7 +23,9 @@ class PaymentByReferenceCreate(BaseModel):
     purpose: Optional[str] = Field(None, description="Purpose of payment")
     payment_method: Optional[str] = Field(None, description="Payment method")
     payment_status: Optional[str] = Field("PAID", description="Payment status")
-    or_number: Optional[str] = Field(None, description="Official receipt number")
+    or_number: Optional[SevenDigitOrNumber] = Field(
+        None, description="Official receipt number as a 7-digit number"
+    )
 
 
 class PaymentReferencesRequest(BaseModel):

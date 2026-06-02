@@ -56,11 +56,7 @@ const SignatureManager = () => {
       const data = await signatureService.list(false);
       setSignatures(data || []);
     } catch (err) {
-      showFeedback(
-        "Load Failed",
-        "Failed to load signatures.",
-        "error",
-      );
+      showFeedback("Load Failed", "Failed to load signatures.", "error");
     } finally {
       setLoading(false);
     }
@@ -212,11 +208,7 @@ const SignatureManager = () => {
       setConfirmOpen(false);
       setConfirmSig(null);
     } catch (err) {
-      showFeedback(
-        "Delete Failed",
-        "Failed to delete signature.",
-        "error",
-      );
+      showFeedback("Delete Failed", "Failed to delete signature.", "error");
     } finally {
       setConfirming(false);
     }
@@ -365,6 +357,7 @@ const SignatureManager = () => {
               {previewUrl && (
                 <div className="mt-2 border border-dashed border-gray-200 rounded-md p-2 bg-gray-50">
                   <img
+                    loading="lazy"
                     src={previewUrl}
                     alt="Signature preview"
                     className="max-h-24 w-auto object-contain"
@@ -420,6 +413,7 @@ const SignatureManager = () => {
                       <div className="w-24 h-16 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
                         {imageUrls[sig.id] ? (
                           <img
+                            loading="lazy"
                             src={imageUrls[sig.id]}
                             alt={`${sig.name} signature`}
                             className="max-h-14 w-auto object-contain"
@@ -435,13 +429,13 @@ const SignatureManager = () => {
                           {sig.name}
                         </div>
                         <div className="text-xs text-gray-500">{sig.title}</div>
-                      <div className="text-[11px] text-gray-400 mt-1">
-                        Campus:{" "}
-                        {sig.campus_id
-                          ? campusNameById.get(String(sig.campus_id)) ||
-                            sig.campus_id
-                          : "N/A"}
-                      </div>
+                        <div className="text-[11px] text-gray-400 mt-1">
+                          Campus:{" "}
+                          {sig.campus_id
+                            ? campusNameById.get(String(sig.campus_id)) ||
+                              sig.campus_id
+                            : "N/A"}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -492,7 +486,10 @@ const SignatureManager = () => {
         >
           <div className="w-full max-w-sm rounded-lg bg-white shadow-lg border border-gray-200">
             <div className="px-4 pt-4">
-              <h4 id="confirm-title" className="text-sm font-semibold text-gray-800">
+              <h4
+                id="confirm-title"
+                className="text-sm font-semibold text-gray-800"
+              >
                 Confirm Deletion
               </h4>
               <p className="mt-2 text-xs text-gray-600">

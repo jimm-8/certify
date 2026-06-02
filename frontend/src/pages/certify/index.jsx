@@ -7,7 +7,9 @@ import RequestTracker from "./tracker";
 import Ready from "./ready";
 import History from "./history";
 import requestService from "../../services/requestService";
+import paymentService from "../../services/paymentService";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { getTokenPayload } from "../../utils/auth";
 
 const tabs = [
   { key: "dashboard", component: <Dashboard /> },
@@ -26,6 +28,7 @@ const CertifyPage = () => {
     history: 0,
   });
   const lastSnapshotRef = useRef("");
+  const ownerUsername = getTokenPayload()?.sub || "";
   const activeTabKey = searchParams.get("tab") || "dashboard";
   const activeTabIndex = Math.max(
     0,
@@ -40,21 +43,61 @@ const CertifyPage = () => {
 
   useEffect(() => {
     let mounted = true;
+    let intervalId;
 
     const fetchTabCounts = async () => {
       try {
-        const data = await requestService.getAllRequests({ page: 1, limit: 200 });
+        const [data, ownedData] = await Promise.all([
+          requestService.getAllRequests({
+            page: 1,
+            limit: 100,
+          }),
+          requestService.getAllRequests({
+            page: 1,
+            limit: 100,
+            ownerUsername,
+          }),
+        ]);
+
         const requests = filterCertifyEligibleRequests(
           Array.isArray(data) ? data : data.items || [],
         );
+        const ownedRequests = filterCertifyEligibleRequests(
+          Array.isArray(ownedData) ? ownedData : ownedData.items || [],
+        );
+        const forReleasingRequests = ownedRequests.filter(
+          (r) => r.status === "FOR_RELEASING",
+        );
+        const readyRefs = forReleasingRequests
+          .map((r) => r.reference_number)
+          .filter(Boolean);
+        const paymentInfo =
+          readyRefs.length > 0
+            ? await paymentService.getPaymentsByReferences(readyRefs)
+            : { items: [] };
+        const paidReadyRefs = new Set(
+          (paymentInfo?.items || [])
+            .filter(
+              (item) =>
+                String(item?.payment_status || "").toUpperCase() === "PAID",
+            )
+            .map((item) => item.reference_number),
+        );
+
         const nextCounts = {
-          received: requests.filter((r) => r.status === "APPROVED").length,
-          processing: requests.filter((r) => r.status === "PROCESSING").length,
-          ready: requests.filter((r) => r.status === "FOR_RELEASING").length,
+          received: ownedRequests.filter((r) => r.status === "PROCESSING")
+            .length,
+          processing: forReleasingRequests.filter(
+            (r) => !paidReadyRefs.has(r.reference_number),
+          ).length,
+          ready: forReleasingRequests.filter((r) =>
+            paidReadyRefs.has(r.reference_number),
+          ).length,
           history: requests.filter((r) => r.status === "RELEASED").length,
         };
 
         const snapshot = JSON.stringify(nextCounts);
+
         if (mounted && snapshot !== lastSnapshotRef.current) {
           lastSnapshotRef.current = snapshot;
           setTabCounts(nextCounts);
@@ -64,14 +107,17 @@ const CertifyPage = () => {
       }
     };
 
-    fetchTabCounts();
-    const intervalId = window.setInterval(fetchTabCounts, 5000);
+    const timeoutId = setTimeout(() => {
+      fetchTabCounts();
+      intervalId = setInterval(fetchTabCounts, 5000);
+    }, 1000);
 
     return () => {
       mounted = false;
-      window.clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, []);
+  }, [ownerUsername]);
 
   return (
     <div>

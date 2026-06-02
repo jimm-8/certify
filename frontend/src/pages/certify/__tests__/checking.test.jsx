@@ -1,15 +1,20 @@
+// @vitest-environment jsdom
 import { render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Checking from "../checking";
 import requestService from "../../../services/requestService";
 
 vi.mock("../../../services/requestService", () => ({
   default: {
+    autoQueueApprovedRequests: vi.fn(),
     getAllRequests: vi.fn(),
     getCertificateTypes: vi.fn(),
     validateRequests: vi.fn(),
     updateStatus: vi.fn(),
+    generateCertificate: vi.fn(),
+    sendCheckingEmail: vi.fn(),
     sendRejectionEmail: vi.fn(),
   },
 }));
@@ -31,6 +36,7 @@ vi.mock("../../../components/common/requestModal", () => ({
 describe("Checking page", () => {
   beforeEach(() => {
     requestService.getAllRequests.mockResolvedValue([]);
+    requestService.autoQueueApprovedRequests.mockResolvedValue({});
     requestService.getCertificateTypes.mockResolvedValue([]);
     requestService.validateRequests.mockResolvedValue({ results: [] });
   });
@@ -39,17 +45,17 @@ describe("Checking page", () => {
     vi.clearAllMocks();
   });
 
-  it("shows empty state when no approved requests", async () => {
+  it("shows empty state when no assigned processing requests", async () => {
     render(<Checking />);
     expect(await screen.findByText(/No requests found/i)).toBeInTheDocument();
   });
 
-  it("processes approved requests in bulk", async () => {
+  it("generates assigned processing requests in bulk", async () => {
     const user = userEvent.setup();
     const approved = [
       {
         id: 1,
-        status: "APPROVED",
+        status: "PROCESSING",
         certificate_type_name: "Certification",
         student_name: "Ada",
         program: "BSCS",
@@ -59,7 +65,7 @@ describe("Checking page", () => {
       },
       {
         id: 2,
-        status: "APPROVED",
+        status: "PROCESSING",
         certificate_type_name: "Good Moral",
         student_name: "Grace",
         program: "BSIT",
@@ -71,38 +77,30 @@ describe("Checking page", () => {
 
     requestService.getAllRequests.mockResolvedValue(approved);
     requestService.validateRequests.mockResolvedValue({ results: [] });
-    requestService.updateStatus.mockResolvedValue({});
+    requestService.generateCertificate.mockResolvedValue({});
 
     render(<Checking />);
 
-    const button = await screen.findByRole("button", {
-      name: /process all/i,
-    });
+    const button = (await screen.findAllByRole("button", {
+      name: /generate all/i,
+    })).find((item) => !item.disabled);
 
     await user.click(button);
 
     await waitFor(() => {
-      expect(requestService.updateStatus).toHaveBeenCalledTimes(2);
+      expect(requestService.generateCertificate).toHaveBeenCalledTimes(2);
     });
 
-    expect(requestService.updateStatus).toHaveBeenCalledWith(
-      1,
-      "PROCESSING",
-      "Request moved to processing",
-    );
-    expect(requestService.updateStatus).toHaveBeenCalledWith(
-      2,
-      "PROCESSING",
-      "Request moved to processing",
-    );
+    expect(requestService.generateCertificate).toHaveBeenCalledWith(1);
+    expect(requestService.generateCertificate).toHaveBeenCalledWith(2);
   });
 
-  it("closes the request modal after approval and shows loading then submitted feedback", async () => {
+  it("closes the request modal only after approval succeeds and shows loading then submitted feedback", async () => {
     const user = userEvent.setup();
     const approved = [
       {
         id: 1,
-        status: "APPROVED",
+      status: "PROCESSING",
         certificate_type_name: "Certification",
         student_name: "Ada",
         program: "BSCS",
@@ -115,7 +113,7 @@ describe("Checking page", () => {
     requestService.getAllRequests.mockResolvedValue(approved);
     requestService.validateRequests.mockResolvedValue({ results: [] });
     let resolveUpdate;
-    requestService.updateStatus.mockImplementation(
+    requestService.generateCertificate.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveUpdate = resolve;
@@ -124,29 +122,199 @@ describe("Checking page", () => {
 
     render(<Checking />);
 
-    await user.click(await screen.findByText("Ada"));
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
     await user.click(await screen.findByRole("button", { name: /modal approve/i }));
 
+    expect(screen.getByRole("button", { name: /modal approve/i })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /modal approve/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      await screen.findByText(/please wait while the certificate request is being submitted/i),
+      await screen.findByText(/please wait while the certificate is being generated/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/working\.\.\./i)).toBeInTheDocument();
 
     resolveUpdate({});
 
     await waitFor(() => {
-      expect(requestService.updateStatus).toHaveBeenCalledWith(
-        1,
-        "PROCESSING",
-        "Request moved to processing",
-      );
+      expect(requestService.generateCertificate).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: /modal approve/i }),
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      await screen.findByText(/certificate request moved to tracker successfully/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows backend conflict details in feedback dialog when approval claim is lost", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+      status: "PROCESSING",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    requestService.generateCertificate.mockRejectedValue({
+      response: {
+        data: {
+          detail: "Certificate generation failed.",
+        },
+      },
+    });
+
+    render(<Checking />);
+
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
+    await user.click(await screen.findByRole("button", { name: /modal approve/i }));
+
+    expect(
+      await screen.findByText(/certificate generation failed\./i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /generation failed/i })).toBeInTheDocument();
+  });
+
+  it("reconciles modal approval timeout when the request was already advanced", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests
+      .mockResolvedValueOnce(approved)
+      .mockResolvedValueOnce([]);
+    requestService.getCertificateTypes.mockResolvedValue([]);
+    requestService.validateRequests
+      .mockResolvedValueOnce({ results: [] })
+      .mockResolvedValueOnce({ results: [] });
+    requestService.updateStatus.mockRejectedValue({
+      code: "ECONNABORTED",
+      message: "timeout of 1000ms exceeded",
+    });
+
+    render(<Checking />);
+
+    const adaCell = (await screen.findAllByText("Ada"))[0];
+    await user.click(adaCell);
+    await user.click(await screen.findByRole("button", { name: /modal approve/i }));
+
+    expect(
+      await screen.findByText(
+        /certificate request was generated successfully\. the page has been refreshed to reflect the latest status\./i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/submission failed/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: /modal approve/i }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows needs review when auto validation returns graduation-related flags", async () => {
+    const approved = [
+      {
+        id: 7,
+        status: "APPROVED",
+        certificate_type_name: "Certification of GWA",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({
+      results: [
+        {
+          request_id: 7,
+          exists: true,
+          flags: [
+            "Student is not yet graduated for the requested GWA certificate.",
+          ],
+        },
+      ],
+    });
+
+    render(<Checking />);
+
+    expect((await screen.findAllByText(/needs review/i)).length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("sends checking update email through the backend action", async () => {
+    const user = userEvent.setup();
+    const approved = [
+      {
+        id: 1,
+        status: "APPROVED",
+        certificate_type_name: "Certification",
+        student_name: "Ada",
+        program: "BSCS",
+        created_at: new Date().toISOString(),
+        requestor_name: "Ada",
+        requestor_email: "ada@example.com",
+      },
+    ];
+
+    requestService.getAllRequests.mockResolvedValue(approved);
+    requestService.validateRequests.mockResolvedValue({ results: [] });
+    requestService.sendCheckingEmail.mockResolvedValue({});
+
+    render(<Checking />);
+
+    const emailButtons = await screen.findAllByRole("button", {
+      name: /send checking email/i,
+    });
+    await user.click(emailButtons[0]);
+
+    await waitFor(() => {
+      expect(requestService.sendCheckingEmail).not.toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText(/compose email/i)).toBeInTheDocument();
+
+    const subject = screen.getByLabelText(/subject/i);
+    const message = screen.getByLabelText(/message/i);
+
+    await user.clear(subject);
+    await user.type(subject, "Need more details");
+    await user.clear(message);
+    await user.type(message, "Please confirm the purpose of your request.");
+    await user.click(screen.getByRole("button", { name: /^send email$/i }));
+
+    await waitFor(() => {
+      expect(requestService.sendCheckingEmail).toHaveBeenCalledWith(1, {
+        subject: "Need more details",
+        message: "Please confirm the purpose of your request.",
+      });
     });
 
     expect(
-      await screen.findByText(/certificate request submitted successfully/i),
+      await screen.findByText(/message sent to the requestor\./i),
     ).toBeInTheDocument();
   });
 });

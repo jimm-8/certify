@@ -1,6 +1,8 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+// @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import PaymentTagging from "../payment";
 import requestService from "../../../../services/requestService";
 import paymentService from "../../../../services/paymentService";
@@ -27,6 +29,7 @@ describe("Payment tagging page", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -64,7 +67,7 @@ describe("Payment tagging page", () => {
     await user.click(await screen.findByRole("button", { name: /record payment/i }));
     const orInput = screen.getByPlaceholderText(/or number/i);
     const orModal = orInput.closest("div.w-full.max-w-sm");
-    await user.type(orInput, "OR-123");
+    await user.type(orInput, "1900054");
     await user.click(
       within(orModal).getByRole("button", { name: /^record payment$/i }),
     );
@@ -72,7 +75,7 @@ describe("Payment tagging page", () => {
       /please review the or number before submitting this payment/i,
     );
     const confirmModal = confirmDialog.closest("div[class*='max-w-sm']");
-    expect(screen.getByText("OR-123")).toBeInTheDocument();
+    expect(screen.getByText("1900054")).toBeInTheDocument();
     await user.click(
       within(confirmModal).getByRole("button", { name: /submit payment/i }),
     );
@@ -88,7 +91,7 @@ describe("Payment tagging page", () => {
       expect(paymentService.createPayment).toHaveBeenCalledWith(
         expect.objectContaining({
           request_id: 10,
-          or_number: "OR-123",
+          or_number: "1900054",
         }),
       );
     });
@@ -96,5 +99,107 @@ describe("Payment tagging page", () => {
     expect(
       await screen.findByText(/payment has been tagged successfully/i),
     ).toBeInTheDocument();
+  });
+
+  it("reconciles timeout errors when payment was actually recorded", async () => {
+    const user = userEvent.setup();
+    const request = {
+      id: 10,
+      reference_number: "REF-100",
+      student_name: "Ada Lovelace",
+      certificate_type_name: "Certification",
+      created_at: new Date().toISOString(),
+      status: "PROCESSING",
+      request_cost: 30,
+    };
+
+    requestService.getAllRequests.mockResolvedValue([request]);
+    paymentService.getUnpaidRequests
+      .mockResolvedValueOnce([{ id: 10 }])
+      .mockResolvedValueOnce([]);
+    paymentService.getPaymentsByReferences
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            reference_number: "REF-100",
+            paid_at: new Date().toISOString(),
+            or_number: "1900054",
+          },
+        ],
+      });
+    paymentService.createPayment.mockRejectedValue({
+      code: "ECONNABORTED",
+      message: "timeout of 1000ms exceeded",
+    });
+
+    render(<PaymentTagging />);
+
+    await user.click(await screen.findByRole("button", { name: /record payment/i }));
+    const orInput = screen.getByPlaceholderText(/or number/i);
+    const orModal = orInput.closest("div.w-full.max-w-sm");
+    await user.type(orInput, "1900054");
+    await user.click(
+      within(orModal).getByRole("button", { name: /^record payment$/i }),
+    );
+    const confirmDialog = await screen.findByText(
+      /please review the or number before submitting this payment/i,
+    );
+    const confirmModal = confirmDialog.closest("div[class*='max-w-sm']");
+    await user.click(
+      within(confirmModal).getByRole("button", { name: /submit payment/i }),
+    );
+
+    expect(
+      await screen.findByText(/payment was recorded successfully/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/failed to record payment/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("allows recording payment for for releasing requests", async () => {
+    const user = userEvent.setup();
+
+    requestService.getAllRequests.mockResolvedValue([
+      {
+        id: 22,
+        reference_number: "REF-220",
+        student_name: "Marie Curie",
+        certificate_type_name: "Certification",
+        created_at: new Date().toISOString(),
+        status: "FOR_RELEASING",
+        request_cost: 30,
+      },
+    ]);
+    paymentService.getUnpaidRequests.mockResolvedValue([{ id: 22 }]);
+    paymentService.getPaymentsByReferences.mockResolvedValue({ items: [] });
+    paymentService.createPayment.mockResolvedValue({});
+
+    render(<PaymentTagging />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /record payment/i }),
+      ).toBeEnabled();
+    });
+
+    const recordButton = screen.getByRole("button", {
+      name: /record payment/i,
+    });
+
+    await user.click(recordButton);
+    await user.type(screen.getByPlaceholderText(/or number/i), "220001");
+    await user.click(screen.getAllByRole("button", { name: /^record payment$/i })[1]);
+    await user.click(await screen.findByRole("button", { name: /submit payment/i }));
+
+    await waitFor(() => {
+      expect(paymentService.createPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request_id: 22,
+          or_number: "220001",
+        }),
+      );
+    });
   });
 });

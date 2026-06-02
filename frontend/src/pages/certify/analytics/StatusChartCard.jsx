@@ -7,7 +7,7 @@ const StatusChartCard = ({
   setStatusMenuOpen,
   setStatusPeriod,
 }) => (
-  <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
+  <div className="bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-[0_10px_28px_rgba(15,23,42,0.06)] min-h-60">
     <div className="flex items-center justify-between mb-4">
       <span className="text-sm font-semibold text-[#0B1B3A]">
         Request Status

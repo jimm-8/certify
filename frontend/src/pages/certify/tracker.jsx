@@ -4,12 +4,16 @@ import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { getTokenPayload } from "../../utils/auth";
+import paymentService from "../../services/paymentService";
 import {
   BsSearch,
   BsCalendar3,
   BsChevronDown,
   BsEye,
   BsArrowRepeat,
+  BsExclamationTriangleFill,
+  BsCheckCircleFill,
 } from "react-icons/bs";
 
 const filterOptions = [
@@ -132,11 +136,6 @@ const statusLabels = {
   RELEASED: "Released",
 };
 
-const bulkStatusTarget = {
-  PROCESSING: "FOR_RELEASING",
-  FOR_RELEASING: "RELEASED",
-};
-
 const Tracker = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,14 +148,13 @@ const Tracker = () => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [statusLoadingId, setStatusLoadingId] = useState(null);
   const [bulkDialog, setBulkDialog] = useState({
     mode: "form",
-    title: "Bulk Change Status",
+    title: "Bulk Generate Certificates",
     message:
-      "Select which group to update. Only requests matching the selected status will be affected.",
+      "Generate certificates for the requests currently assigned to your tracker.",
     tone: "default",
     current: 0,
     total: 0,
@@ -170,10 +168,14 @@ const Tracker = () => {
     message: "",
     tone: "default",
   });
+  const [validationMap, setValidationMap] = useState({});
+  const [paymentMap, setPaymentMap] = useState({});
 
   const lastSnapshotRef = useRef("");
+  const lastAutoQueueAttemptRef = useRef(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const ownerUsername = getTokenPayload()?.sub || "";
 
   useEffect(
     () => setCurrentPage(1),
@@ -192,9 +194,8 @@ const Tracker = () => {
   const resetBulkDialog = () => {
     setBulkDialog({
       mode: "form",
-      title: "Bulk Change Status",
-      message:
-        "Select which group to update. Only requests matching the selected status will be affected.",
+      title: "Tracker",
+      message: "Requests awaiting payment after certificate generation.",
       tone: "default",
       current: 0,
       total: 0,
@@ -202,19 +203,64 @@ const Tracker = () => {
     });
   };
 
+  const maybeRefreshAutoQueue = async () => {
+    const now = Date.now();
+    if (now - lastAutoQueueAttemptRef.current < 30000) return;
+    lastAutoQueueAttemptRef.current = now;
+    try {
+      await requestService.autoQueueApprovedRequests();
+    } catch (error) {
+      console.error("Tracker auto-queue refresh failed:", error);
+    }
+  };
+
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      await maybeRefreshAutoQueue();
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+        ownerUsername,
+      });
       const items = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );
+      const forReleasingItems = items.filter(
+        (r) => r.status === "FOR_RELEASING",
+      );
+      const refs = forReleasingItems
+        .map((r) => r.reference_number)
+        .filter(Boolean);
+      const paymentInfo =
+        refs.length > 0
+          ? await paymentService.getPaymentsByReferences(refs)
+          : { items: [] };
+      const nextPaymentMap = {};
+      (paymentInfo?.items || []).forEach((item) => {
+        nextPaymentMap[item.reference_number] = item;
+      });
+      const unpaidItems = forReleasingItems.filter(
+        (r) =>
+          String(
+            nextPaymentMap[r.reference_number]?.payment_status || "",
+          ).toUpperCase() !== "PAID",
+      );
+      const nextValidationMap = {};
       const snapshot = JSON.stringify(
-        items.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
+        unpaidItems.map((r) => [
+          r.id,
+          r.status,
+          r.updated_at,
+          r.created_at,
+          nextPaymentMap[r.reference_number]?.paid_at || null,
+        ]),
       );
       if (snapshot !== lastSnapshotRef.current) {
         lastSnapshotRef.current = snapshot;
-        setRequests(items);
+        setRequests(unpaidItems);
+        setValidationMap(nextValidationMap);
+        setPaymentMap(nextPaymentMap);
       }
       setLastUpdatedAt(Date.now());
     } catch (error) {
@@ -226,12 +272,12 @@ const Tracker = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);
@@ -276,7 +322,7 @@ const Tracker = () => {
       matchesDate &&
       matchesType &&
       matchesProgram &&
-      r.status === "PROCESSING"
+      r.status === "FOR_RELEASING"
     );
   });
 
@@ -284,99 +330,26 @@ const Tracker = () => {
     ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
     : "—";
 
-  const affectedCount = filteredRequests.filter(
-    (r) => r.status === bulkStatus,
-  ).length;
-
   const handleView = (row) => setSelectedRequest(row);
 
-  const handleMarkProcessing = async (row) => {
-    try {
-      setStatusLoadingId(row.id);
-      const newStatus = "FOR_RELEASING";
-      const updated = await requestService.updateStatus(row.id, newStatus);
-      setRequests((prev) =>
-        prev.map((item) => (item.id === row.id ? updated : item)),
-      );
-      if (selectedRequest?.id === row.id) {
-        setSelectedRequest(updated);
-      }
-      fetchRequests();
-      showFeedback("Status Updated", "Request status updated successfully.", "success");
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      const detail =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to update status.";
-      showFeedback("Update Failed", detail, "error");
-    } finally {
-      setStatusLoadingId(null);
-    }
-  };
-
-  const handleBulkStatusChange = async () => {
-    if (!bulkStatus) return;
-    setBulkLoading(true);
-    const targets = filteredRequests.filter((r) => r.status === bulkStatus);
-    setBulkDialog({
-      mode: "progress",
-      title: "Updating Status",
-      message: `0 of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
-      tone: "info",
-      current: 0,
-      total: targets.length,
-      done: false,
-    });
-    try {
-      for (let i = 0; i < targets.length; i += 1) {
-        await requestService.updateStatus(
-          targets[i].id,
-          bulkStatusTarget[bulkStatus],
-        );
-        setBulkDialog({
-          mode: "progress",
-          title: "Updating Status",
-          message: `${i + 1} of ${targets.length} request${targets.length !== 1 ? "s" : ""} processed.`,
-          tone: "info",
-          current: i + 1,
-          total: targets.length,
-          done: false,
-        });
-      }
-      fetchRequests();
-      setBulkDialog({
-        mode: "done",
-        title: "Bulk Update Complete",
-        message: `${targets.length} request${targets.length !== 1 ? "s were" : " was"} updated successfully.`,
-        tone: "success",
-        current: targets.length,
-        total: targets.length,
-        done: true,
-      });
-    } catch (error) {
-      console.error("Bulk status change failed:", error);
-      const detail =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        "Bulk status change failed.";
-      setBulkDialog({
-        mode: "done",
-        title: "Bulk Update Failed",
-        message: detail,
-        tone: "error",
-        current: bulkDialog.current,
-        total: targets.length || 1,
-        done: true,
-      });
-    } finally {
-      setBulkLoading(false);
-    }
-  };
+  const getValidationFlags = () => [];
 
   const columns = [
+    {
+      name: "Validation",
+      selector: (row) => getValidationFlags(row).length,
+      sortable: true,
+      width: "180px",
+      cell: (row) => {
+        const flags = getValidationFlags(row);
+        return (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+            <BsExclamationTriangleFill size={12} />
+            <span>Awaiting Payment</span>
+          </div>
+        );
+      },
+    },
     {
       name: "Reference #",
       selector: (row) => row.reference_number,
@@ -429,19 +402,6 @@ const Tracker = () => {
       width: "150px",
     },
     {
-      name: "Status",
-      selector: (row) => row.status,
-      sortable: true,
-      width: "120px",
-      cell: (row) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[row.status] || "bg-gray-100 text-gray-600"}`}
-        >
-          {statusLabels[row.status] || row.status}
-        </span>
-      ),
-    },
-    {
       name: "Action",
       ignoreRowClick: true,
       cell: (row) => (
@@ -453,20 +413,6 @@ const Tracker = () => {
           >
             <BsEye size={18} />
           </button>
-          {row.status === "PROCESSING" && (
-            <button
-              onClick={() => handleMarkProcessing(row)}
-              title="Mark as For Releasing"
-              disabled={statusLoadingId === row.id}
-              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {statusLoadingId === row.id ? (
-                <span className="w-5 h-5 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <BsArrowRepeat size={18} />
-              )}
-            </button>
-          )}
         </div>
       ),
     },
@@ -478,13 +424,10 @@ const Tracker = () => {
       <div className="flex items-center justify-between gap-2 mb-2">
         {/* LEFT — Bulk */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setBulkModalOpen(true)}
-            disabled={filteredRequests.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            Change Status
-          </button>
+          <span className="text-[11px] text-gray-500">
+            Requests in this tab are ready for release and still awaiting
+            payment.
+          </span>
         </div>
 
         {/* RIGHT — Filters */}
@@ -641,82 +584,10 @@ const Tracker = () => {
       <RequestModal
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
-        readOnly={true}
+        validationFlags={
+          selectedRequest ? getValidationFlags(selectedRequest) : []
+        }
       />
-
-      <BulkStatusDialog
-        open={bulkModalOpen}
-        title={bulkDialog.title}
-        message={bulkDialog.message}
-        tone={bulkDialog.tone}
-        current={bulkDialog.current}
-        total={bulkDialog.total}
-        done={bulkDialog.done}
-        loading={bulkLoading}
-        confirmLabel={
-          bulkDialog.mode === "form"
-            ? "Apply"
-            : bulkDialog.done
-              ? "Close"
-              : "Working..."
-        }
-        cancelLabel={bulkDialog.mode === "form" ? "Cancel" : ""}
-        confirmDisabled={
-          bulkDialog.mode === "form" ? !bulkStatus || affectedCount === 0 : false
-        }
-        onClose={() => {
-          if (bulkLoading) return;
-          setBulkModalOpen(false);
-          setBulkStatus("");
-          resetBulkDialog();
-        }}
-        onConfirm={
-          bulkDialog.mode === "form"
-            ? handleBulkStatusChange
-            : () => {
-                setBulkModalOpen(false);
-                setBulkStatus("");
-                resetBulkDialog();
-              }
-        }
-      >
-        {bulkDialog.mode === "form" && (
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                  All
-                </label>
-                <select
-                  value={bulkStatus}
-                  onChange={(e) => setBulkStatus(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:outline-none"
-                >
-                  <option value="">Select status...</option>
-                  <option value="PROCESSING">Processing</option>
-                </select>
-              </div>
-              <div className="mt-4 text-sm text-gray-400">to</div>
-              <div className="flex-1">
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                  Change to
-                </label>
-                <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500">
-                  {bulkStatus
-                    ? statusLabels[bulkStatusTarget[bulkStatus]] ||
-                      bulkStatusTarget[bulkStatus]
-                    : "Select a status first"}
-                </div>
-              </div>
-            </div>
-            {bulkStatus && (
-              <p className="mt-3 text-xs text-gray-400">
-                {affectedCount} request{affectedCount !== 1 ? "s" : ""} will be updated.
-              </p>
-            )}
-          </div>
-        )}
-      </BulkStatusDialog>
 
       <FeedbackDialog
         open={feedbackModal.open}

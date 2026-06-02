@@ -1,0 +1,1266 @@
+[
+  {
+    "new": [
+      {
+        "program_code": "BSCHE",
+        "curriculum_name": "Bachelor of Science in Chemical Engineering",
+        "academic_year": "2023-2024",
+        "total_courses": 66,
+        "courses": [
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "This course provides an overview of the engineering profession, focusing on technical sketching and the use of engineering tools.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "This course explores the nature of identity and the factors that influence personal development through an interdisciplinary perspective.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics for the Modern World",
+            "course_description": "This course focuses on the nature of mathematics as a tool for understanding patterns and making decisions in various aspects of modern life.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "This course analyzes Philippine history through primary sources to develop a deeper understanding of the nation's political and social evolution.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "This course develops advanced communication skills for diverse audiences and professional purposes in a globalized context.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "This course covers the concepts of limits, continuity, and derivatives, emphasizing their application in solving engineering problems.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "This course focuses on civic consciousness and defense preparedness to contribute to the general welfare of the community.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PATHFit 1",
+            "course_title": "Movement Competency Training",
+            "course_description": "This course introduces fundamental movement patterns and physical fitness concepts for overall health and wellness.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "This course introduces the fundamental principles of chemistry, including atomic structure and chemical bonding, essential for engineering science.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "This course focuses on logic formulation and high-level programming to solve basic computational tasks.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "This course covers the standards of technical sketching and orthographic projections for engineering design communication.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "This course examines globalization and its impact on international economic, political, and cultural landscapes.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "This course develops the ability to analyze and value various art forms and their cultural significance.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "This course explores the interactions between scientific progress, technological innovation, and social factors.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "This course presents the concepts of integration and anti-derivatives for determining areas, volumes, and physical work.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "This course continues civic training through community-based projects and practical service applications.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PATHFit 2",
+            "course_title": "Exercise-based Fitness Activities",
+            "course_description": "This course focuses on fitness training through various exercise activities and health-related fitness programs.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "This course investigate the laws of mechanics, heat, and sound as applied to physical systems.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "This course explores the history and literary contributions of Jose Rizal and his influence on Philippine nationalism.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "This course discusses moral frameworks and ethical theories guiding human conduct and professional responsibility.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "This course covers essential biological principles, focusing on cell structures, genetics, and ecological health.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 401",
+            "course_title": "Analytical Chemistry",
+            "course_description": "This course focuses on the principles and techniques for qualitative and quantitative chemical analysis.",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 402",
+            "course_title": "Organic Chemistry",
+            "course_description": "This course covers the structure, properties, and reactions of organic compounds essential for chemical engineering.",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 403",
+            "course_title": "Chemical Engineering Calculations",
+            "course_description": "This course introduces material and energy balance calculations for chemical engineering processes.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "This course employs statistical techniques and probability theory to analyze data sets within engineering research.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "This course explains methods for solving equations used to model dynamic physical engineering systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PATHFit 3",
+            "course_title": "Menu of Dance, Sports, Martial Arts, Group Exercise, Outdoor & Adventure Activities",
+            "course_description": "This course provides elective training in various sports and physical activities like traditional games.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 404",
+            "course_title": "Physics 2",
+            "course_description": "This course investigations the principles of electricity, magnetism, and optics within physical systems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "This course refines communication skills in Filipino across various professional and contextualized scenarios.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 404",
+            "course_title": "Physical Chemistry for ChE",
+            "course_description": "This course covers the study of the physical properties and behavior of chemical systems.",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 405",
+            "course_title": "Advanced Engineering Mathematics for ChE",
+            "course_description": "This course integrates advanced mathematical methods and transforms required for complex chemical engineering analysis.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 406",
+            "course_title": "Chemical Engineering Thermodynamics",
+            "course_description": "This course investigations the laws of thermodynamics and their application to chemical processes and systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 407",
+            "course_title": "Momentum Transfer",
+            "course_description": "This course discusses the principles of fluid flow and the mechanisms of momentum transfer in process systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Drafting",
+            "course_description": "This course master the use of CAD software for creating precise digital representations of engineering designs.",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "This course provides financial tools needed to evaluate the economic feasibility of engineering projects and investments.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "This course covers the impact of engineering activities on the environment and the application of engineering principles to sustainable development.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PATHFit 4",
+            "course_title": "Menu of Dance, Sports, Martial Arts, Group Exercise, Outdoor & Adventure Activities",
+            "course_description": "This course focuses on teamwork and strategy through participation in team sports like basketball and volleyball.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "This course promotes the specialized use of the Filipino language in academic research across different disciplines.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 408",
+            "course_title": "Solution Thermodynamics",
+            "course_description": "This course focuses on the thermodynamic properties of solutions and their application in chemical engineering design.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 409",
+            "course_title": "Heat and Mass Transfer",
+            "course_description": "This course analyzes the mechanisms of heat and mass transfer in various chemical engineering operations.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 410",
+            "course_title": "Chemical Process Laboratory",
+            "course_description": "This laboratory course provides hands-on experience in various chemical processes and unit operations.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 411",
+            "course_title": "Chemical Engineering Laboratory 1",
+            "course_description": "This course conducts experiments focusing on the principles of thermodynamics and momentum transfer.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 412",
+            "course_title": "Computer Applications in Chemical Engineering",
+            "course_description": "This course utilizes software tools to solve complex chemical engineering problems and design processes.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 413",
+            "course_title": "Process Dynamics and Control",
+            "course_description": "This course investigates the behavior and control of dynamic chemical processes using mathematical models.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 412",
+            "course_title": "Materials Science and Engineering",
+            "course_description": "This course covers the properties and performance of engineering materials used in chemical processes.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 416",
+            "course_title": "Research Methods",
+            "course_description": "This course outlines the methodologies of scientific research, from data gathering to the writing of technical results.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 414",
+            "course_title": "Separation Processes",
+            "course_description": "This course explores the principles and design of equipment for chemical separation such as distillation and extraction.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 415",
+            "course_title": "Particle Technology",
+            "course_description": "This course focuses on the characterization and processing of particulate solids in chemical engineering.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 416",
+            "course_title": "Chemical Engineering Laboratory 2",
+            "course_description": "This course conducts experiments focusing on heat and mass transfer and chemical reaction engineering.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 417",
+            "course_title": "Chemical Reaction Engineering",
+            "course_description": "This course applies kinetics and thermodynamics to the design and operation of chemical reactors.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 418",
+            "course_title": "Industrial Waste Management and Control",
+            "course_description": "This course identifies methods for the treatment and disposal of industrial waste to ensure environmental compliance.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "EE 420",
+            "course_title": "Basic Electrical and Electronics Engineering",
+            "course_description": "This course investigates basic electrical circuit laws and components essential for electronic systems in processes.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 406",
+            "course_title": "Engineering Management",
+            "course_description": "This course provides knowledge and understanding of management and financial principles for engineering projects.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "This course covers the principles of statics and dynamics applied to engineering systems and structures.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 419",
+            "course_title": "Chemical Process Industries",
+            "course_description": "This course provides an overview of various chemical industries and the processes involved in their production.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 420",
+            "course_title": "Field Trips and Seminars",
+            "course_description": "This course exposes students to industry trends and facility operations through professional seminars and engineering site visits.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Lit 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "This course explores the diverse literary traditions and cultural identities of nations within the ASEAN region.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 421",
+            "course_title": "Chemical Engineering Design 1",
+            "course_description": "This course initiates the process design project, focusing on conceptualization and equipment sizing.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 422",
+            "course_title": "Chemical Engineering Project I",
+            "course_description": "This course starts the capstone research project, focusing on literature review and experimental design.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "This course explores the intersection of technical innovation and business to prepare students for launching tech-driven ventures.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "This course provides immersive industry internship experience, allowing students to apply engineering knowledge in real-world settings.",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 423",
+            "course_title": "Biochemical Engineering",
+            "course_description": "This course applies chemical engineering principles to biological systems and bioprocesses.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 424",
+            "course_title": "Laws, Ethics and Process Safety for Chemical Engineering",
+            "course_description": "This course examines the legal obligations, ethical standards, and safety protocols specifically governing the practice of chemical engineering.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 425",
+            "course_title": "Chemical Engineering Design 2",
+            "course_description": "This course completes the process design project with detailed engineering and cost estimation.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 426",
+            "course_title": "Chemical Engineering Application with Comprehensive Examination",
+            "course_description": "This course integrates core knowledge through complex applications and a comprehensive assessment.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "IE 426",
+            "course_title": "Quantitative Methods in Management",
+            "course_description": "This course applies mathematical and statistical models to solve management and operational problems.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 427",
+            "course_title": "Track Specialization 1",
+            "course_description": "This course provides specialized instruction in the first chosen technical track of the program.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 428",
+            "course_title": "Track Specialization 2",
+            "course_description": "This course provides specialized instruction in the second chosen technical track of the program.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 429",
+            "course_title": "Track Specialization 3",
+            "course_description": "This course provides specialized instruction in the third chosen technical track of the program.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          }
+        ]
+      }
+    ],
+    "old": [
+      {
+        "program_code": "BSCHE",
+        "curriculum_name": "Bachelor of Science in Chemical Engineering",
+        "academic_year": "2018-2019",
+        "total_courses": 66,
+        "courses": [
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Foundational course introducing engineering concepts and technical sketching[cite: 32, 164].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "Interdisciplinary exploration of identity and personal development[cite: 85, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics for the Modern World",
+            "course_description": "Exploration of the nature and application of mathematics in contemporary life[cite: 83, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "Analysis of the Philippine past through primary sources[cite: 84, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Development of communication skills for diverse audiences and professional settings[cite: 86, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Study of limits, continuity, and derivatives in engineering problem-solving[cite: 32, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Civic consciousness and defense preparedness training[cite: 141, 164].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PE 101",
+            "course_title": "Physical Fitness, Gymnastics and Aerobics",
+            "course_description": "Foundational training in gymnastics and physical wellness[cite: 141, 164].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Fundamental chemical principles including atomic structure and bonding[cite: 32, 164].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Introduction to logic formulation and high-level programming[cite: 32, 167].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Standards of technical sketching and orthographic projections[cite: 32, 167].",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Study of globalization and its global economic and political impacts[cite: 87, 167].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Analysis and valuation of various art forms and cultural significance[cite: 89, 167].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "The relationship between scientific progress and social forces[cite: 88, 167].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Integration concepts for calculating areas, volumes, and work[cite: 32, 167].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Community-based projects and practical service application[cite: 141, 167].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PE 102",
+            "course_title": "Rhythmic Activities",
+            "course_description": "Movement and coordination through rhythmic and dance forms[cite: 141, 167].",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Investigation of the laws of mechanics, heat, and sound[cite: 32, 167].",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "History and literary contributions of the national hero, Jose Rizal[cite: 137, 169].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Moral frameworks and ethical theories in professional responsibility[cite: 111, 169].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Biological principles focusing on genetics and ecological health[cite: 32, 169].",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 401",
+            "course_title": "Analytical Chemistry",
+            "course_description": "Qualitative and quantitative chemical analysis techniques[cite: 32, 171].",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 402",
+            "course_title": "Organic Chemistry",
+            "course_description": "Properties and reactions of organic compounds[cite: 32, 171].",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 403",
+            "course_title": "Chemical Engineering Calculations",
+            "course_description": "Material and energy balance calculations for chemical processes[cite: 32, 171].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Solving equations used to model dynamic engineering systems[cite: 32, 171].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "Statistical and probability techniques for engineering research[cite: 32, 171].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "SCI 404",
+            "course_title": "Physics 2",
+            "course_description": "Principles of electricity, magnetism, and optics[cite: 32, 171].",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PE 103",
+            "course_title": "Individual and Dual Sports",
+            "course_description": "Skills and strategies for individual and partner-based sports[cite: 141, 171].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Refining communication skills in the Filipino language across scenarios[cite: 120, 171].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 404",
+            "course_title": "Physical Chemistry for ChE",
+            "course_description": "Study of physical properties and behaviors of chemical systems[cite: 32, 173].",
+            "units": 5,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 405",
+            "course_title": "Advanced Engineering Mathematics for ChE",
+            "course_description": "Complex mathematical methods for chemical engineering analysis[cite: 32, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 406",
+            "course_title": "Chemical Engineering Thermodynamics",
+            "course_description": "Laws of thermodynamics applied to chemical systems[cite: 32, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 407",
+            "course_title": "Momentum Transfer",
+            "course_description": "Fluid flow principles and mechanisms of momentum transfer[cite: 32, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Design",
+            "course_description": "Mastery of CAD software for engineering design[cite: 32, 173].",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Financial tools for evaluating engineering project feasibility[cite: 32, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "Engineering solutions for environmental protection and sustainability[cite: 32, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "PE 104",
+            "course_title": "Team Sports",
+            "course_description": "Development of teamwork through competitive group sports[cite: 141, 173].",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "Use of Filipino language in academic research across disciplines[cite: 124, 173].",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 408",
+            "course_title": "Solution Thermodynamics",
+            "course_description": "Thermodynamic properties of solutions in chemical design[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 409",
+            "course_title": "Heat and Mass Transfer",
+            "course_description": "Mechanisms of heat and mass transfer in unit operations[cite: 32, 175].",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 410",
+            "course_title": "Chemical Process Laboratory",
+            "course_description": "Laboratory applications of various chemical processes[cite: 32, 175].",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 411",
+            "course_title": "Chemical Engineering Laboratory 1",
+            "course_description": "Experiments focusing on thermodynamics and momentum transfer[cite: 32, 175].",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 412",
+            "course_title": "Computer Applications in Chemical Engineering",
+            "course_description": "Solving chemical engineering problems using software[cite: 42, 175].",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 413",
+            "course_title": "Process Dynamics and Control",
+            "course_description": "Control and mathematical modeling of dynamic processes[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 412",
+            "course_title": "Materials Science and Engineering",
+            "course_description": "Study of properties and performance of engineering materials[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 416",
+            "course_title": "Research Methods",
+            "course_description": "Methodologies for scientific research and technical writing[cite: 46, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 414",
+            "course_title": "Separation Processes",
+            "course_description": "Principles of chemical separation operations like distillation[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 415",
+            "course_title": "Particle Technology",
+            "course_description": "Processing and characterization of particulate solids[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 416",
+            "course_title": "Chemical Engineering Laboratory 2",
+            "course_description": "Experiments in heat, mass transfer, and reaction engineering[cite: 32, 175].",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "Principles of statics and dynamics in engineering systems[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 417",
+            "course_title": "Chemical Reaction and Engineering",
+            "course_description": "Kinetics and thermodynamics applied to reactor design[cite: 32, 175].",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 418",
+            "course_title": "Industrial Waste Management and Control",
+            "course_description": "Treatment and disposal methods for industrial waste compliance[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "EE 420",
+            "course_title": "Basic Electrical and Electronics Engineering",
+            "course_description": "Electrical circuit laws and components for process systems[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 406",
+            "course_title": "Engineering Management",
+            "course_description": "Management and financial principles for engineering projects[cite: 32, 175].",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 419",
+            "course_title": "Chemical Process Industries",
+            "course_description": "Overview of various chemical manufacturing industries[cite: 32, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 420",
+            "course_title": "Field Trips and Seminars",
+            "course_description": "Exposure to industrial operations through site visits[cite: 38, 175].",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Cultural identities and literary traditions of ASEAN nations[cite: 128, 175].",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "Immersive industry internship experience[cite: 54, 175].",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 421",
+            "course_title": "Chemical Engineering Design 1",
+            "course_description": "Initial phase of process design and equipment sizing[cite: 32, 175].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 422",
+            "course_title": "Chemical Engineering Project I",
+            "course_description": "First phase of capstone research and experimental design[cite: 50, 175].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Intersection of technical innovation and business ventures[cite: 32, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "IE 426",
+            "course_title": "Quantitative Methods in Management",
+            "course_description": "Mathematical models for management problem-solving[cite: 32, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 423",
+            "course_title": "Biochemical Engineering",
+            "course_description": "Application of chemical engineering to biological systems[cite: 32, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 424",
+            "course_title": "Laws, Ethics and Process Safety for Chemical Engineering",
+            "course_description": "Legal, ethical, and safety standards in the profession[cite: 34, 175].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 425",
+            "course_title": "Chemical Engineering Design 2",
+            "course_description": "Completion of process design with cost estimation[cite: 32, 175].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 426",
+            "course_title": "Chemical Engineering Application with Comprehensive Examination",
+            "course_description": "Integration of core knowledge through comprehensive assessment[cite: 57, 175].",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 427",
+            "course_title": "Track Specialization I",
+            "course_description": "Technical instruction in a specialized chemical engineering area[cite: 61, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 428",
+            "course_title": "Track Specialization 2",
+            "course_description": "Further specialized training in a chosen sub-field[cite: 65, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          },
+          {
+            "course_code": "ChE 429",
+            "course_title": "Track Specialization 3",
+            "course_description": "Final specialized technical course in the program[cite: 69, 175].",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSCHE"
+          }
+        ]
+      }
+    ]
+  }
+]

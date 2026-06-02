@@ -149,27 +149,32 @@ const GlobalPrintQueue = () => {
       try {
         const data = await requestService.getAllRequests({
           page: 1,
-          limit: 100,
+          limit: 50, // reduce load ❗
         });
+
         if (!mounted) return;
 
         const all = filterCertifyEligibleRequests(
           Array.isArray(data) ? data : data.items || [],
         );
+
         const releasable = all.filter(
           (request) => request.status === "FOR_RELEASING",
         );
+
         const printedCount = releasable.filter(
           (request) =>
             request.auto_printed_at ||
             String(request.auto_print_status || "").toUpperCase() ===
               "COMPLETED",
         ).length;
+
         const submittedCount = releasable.filter((request) =>
           ["SENDING", "SUBMITTED"].includes(
             String(request.auto_print_status || "").toUpperCase(),
           ),
         ).length;
+
         const failedCount = releasable.filter(
           (request) =>
             String(request.auto_print_status || "").toUpperCase() === "FAILED",
@@ -187,12 +192,18 @@ const GlobalPrintQueue = () => {
       }
     };
 
-    fetchQueueStats();
-    const intervalId = window.setInterval(fetchQueueStats, 5000);
+    // 🔥 DEFER execution
+    const timeoutId = setTimeout(() => {
+      fetchQueueStats();
+
+      const intervalId = setInterval(fetchQueueStats, 5000);
+
+      return () => clearInterval(intervalId);
+    }, 1000); // delay by 1s
 
     return () => {
       mounted = false;
-      window.clearInterval(intervalId);
+      clearTimeout(timeoutId);
     };
   }, []);
 

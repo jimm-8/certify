@@ -11,8 +11,15 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Create the database engine
-# This is like opening a connection to your PostgreSQL database
-engine = create_engine(DATABASE_URL)
+# Keep connections healthy and allow a slightly larger pool for background work.
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "1800")),
+    pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
+    max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "20")),
+    pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "30")),
+)
 
 # Create a session factory
 # A session is like a conversation with the database

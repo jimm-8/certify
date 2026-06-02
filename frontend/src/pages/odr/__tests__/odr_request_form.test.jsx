@@ -1,10 +1,17 @@
+// @vitest-environment jsdom
 import { createRef } from "react";
 import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import OdrRequestForm from "../odr_reqest_form";
 
+vi.mock("../../../services/requestService", () => ({
+  default: {
+    getCourseOptionsForOdr: vi.fn(),
+  },
+}));
 
 describe("OdrRequestForm", () => {
   it("captures a free-text purpose entry", async () => {

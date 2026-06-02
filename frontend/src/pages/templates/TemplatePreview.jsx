@@ -18,7 +18,9 @@ export default function TemplatePreview() {
     fetch();
   }, []);
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
   const iframeSrc = selected ? `${apiBase}/certificate-types/preview/${encodeURIComponent(selected)}` : "about:blank";
 
   return (

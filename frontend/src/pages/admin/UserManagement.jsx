@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTokenPayload } from "../../utils/auth";
 import userService from "../../services/userService";
+import requestService from "../../services/requestService";
 import rbacService from "../../services/rbacService";
 import campusService from "../../services/campusService";
 import { BsChevronLeft } from "react-icons/bs";
+import FeedbackDialog from "../../components/common/feedbackDialog";
+import formatApiError from "../../utils/formatApiError";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
+  const [userDrafts, setUserDrafts] = useState({});
+  const [savingUserId, setSavingUserId] = useState(null);
   const navigate = useNavigate();
   const [form, setForm] = useState({
     username: "",
@@ -19,20 +24,52 @@ export default function UserManagement() {
     role: "registrar_staff",
     campus_id: null,
     permissions: [],
+    can_process_certificates: false,
+    processing_queue_limit: 5,
   });
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [permissions, setPermissions] = useState([]);
   const [permissionFilter, setPermissionFilter] = useState("");
   const [campuses, setCampuses] = useState([]);
   const [campusLoading, setCampusLoading] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
 
   const fetch = async () => {
     try {
       const data = await userService.listUsers();
       setUsers(data || []);
+      setUserDrafts(
+        Object.fromEntries(
+          (data || []).map((user) => [
+            user.id,
+            {
+              can_process_certificates: Boolean(user.can_process_certificates),
+              processing_queue_limit: Number(user.processing_queue_limit || 5),
+            },
+          ]),
+        ),
+      );
     } catch (err) {
       console.error(err);
+      showFeedback(
+        "Load Users Failed",
+        formatApiError(err, "Failed to load existing users."),
+        "error",
+      );
     }
   };
 
@@ -57,7 +94,13 @@ export default function UserManagement() {
   }, []);
 
   const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]:
+        e.target.name === "can_process_certificates"
+          ? e.target.checked
+          : e.target.value,
+    });
 
   const validateForm = () => {
     const nextErrors = {};
@@ -70,6 +113,13 @@ export default function UserManagement() {
     if (!form.department.trim())
       nextErrors.department = "Department is required.";
     setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      showFeedback(
+        "Incomplete Form",
+        Object.values(nextErrors).join(" "),
+        "error",
+      );
+    }
     return Object.keys(nextErrors).length === 0;
   };
   const handlePermissionToggle = (permName) => {
@@ -101,7 +151,6 @@ export default function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setError("");
       if (!validateForm()) return;
       await userService.createUser(form);
       setForm({
@@ -114,11 +163,64 @@ export default function UserManagement() {
         role: "registrar_staff",
         campus_id: null,
         permissions: [],
+        can_process_certificates: false,
+        processing_queue_limit: 5,
       });
       setFieldErrors({});
       fetch();
     } catch (err) {
-      setError(err.response?.data || "Failed to create user");
+      showFeedback(
+        "Create User Failed",
+        formatApiError(err, "Failed to create user."),
+        "error",
+      );
+    }
+  };
+
+  const updateUserDraft = (userId, changes) => {
+    setUserDrafts((current) => ({
+      ...current,
+      [userId]: {
+        ...current[userId],
+        ...changes,
+      },
+    }));
+  };
+
+  const handleSaveProcessingSettings = async (user) => {
+    const draft = userDrafts[user.id];
+    if (!draft) return;
+
+    try {
+      setSavingUserId(user.id);
+      await userService.updateUser(user.id, {
+        can_process_certificates: Boolean(draft.can_process_certificates),
+        processing_queue_limit: Math.max(
+          Number(draft.processing_queue_limit || 5),
+          1,
+        ),
+      });
+      if (draft.can_process_certificates) {
+        try {
+          await requestService.autoQueueApprovedRequests();
+        } catch (error) {
+          console.error("Auto-queue after processor update failed:", error);
+        }
+      }
+      await fetch();
+      showFeedback(
+        "Processor Settings Saved",
+        `Updated processing eligibility for ${user.username}.`,
+        "success",
+      );
+    } catch (err) {
+      showFeedback(
+        "Save Failed",
+        formatApiError(err, "Failed to update processing settings."),
+        "error",
+      );
+    } finally {
+      setSavingUserId(null);
     }
   };
 
@@ -148,12 +250,6 @@ export default function UserManagement() {
         </p>
       </div>
 
-      {error && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-          {String(error)}
-        </div>
-      )}
-
       <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6">
         <div className="text-sm font-semibold text-gray-800 mb-2">
           Create User
@@ -177,11 +273,6 @@ export default function UserManagement() {
                 placeholder="Enter username"
                 required
               />
-              {fieldErrors.username && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.username}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -196,11 +287,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="Enter full name"
               />
-              {fieldErrors.full_name && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.full_name}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -216,11 +302,6 @@ export default function UserManagement() {
                 placeholder="name@university.edu"
                 required
               />
-              {fieldErrors.email && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.email}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -237,11 +318,6 @@ export default function UserManagement() {
                 placeholder="Create a password"
                 required
               />
-              {fieldErrors.password && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.password}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -258,11 +334,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="e.g. 09xx-xxx-xxxx"
               />
-              {fieldErrors.contact_number && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.contact_number}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">
@@ -277,11 +348,6 @@ export default function UserManagement() {
                 }`}
                 placeholder="Registrar Office"
               />
-              {fieldErrors.department && (
-                <div className="text-[11px] text-red-600">
-                  {fieldErrors.department}
-                </div>
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">Role</label>
@@ -317,6 +383,31 @@ export default function UserManagement() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="flex flex-col gap-2 rounded-md border border-gray-200 px-3 py-3">
+              <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  name="can_process_certificates"
+                  checked={form.can_process_certificates}
+                  onChange={handleChange}
+                />
+                Eligible for document processing
+              </label>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">
+                  Queue Limit
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  name="processing_queue_limit"
+                  value={form.processing_queue_limit}
+                  onChange={handleChange}
+                  disabled={!form.can_process_certificates}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 disabled:bg-gray-50"
+                />
+              </div>
             </div>
           </div>
 
@@ -384,6 +475,9 @@ export default function UserManagement() {
                 <th className="py-2 pr-3">Department</th>
                 <th className="py-2 pr-3">Role</th>
                 <th className="py-2 pr-3">Campus</th>
+                <th className="py-2 pr-3">Processor Access</th>
+                <th className="py-2 pr-3">Queue</th>
+                <th className="py-2 pr-3">Save</th>
               </tr>
             </thead>
             <tbody>
@@ -406,11 +500,60 @@ export default function UserManagement() {
                       ? campusNameById.get(String(u.campus_id)) || u.campus_id
                       : "-"}
                   </td>
+                  <td className="py-2 pr-3 text-gray-700">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(
+                          userDrafts[u.id]?.can_process_certificates,
+                        )}
+                        onChange={(e) =>
+                          updateUserDraft(u.id, {
+                            can_process_certificates: e.target.checked,
+                          })
+                        }
+                      />
+                      <span>
+                        {userDrafts[u.id]?.can_process_certificates
+                          ? "Eligible"
+                          : "Not eligible"}
+                      </span>
+                    </label>
+                  </td>
+                  <td className="py-2 pr-3 text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        value={userDrafts[u.id]?.processing_queue_limit ?? 5}
+                        disabled={!userDrafts[u.id]?.can_process_certificates}
+                        onChange={(e) =>
+                          updateUserDraft(u.id, {
+                            processing_queue_limit: e.target.value,
+                          })
+                        }
+                        className="w-20 border border-gray-300 rounded-md px-2 py-1 text-xs disabled:bg-gray-50"
+                      />
+                      <span className="text-[11px] text-gray-500">
+                        Active: {u.current_processing_queue_count || 0}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-2 pr-3 text-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveProcessingSettings(u)}
+                      disabled={savingUserId === u.id}
+                      className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {savingUserId === u.id ? "Saving..." : "Save"}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td className="py-3 text-xs text-gray-500" colSpan={7}>
+                  <td className="py-3 text-xs text-gray-500" colSpan={10}>
                     No users found.
                   </td>
                 </tr>
@@ -419,6 +562,15 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 }

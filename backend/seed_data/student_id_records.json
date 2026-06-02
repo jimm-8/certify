@@ -10,11 +10,11 @@
   },
   {
     "sr_code": "22-07058",
-    "student_name": "John Mark Santos",
+    "student_name": "Jim Mariel Castillo",
     "is_currently_enrolled": true,
     "year_attended_start": "2022",
     "year_attended_end": "",
-    "semester_current": "2nd",
+    "semester_current": "4th",
     "academic_year": "2025-2026"
   },
   {
@@ -25,5 +25,554 @@
     "year_attended_end": "2025",
     "semester_current": "2nd",
     "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "24-08452",
+    "student_name": "Patricia Anne Castillo",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-08011",
+    "student_name": "Joshua Miguel Santiago",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "1st",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-07031",
+    "student_name": "Angela Mae Castillo",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "3rd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "22-07051",
+    "student_name": "Adrian Paul Garcia",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "4th",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-01234",
+    "student_name": "Mark Anthony Villanueva",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "20-02871",
+    "student_name": "Maria Kristina Ocampo",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "20-03456",
+    "student_name": "Reymart Flores",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-01192",
+    "student_name": "Lovely Grace Reyes",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "21-02385",
+    "student_name": "John Carlo Espiritu",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "21-03741",
+    "student_name": "Sheena Marie Tolentino",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-04582",
+    "student_name": "Carlo Luis Navarro",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "22-05318",
+    "student_name": "Diane Kaye Macaraeg",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "22-06094",
+    "student_name": "Paolo Rafael Cruz",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-01047",
+    "student_name": "Rhea Joyce Delos Santos",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-02583",
+    "student_name": "Francis Xavier Bondoc",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-03912",
+    "student_name": "Camille Rose Mendez",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-04770",
+    "student_name": "Aldrin Jay Quiambao",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-05601",
+    "student_name": "Kristel Joy Evangelista",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-01388",
+    "student_name": "Nico Martin Alcantara",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-02914",
+    "student_name": "Hannah Claire Ferrer",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-03725",
+    "student_name": "Jeremiah Villareal",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-04866",
+    "student_name": "Aubrey Faye Lacson",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-05934",
+    "student_name": "Kevin Bryan Pineda",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-06741",
+    "student_name": "Lara Isabel Gutierrez",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-01093",
+    "student_name": "Sean Gabriel Tomas",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-02274",
+    "student_name": "Alyssa Nicole Ramos",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-03385",
+    "student_name": "Dominic James Mateo",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-04496",
+    "student_name": "Mia Angelica Valdez",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-06182",
+    "student_name": "Brylle Angelo Coronel",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-07359",
+    "student_name": "Tricia Mae Aquino",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-04517",
+    "student_name": "Erwin Joseph Magpantay",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "20-05882",
+    "student_name": "Rachelle Ann Sison",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-04813",
+    "student_name": "Norbert Kyle Atienza",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "21-05970",
+    "student_name": "Jasmine Faye Banaag",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-08214",
+    "student_name": "Christian Mark Dela Torre",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "22-09037",
+    "student_name": "Erika Pauline Hernandez",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-06422",
+    "student_name": "Lance Michael Lim",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-07849",
+    "student_name": "Charisse Anne Padilla",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-07388",
+    "student_name": "Ralph Vincent Samson",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-09112",
+    "student_name": "Francesca Lia Dizon",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-06341",
+    "student_name": "Jomarc Cunanan",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-06284",
+    "student_name": "Samantha Leigh Orozco",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-10185",
+    "student_name": "Gerald Anthony Mallari",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-08603",
+    "student_name": "Nicole Bianca Mercado",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-10047",
+    "student_name": "Kurt Andrei Espinosa",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-09204",
+    "student_name": "Bianca Sofia Tan",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-07198",
+    "student_name": "Aldous Miguel Buenaobra",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-07326",
+    "student_name": "Liezl Marie Caringal",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-11024",
+    "student_name": "Ronan Kyle Palomares",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-09741",
+    "student_name": "Venilyn Grace Alonzo",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-11385",
+    "student_name": "Elijah John Nuñez",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-10316",
+    "student_name": "Isabelle Monique Villafuerte",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-08452",
+    "student_name": "Rommel Tagala",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-08519",
+    "student_name": "Aubriella Faith Concepcion",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-12093",
+    "student_name": "Ivan Marco Salonga",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "23-10854",
+    "student_name": "Therese Angela Borja",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2023",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "24-12476",
+    "student_name": "Jericho Noel Burgos",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2024",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "25-11437",
+    "student_name": "Gail Margarette Robles",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2025",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
+  },
+  {
+    "sr_code": "20-09503",
+    "student_name": "Dexter John Magsino",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2020",
+    "year_attended_end": "2024",
+    "semester_current": "2nd",
+    "academic_year": "2023-2024"
+  },
+  {
+    "sr_code": "21-09681",
+    "student_name": "Angelica Rose Panlaqui",
+    "is_currently_enrolled": false,
+    "year_attended_start": "2021",
+    "year_attended_end": "2025",
+    "semester_current": "2nd",
+    "academic_year": "2024-2025"
+  },
+  {
+    "sr_code": "22-13107",
+    "student_name": "Renz Lorenzo Cayanan",
+    "is_currently_enrolled": true,
+    "year_attended_start": "2022",
+    "year_attended_end": "",
+    "semester_current": "2nd",
+    "academic_year": "2025-2026"
   }
 ]

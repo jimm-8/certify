@@ -10,7 +10,6 @@ import {
   BsEye,
   BsPrinter,
   BsCheckLg,
-  BsEnvelopeArrowUp,
 } from "react-icons/bs";
 import { FaXmark } from "react-icons/fa6";
 import {
@@ -19,6 +18,7 @@ import {
 } from "../../utils/printQueue";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
 import FeedbackDialog from "../../components/common/feedbackDialog";
+import { getTokenPayload } from "../../utils/auth";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -27,6 +27,9 @@ const filterOptions = [
   { label: "Last 30 days", days: 30 },
   { label: "All time", days: null },
 ];
+
+const isPaidPayment = (payment) =>
+  String(payment?.payment_status || "").toUpperCase() === "PAID";
 
 const getDateFrom = (days) => {
   if (days === null) return null;
@@ -163,6 +166,7 @@ const Ready = () => {
     cancelLabel: "",
   });
   const [paymentMap, setPaymentMap] = useState({});
+  const ownerUsername = getTokenPayload()?.sub || "";
 
   const showFeedback = (title, message, tone = "default", extra = {}) => {
     setFeedbackModal({
@@ -206,12 +210,16 @@ const Ready = () => {
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+        ownerUsername,
+      });
       const all = filterCertifyEligibleRequests(
         Array.isArray(data) ? data : data.items || [],
       );
-      const filtered = all.filter((r) => r.status === "FOR_RELEASING");
-      const refs = filtered.map((r) => r.reference_number).filter(Boolean);
+      const forReleasing = all.filter((r) => r.status === "FOR_RELEASING");
+      const refs = forReleasing.map((r) => r.reference_number).filter(Boolean);
       const paymentInfo =
         refs.length > 0
           ? await paymentService.getPaymentsByReferences(refs)
@@ -220,8 +228,17 @@ const Ready = () => {
       (paymentInfo?.items || []).forEach((item) => {
         nextPaymentMap[item.reference_number] = item;
       });
+      const filtered = forReleasing.filter((r) =>
+        isPaidPayment(nextPaymentMap[r.reference_number]),
+      );
       const snapshot = JSON.stringify(
-        filtered.map((r) => [r.id, r.status, r.updated_at, r.created_at]),
+        filtered.map((r) => [
+          r.id,
+          r.status,
+          r.updated_at,
+          r.created_at,
+          nextPaymentMap[r.reference_number]?.paid_at || null,
+        ]),
       );
       setPaymentMap(nextPaymentMap);
       if (snapshot !== lastSnapshotRef.current) {
@@ -238,12 +255,12 @@ const Ready = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     console.log("READY requests:", requests);
@@ -374,7 +391,7 @@ const Ready = () => {
       fetchRequests();
       showFeedback(
         "Task Successful",
-        "Ready-for-pickup email sent successfully.",
+        "Ready-for-release email sent successfully.",
         "success",
       );
     } catch (error) {
@@ -723,17 +740,6 @@ const Ready = () => {
             <BsEye size={13} />
           </button>
 
-          {wetSignature && (
-            <button
-              onClick={() => handleSendReadyEmail(row)}
-              title="Send Ready Email"
-              disabled={emailLoading[row.id]}
-              className="flex items-center rounded-md border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-50 disabled:opacity-50"
-            >
-              {emailLoading[row.id] ? "..." : <BsEnvelopeArrowUp size={13} />}
-            </button>
-          )}
-
           {row.ready_email_sent_at && (
             <button
               onClick={() => handleComplete(row)}
@@ -782,19 +788,6 @@ const Ready = () => {
 
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleBulkSendReadyEmails}
-            disabled={bulkEmailing || filteredRequests.length === 0}
-            className="flex items-center gap-1.5 rounded-md bg-[#ee1133] px-2 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-          >
-            {bulkEmailing ? (
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : (
-              <BsEnvelopeArrowUp size={13} />
-            )}
-            {bulkEmailing ? "Sending..." : "Send All Emails"}
-          </button>
-
           <button
             onClick={handlePrintAll}
             disabled={filteredRequests.length === 0}

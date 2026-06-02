@@ -239,6 +239,7 @@ export default function CertifyDashboard() {
     [];
   const maxHistory = Math.max(...certHistory.map((x) => x.count), 1);
   const totalProcessed = certHistory.reduce((sum, x) => sum + x.count, 0);
+  const showInitialSkeleton = loading && !dashboardData;
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
   const SkelCard = ({ className = "" }) => (
@@ -247,12 +248,10 @@ export default function CertifyDashboard() {
     />
   );
 
-  return (
-    <div className="text-[#1A1D2E] text-sm -mt-3">
-      {/* MAIN */}
-      <div className="flex flex-col gap-3 pb-3">
-        {/* SKELETON */}
-        {loading && !dashboardData && (
+  if (showInitialSkeleton) {
+    return (
+      <div className="text-[#1A1D2E] text-sm -mt-3">
+        <div className="flex flex-col gap-3 pb-3">
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -275,14 +274,30 @@ export default function CertifyDashboard() {
               <SkelCard className="h-[86px]" />
             </div>
           </div>
-        )}
+        </div>
+        <FeedbackDialog
+          open={feedbackModal.open}
+          title={feedbackModal.title}
+          message={feedbackModal.message}
+          tone={feedbackModal.tone}
+          onClose={() =>
+            setFeedbackModal((current) => ({ ...current, open: false }))
+          }
+        />
+      </div>
+    );
+  }
 
+  return (
+    <div className="text-[#1A1D2E] text-sm -mt-3">
+      {/* MAIN */}
+      <div className="flex flex-col gap-3 pb-3">
         {/* STATS */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-0">
           {stats.map((s, i) => (
             <div
               key={i}
-              className="bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-[0_8px_22px_rgba(15,23,42,0.05)] flex items-start gap-3"
+              className="bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-[0_8px_22px_rgba(15,23,42,0.05)] flex min-h-[86px] items-start gap-3"
             >
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${s.iconBg}`}
@@ -336,7 +351,7 @@ export default function CertifyDashboard() {
           style={{ gridTemplateColumns: "1.5fr 1fr 0.7fr" }}
         >
           {/* TABLE CARD */}
-          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden min-h-60">
             <div className="p-[18px_18px_12px]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-1">
@@ -439,7 +454,7 @@ export default function CertifyDashboard() {
           </div>
 
           {/* RECENT REQUESTS */}
-          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden flex flex-col">
+          <div className="bg-white border border-[#E2E8F0] rounded-lg shadow-[0_10px_28px_rgba(15,23,42,0.06)] overflow-hidden flex min-h-60 flex-col">
             <div className="p-4">
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-sm font-semibold text-[#0B1B3A]">

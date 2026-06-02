@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import bg from "../../assets/bsu-bg.png";
+import bg from "../../assets/bsu-bg.webp";
 import bsuNEU from "../../assets/system-logo.png";
 
 export default function ForgotPassword() {
@@ -11,7 +11,12 @@ export default function ForgotPassword() {
       <div className="absolute inset-0 backdrop-blur-sm bg-black/50" />
 
       <div className="relative z-10 bg-white rounded-xl shadow-2xl border-[#B22222] border-1 p-4 w-full max-w-sm">
-        <img src={bsuNEU} alt="BatStateU Logo" className="mb-2" />
+        <img
+          loading="lazy"
+          src={bsuNEU}
+          alt="BatStateU Logo"
+          className="mb-2"
+        />
 
         <h1 className="text-lg font-semibold text-gray-800 mb-2">
           Forgot Password

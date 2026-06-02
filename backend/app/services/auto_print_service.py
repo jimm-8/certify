@@ -1,6 +1,6 @@
 import os
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
@@ -38,20 +38,28 @@ class AutoPrintWorker:
     def _run(self):
         interval = float(os.getenv("CERTIFY_AUTO_PRINT_INTERVAL", "5") or "5")
         batch = int(os.getenv("CERTIFY_AUTO_PRINT_BATCH", "5") or "5")
+        sending_timeout_seconds = int(
+            os.getenv("CERTIFY_AUTO_PRINT_SENDING_TIMEOUT", "120") or "120"
+        )
         print_agent_url = (
             os.getenv("PRINT_AGENT_URL", "http://127.0.0.1:3100") or ""
         ).rstrip("/")
 
         while not self._stop_event.is_set():
             try:
-                self._process_batch(print_agent_url, batch)
+                self._process_batch(
+                    print_agent_url,
+                    batch,
+                    timedelta(seconds=max(sending_timeout_seconds, 5)),
+                )
             except Exception as exc:
                 print(f"[AutoPrint] Unexpected error: {exc}")
             self._stop_event.wait(interval)
 
-    def _process_batch(self, print_agent_url, batch):
+    def _process_batch(self, print_agent_url, batch, sending_timeout):
         db = self._db_factory()
         try:
+            self._recover_stale_sending_jobs(db, sending_timeout, batch)
             self._refresh_submitted_jobs(db, print_agent_url, batch)
             pending = (
                 db.query(CertificateRequest)
@@ -77,6 +85,38 @@ class AutoPrintWorker:
                 self._print_request(db, request, print_agent_url)
         finally:
             db.close()
+
+    def _recover_stale_sending_jobs(self, db, sending_timeout, batch):
+        cutoff = datetime.now() - sending_timeout
+        sending = (
+            db.query(CertificateRequest)
+            .filter(CertificateRequest.auto_print_requested_at.isnot(None))
+            .filter(CertificateRequest.auto_printed_at.is_(None))
+            .filter(CertificateRequest.status == RequestStatus.FOR_RELEASING)
+            .filter(
+                CertificateRequest.auto_print_status == AutoPrintStatus.SENDING.value
+            )
+            .filter(
+                (CertificateRequest.updated_at.is_(None))
+                | (CertificateRequest.updated_at <= cutoff)
+            )
+            .order_by(CertificateRequest.auto_print_requested_at.asc())
+            .limit(batch)
+            .all()
+        )
+
+        for request in sending:
+            request.auto_print_status = AutoPrintStatus.REQUESTED.value
+            request.auto_print_job_id = None
+            request.auto_print_error = (
+                "Recovered from a stale SENDING state and re-queued automatically."
+            )
+            db.commit()
+            db.refresh(request)
+            print(
+                f"[AutoPrint] Re-queued stale sending job for "
+                f"{request.reference_number}"
+            )
 
     def _refresh_submitted_jobs(self, db, print_agent_url, batch):
         submitted = (

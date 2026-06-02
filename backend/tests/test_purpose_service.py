@@ -33,6 +33,23 @@ def test_analyze_request_purpose_flags_scope_sensitive_instruction_review():
     assert result["purpose_category"] == "TRANSFER"
     assert result["purpose_extracted_notes"] == "gen ed subjects"
     assert result["needs_instruction_review"] is True
+    assert "special processing instructions" in result["review_reason"]
+
+
+def test_analyze_request_purpose_flags_unknown_category_for_review():
+    result = analyze_request_purpose("for civil service eligibility only")
+
+    assert result["purpose_category"] == "BOARD_EXAM"
+    assert result["needs_instruction_review"] is False
+    assert result["review_reason"] is None
+
+
+def test_analyze_request_purpose_flags_gibberish_for_review():
+    result = analyze_request_purpose("sdfghjkl")
+
+    assert result["purpose_category"] == "OTHER"
+    assert result["needs_instruction_review"] is True
+    assert "gibberish-like" in result["review_reason"]
 
 
 def test_certificate_purpose_text_uses_category_label_for_shorthand_input():
@@ -44,6 +61,6 @@ def test_certificate_purpose_text_uses_category_label_for_shorthand_input():
 
 def test_certificate_purpose_text_falls_back_to_cleaned_phrase_for_unknown_input():
     assert (
-        certificate_purpose_text("for civil service eligibility only")
-        == "civil service eligibility only"
+        certificate_purpose_text("for unclear supporting document reason")
+        == "general"
     )

@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { BsChevronLeft } from "react-icons/bs";
 import requestService from "../../services/requestService";
 import { getTokenPayload } from "../../utils/auth";
+import {
+  formatAuditLogAction,
+  formatAuditLogEntity,
+} from "../../utils/auditLogFormatter";
 
 const Activity = () => {
   const navigate = useNavigate();
@@ -10,61 +14,6 @@ const Activity = () => {
   const username = payload?.sub || "User";
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const actionLabel = (log) => {
-    const action = log.action || "";
-    if (action === "AUTH_LOGIN") return "Signed in";
-    if (action === "AUTH_PASSWORD_CHANGE") return "Changed password";
-    if (action === "REQUEST_REVIEW_REQUIRED") {
-      return "Historical record review required";
-    }
-    if (action === "REQUEST_PRINTED") {
-      return "Document printed";
-    }
-    if (action === "API_PATCH") {
-      const source = String(log.new_value || log.notes || "");
-      const match = source.match(/\/requests\/(\d+)\/status/);
-      if (match) {
-        return `Updated request status for Request #${match[1]}`;
-      }
-      return "Updated a record";
-    }
-    if (action.includes("STATUS")) {
-      const oldVal = log.old_value ? String(log.old_value) : null;
-      const newVal = log.new_value ? String(log.new_value) : null;
-      if (oldVal && newVal) {
-        return `Updated status from ${oldVal} to ${newVal}`;
-      }
-      if (newVal) {
-        return `Updated status to ${newVal}`;
-      }
-      return "Updated request status";
-    }
-    if (action.includes("NOTE")) return "Added a note";
-    if (action.includes("CREATE")) return "Created a record";
-    if (action.includes("UPDATE")) return "Updated details";
-    return action
-      .toLowerCase()
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  };
-
-  const entityLabel = (log) => {
-    if (log.entity_type === "certificate_request" && log.entity_id) {
-      return `Request #${log.entity_id}`;
-    }
-    if (log.action === "API_PATCH") {
-      const source = String(log.new_value || log.notes || "");
-      const match = source.match(/\/requests\/(\d+)\/status/);
-      if (match) {
-        return `Request #${match[1]}`;
-      }
-    }
-    if (log.entity_type) {
-      return log.entity_type.replace(/_/g, " ");
-    }
-    return "System";
-  };
 
   useEffect(() => {
     let active = true;
@@ -77,8 +26,9 @@ const Activity = () => {
         const filtered = all.filter(
           (log) =>
             log.user_name === username ||
-            log.action === "REQUEST_REVIEW_REQUIRED" ||
-            log.action === "REQUEST_PRINTED",
+            (log.owner_username === username &&
+              (log.action === "REQUEST_REVIEW_REQUIRED" ||
+                log.action === "REQUEST_PRINTED")),
         );
         setLogs(filtered);
       })
@@ -139,7 +89,7 @@ const Activity = () => {
             >
               <div>
                 <div className="text-sm font-semibold text-gray-800">
-                  {actionLabel(log)}
+                  {formatAuditLogAction(log)}
                 </div>
                 {log.action === "REQUEST_REVIEW_REQUIRED" && (
                   <div className="text-[11px] font-medium uppercase tracking-wide text-amber-700">
@@ -151,7 +101,7 @@ const Activity = () => {
                     {log.old_value || "Certificate request"}
                   </div>
                 )}
-                <div className="text-xs text-gray-500">{entityLabel(log)}</div>
+                <div className="text-xs text-gray-500">{formatAuditLogEntity(log)}</div>
                 {log.notes && (
                   <div className="text-xs text-gray-600">{log.notes}</div>
                 )}

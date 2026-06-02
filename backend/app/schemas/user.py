@@ -9,6 +9,8 @@ class UserBase(BaseModel):
     role: Optional[str] = "user"
     campus_id: Optional[int] = None
     permissions: Optional[Union[List[str], str]] = None
+    can_process_certificates: bool = False
+    processing_queue_limit: int = 5
     full_name: Optional[str] = None
     contact_number: Optional[str] = None
     department: Optional[str] = None
@@ -25,6 +27,10 @@ class UserResponse(BaseModel):
     role: str
     campus_id: Optional[int]
     permissions: Optional[str] = None
+    can_process_certificates: bool = False
+    processing_queue_limit: int = 5
+    current_processing_queue_count: int = 0
+    is_active: bool = True
     full_name: Optional[str] = None
     contact_number: Optional[str] = None
     department: Optional[str] = None
@@ -54,3 +60,16 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     contact_number: Optional[str] = None
     department: Optional[str] = None
+
+
+class UserAdminUpdate(BaseModel):
+    role: Optional[str] = None
+    campus_id: Optional[int] = None
+    permissions: Optional[Union[List[str], str]] = None
+    can_process_certificates: Optional[bool] = None
+    processing_queue_limit: Optional[int] = None
+    is_active: Optional[bool] = None
+    full_name: Optional[str] = None
+    contact_number: Optional[str] = None
+    department: Optional[str] = None
+    email: Optional[EmailStr] = None

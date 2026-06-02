@@ -1,0 +1,642 @@
+{
+    "setup_data": {
+        "auth": {
+            "enabled": true,
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrNmxvYWQiLCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NzMwNjc4MX0.Enb-ZOYHNBebVZ22yz93VjXc3uA1MRUHYAeEsgfL7Mk",
+            "username": "k6load"
+        },
+        "certificateType": {
+            "description": "Certifies the General Weighted Average (GWA) of a student for a specific period or entire academic program.",
+            "id": 10,
+            "is_active": 1,
+            "name": "Certificate of GWA",
+            "updated_at": null,
+            "created_at": "2026-04-22T02:55:46.786355+08:00",
+            "dependency_variants": []
+        },
+        "program": {
+            "id": 24,
+            "major": "",
+            "name": "Bachelor of Computer Engineering Technology"
+        },
+        "settings": {
+            "signingAvailable": true,
+            "useWetSignature": true
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "health check ok": {
+                            "name": "health check ok",
+                            "path": "::setup::health check ok",
+                            "id": "ef733676e9339f64fe713faaa47df19b",
+                            "passes": 1,
+                            "fails": 0
+                        },
+                        "certificate types ok": {
+                            "name": "certificate types ok",
+                            "path": "::setup::certificate types ok",
+                            "id": "565533bc0fec952080118def2394e680",
+                            "passes": 1,
+                            "fails": 0
+                        },
+                        "certificate types returned data": {
+                            "path": "::setup::certificate types returned data",
+                            "id": "82c62ee74197b761afb2ed5bf78967b6",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "certificate types returned data"
+                        },
+                        "programs by campus ok": {
+                            "name": "programs by campus ok",
+                            "path": "::setup::programs by campus ok",
+                            "id": "7f4b52826a2dc943af06ed932358d5ab",
+                            "passes": 1,
+                            "fails": 0
+                        },
+                        "login ok": {
+                            "id": "65474b9d4039908543e738715d924333",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "login ok",
+                            "path": "::setup::login ok"
+                        },
+                        "login returned access token": {
+                            "id": "e80fd5a398c18eff6ec578f554906a45",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "login returned access token",
+                            "path": "::setup::login returned access token"
+                        }
+                    }
+            },
+            "public submit and track": {
+                "name": "public submit and track",
+                "path": "::public submit and track",
+                "id": "34e3abeea463bb04d6d192137e205b81",
+                "groups": {},
+                "checks": {
+                        "request creation 201": {
+                            "name": "request creation 201",
+                            "path": "::public submit and track::request creation 201",
+                            "id": "c000dc3171464e5466618aff069a9f13",
+                            "passes": 18,
+                            "fails": 0
+                        },
+                        "request creation returned tracking": {
+                            "name": "request creation returned tracking",
+                            "path": "::public submit and track::request creation returned tracking",
+                            "id": "71ae1cdb8fb6d8b7a3e2a02a28d38a45",
+                            "passes": 18,
+                            "fails": 0
+                        },
+                        "tracking lookup 200": {
+                            "passes": 18,
+                            "fails": 0,
+                            "name": "tracking lookup 200",
+                            "path": "::public submit and track::tracking lookup 200",
+                            "id": "7155ddb83edabd231372a043ed68a698"
+                        },
+                        "tracking returned same reference": {
+                            "name": "tracking returned same reference",
+                            "path": "::public submit and track::tracking returned same reference",
+                            "id": "28c13b42913d273bd4e39cfbd5a0bbc0",
+                            "passes": 18,
+                            "fails": 0
+                        }
+                    }
+            },
+            "authenticated heavy workflow": {
+                "name": "authenticated heavy workflow",
+                "path": "::authenticated heavy workflow",
+                "id": "83f174f85779f115efec203575fc8a18",
+                "groups": {},
+                "checks": {
+                        "workflow request creation 201": {
+                            "fails": 0,
+                            "name": "workflow request creation 201",
+                            "path": "::authenticated heavy workflow::workflow request creation 201",
+                            "id": "b32d79d264572b9a1d5910f6210a28fe",
+                            "passes": 26
+                        },
+                        "workflow request has reference": {
+                            "fails": 0,
+                            "name": "workflow request has reference",
+                            "path": "::authenticated heavy workflow::workflow request has reference",
+                            "id": "0dc6bfba62a0478d92d842a1c1cdaadf",
+                            "passes": 26
+                        },
+                        "workflow request has pin": {
+                            "passes": 26,
+                            "fails": 0,
+                            "name": "workflow request has pin",
+                            "path": "::authenticated heavy workflow::workflow request has pin",
+                            "id": "3f6abe0c8378b59ad82a10f413f10d74"
+                        },
+                        "workflow tracking 200": {
+                            "name": "workflow tracking 200",
+                            "path": "::authenticated heavy workflow::workflow tracking 200",
+                            "id": "ca7321b66083067bae680125f8033678",
+                            "passes": 26,
+                            "fails": 0
+                        },
+                        "workflow tracking matches reference": {
+                            "path": "::authenticated heavy workflow::workflow tracking matches reference",
+                            "id": "1b0dd5af8aa0be3cd4f39f1bb2a75151",
+                            "passes": 26,
+                            "fails": 0,
+                            "name": "workflow tracking matches reference"
+                        },
+                        "workflow lookup 200": {
+                            "name": "workflow lookup 200",
+                            "path": "::authenticated heavy workflow::workflow lookup 200",
+                            "id": "bfa7ba2364ae940a478cbeeedffa48ed",
+                            "passes": 26,
+                            "fails": 0
+                        },
+                        "workflow lookup has request id": {
+                            "name": "workflow lookup has request id",
+                            "path": "::authenticated heavy workflow::workflow lookup has request id",
+                            "id": "70272aeace7f85dac7a9948ab089d91b",
+                            "passes": 26,
+                            "fails": 0
+                        },
+                        "workflow processing status ok": {
+                            "id": "0d2077397611c17b851f20bc86eeb789",
+                            "passes": 26,
+                            "fails": 0,
+                            "name": "workflow processing status ok",
+                            "path": "::authenticated heavy workflow::workflow processing status ok"
+                        },
+                        "workflow moved to processing": {
+                            "name": "workflow moved to processing",
+                            "path": "::authenticated heavy workflow::workflow moved to processing",
+                            "id": "14de41c128fa0733b7cc18788c335a8d",
+                            "passes": 26,
+                            "fails": 0
+                        },
+                        "workflow initial download ok": {
+                            "fails": 26,
+                            "name": "workflow initial download ok",
+                            "path": "::authenticated heavy workflow::workflow initial download ok",
+                            "id": "d71469c0b08666187453e40f04c365ab",
+                            "passes": 0
+                        },
+                        "workflow initial download is pdf": {
+                            "fails": 26,
+                            "name": "workflow initial download is pdf",
+                            "path": "::authenticated heavy workflow::workflow initial download is pdf",
+                            "id": "7ca1d0ab1b9ef39d0ade66a8f7b1ad59",
+                            "passes": 0
+                        }
+                    }
+            },
+            "public browse": {
+                "name": "public browse",
+                "path": "::public browse",
+                "id": "ece1104b32aae55477837d96378b9148",
+                "groups": {},
+                "checks": {
+                        "public health 200": {
+                            "name": "public health 200",
+                            "path": "::public browse::public health 200",
+                            "id": "5b799c137735b7eca67ca6c5c3a2a5b1",
+                            "passes": 88,
+                            "fails": 0
+                        },
+                        "public certificate types 200": {
+                            "name": "public certificate types 200",
+                            "path": "::public browse::public certificate types 200",
+                            "id": "86d3145e6f581b749a18cd482f7f953c",
+                            "passes": 88,
+                            "fails": 0
+                        },
+                        "public programs 200": {
+                            "name": "public programs 200",
+                            "path": "::public browse::public programs 200",
+                            "id": "a1387835b7fa508d5421fbb259ceef66",
+                            "passes": 88,
+                            "fails": 0
+                        }
+                    }
+            },
+            "authenticated reads": {
+                "groups": {},
+                "checks": {
+                        "users/me 200": {
+                            "name": "users/me 200",
+                            "path": "::authenticated reads::users/me 200",
+                            "id": "e2984d69336936ec18ef29a1b12f5b91",
+                            "passes": 65,
+                            "fails": 0
+                        },
+                        "dashboard summary readable": {
+                            "passes": 65,
+                            "fails": 0,
+                            "name": "dashboard summary readable",
+                            "path": "::authenticated reads::dashboard summary readable",
+                            "id": "c07651fddd640b3251619406c839f747"
+                        },
+                        "requests list readable": {
+                            "name": "requests list readable",
+                            "path": "::authenticated reads::requests list readable",
+                            "id": "bbb202bc5377d7f458969b10193e4d88",
+                            "passes": 65,
+                            "fails": 0
+                        }
+                    },
+                "name": "authenticated reads",
+                "path": "::authenticated reads",
+                "id": "1c3dc76a78614517f40f209b57dad918"
+            }
+        },
+        "checks": {}
+    },
+    "metrics": {
+        "http_req_duration{endpoint:auth_token}": {
+            "p(95)": 583.1711,
+            "max": 583.1711,
+            "avg": 583.1711,
+            "min": 583.1711,
+            "med": 583.1711,
+            "p(90)": 583.1711,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "http_req_duration{endpoint:programs_by_campus}": {
+            "med": 25.2079,
+            "p(90)": 53.64146000000001,
+            "p(95)": 72.03146,
+            "max": 188.6085,
+            "avg": 30.110046067415738,
+            "min": 7.3772,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 5
+        },
+        "http_req_duration{endpoint:requests_track}": {
+            "avg": 8.74205,
+            "min": 3.5732,
+            "med": 7.2295,
+            "p(90)": 13.866830000000002,
+            "p(95)": 21.23014500000001,
+            "max": 36.8283,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "http_req_duration{endpoint:requests_send_ready_email}": {
+            "max": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "thresholds": {
+                "p(95)<5000": false
+            }
+        },
+        "http_req_duration": {
+            "avg": 72.11927686212368,
+            "min": 2.737,
+            "med": 28.4311,
+            "p(90)": 67.5615,
+            "p(95)": 184.28105,
+            "max": 1559.6271
+        },
+        "workflow_ready_email_duration": {
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "avg": 0,
+            "thresholds": {
+                "p(95)<5000": false
+            }
+        },
+        "workflow_download_duration": {
+            "avg": 65.46153846153847,
+            "min": 46,
+            "med": 60,
+            "p(90)": 85,
+            "p(95)": 91.25,
+            "max": 157,
+            "thresholds": {
+                "p(95)<15000": false
+            }
+        },
+        "http_req_duration{endpoint:certificate_types}": {
+            "avg": 30.58231797752809,
+            "min": 7.9018,
+            "med": 27.3687,
+            "p(90)": 53.20138,
+            "p(95)": 68.00961999999994,
+            "max": 185.4532,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "http_req_blocked": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 8.2963,
+            "avg": 0.08233423137876386,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_duration{endpoint:requests_update_status_processing}": {
+            "p(95)": 959.6015,
+            "max": 1559.6271,
+            "avg": 944.6196769230769,
+            "min": 892.5989,
+            "med": 916.3610000000001,
+            "p(90)": 946.23645,
+            "thresholds": {
+                "p(95)<15000": false
+            }
+        },
+        "iterations": {
+            "count": 197,
+            "rate": 4.233424557472234
+        },
+        "http_req_duration{endpoint:payments_by_references}": {
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "avg": 0,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_req_duration{endpoint:certificate_preview}": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "thresholds": {
+                "p(95)<4000": false
+            }
+        },
+        "http_req_waiting": {
+            "max": 1557.3904,
+            "avg": 70.27569160063388,
+            "min": 0.5054,
+            "med": 26.7941,
+            "p(90)": 66.7197,
+            "p(95)": 183.64695
+        },
+        "workflow_payment_duration": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "thresholds": {
+                "p(95)<4000": false
+            }
+        },
+        "workflow_duration": {
+            "p(95)": 1121,
+            "max": 1837,
+            "avg": 1060.1538461538462,
+            "min": 984,
+            "med": 1028,
+            "p(90)": 1075.5,
+            "thresholds": {
+                "p(95)<30000": false
+            }
+        },
+        "iteration_duration": {
+            "avg": 1077.2216030456855,
+            "min": 340.475,
+            "med": 995.9089,
+            "p(90)": 1841.4439,
+            "p(95)": 1948.69564,
+            "max": 2192.2086
+        },
+        "http_req_duration{endpoint:users_me}": {
+            "med": 42.3679,
+            "p(90)": 60.247840000000004,
+            "p(95)": 66.64572,
+            "max": 188.0981,
+            "avg": 43.93848615384615,
+            "min": 14.9773,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "http_req_duration{endpoint:requests_create}": {
+            "p(95)": 76.81780500000002,
+            "max": 170.5757,
+            "avg": 33.218725,
+            "min": 9.7824,
+            "med": 26.66005,
+            "p(90)": 43.32212000000002,
+            "thresholds": {
+                "p(95)<2500": false
+            }
+        },
+        "vus_max": {
+            "value": 5,
+            "min": 5,
+            "max": 5
+        },
+        "http_req_duration{endpoint:dashboard_summary}": {
+            "med": 46.3952,
+            "p(90)": 67.13907999999999,
+            "p(95)": 68.63481999999999,
+            "max": 469.8595,
+            "avg": 52.20276000000002,
+            "min": 20.3696,
+            "thresholds": {
+                "p(95)<2500": false
+            }
+        },
+        "workflow_pdf_generation_duration": {
+            "avg": 944.8461538461538,
+            "min": 892,
+            "med": 916.5,
+            "p(90)": 947.5,
+            "p(95)": 960.25,
+            "max": 1560,
+            "thresholds": {
+                "p(95)<15000": false
+            }
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 27.4058,
+            "p(90)": 66.66182,
+            "p(95)": 187.56911999999988,
+            "max": 1559.6271,
+            "avg": 72.41039471074387,
+            "min": 2.737
+        },
+        "http_req_duration{endpoint:requests_detail}": {
+            "max": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "checks": {
+            "fails": 52,
+            "passes": 771,
+            "thresholds": {
+                "rate>0.95": true
+            },
+            "value": 0.93681652490887
+        },
+        "http_req_tls_handshaking": {
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "avg": 0,
+            "min": 0
+        },
+        "data_received": {
+            "count": 2705359,
+            "rate": 58136.71689024632
+        },
+        "http_req_connecting": {
+            "avg": 0.04992440570522979,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 3.6353
+        },
+        "workflow_failures": {
+            "rate": 1.1174521674545999,
+            "count": 52
+        },
+        "http_req_duration{endpoint:health}": {
+            "min": 2.737,
+            "med": 14.3933,
+            "p(90)": 32.12042,
+            "p(95)": 52.41767999999993,
+            "max": 119.1304,
+            "avg": 17.22588202247191,
+            "thresholds": {
+                "p(95)<500": false
+            }
+        },
+        "http_req_sending": {
+            "p(90)": 0,
+            "p(95)": 0.5988,
+            "max": 2.3249,
+            "avg": 0.05392076069730586,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_duration{endpoint:requests_download_certificate}": {
+            "avg": 65.34518846153846,
+            "min": 45.1606,
+            "med": 60.0406,
+            "p(90)": 84.9837,
+            "p(95)": 91.369025,
+            "max": 156.6669,
+            "thresholds": {
+                "p(95)<15000": false
+            }
+        },
+        "http_req_duration{endpoint:requests_list}": {
+            "p(95)": 70.30332,
+            "max": 468.4249,
+            "avg": 52.62068769230768,
+            "min": 20.8755,
+            "med": 46.0982,
+            "p(90)": 66.75194,
+            "thresholds": {
+                "p(95)<2500": false
+            }
+        },
+        "http_req_receiving": {
+            "p(95)": 6.0959,
+            "max": 11.1633,
+            "avg": 1.7896645007923926,
+            "min": 0,
+            "med": 1.0497,
+            "p(90)": 4.7702
+        },
+        "http_req_duration{endpoint:payments_create}": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "max": 0,
+            "thresholds": {
+                "p(95)<4000": false
+            }
+        },
+        "data_sent": {
+            "count": 150978,
+            "rate": 3244.4364103453954
+        },
+        "http_req_duration{endpoint:payments_lookup}": {
+            "p(90)": 12.442499999999999,
+            "p(95)": 17.758174999999998,
+            "max": 24.7808,
+            "avg": 7.523769230769229,
+            "min": 3.4223,
+            "med": 6.13835,
+            "thresholds": {
+                "p(95)<1500": false
+            }
+        },
+        "workflow_success_rate": {
+            "passes": 0,
+            "fails": 52,
+            "thresholds": {
+                "rate>0.90": true
+            },
+            "value": 0
+        },
+        "http_reqs": {
+            "rate": 13.559852262766395,
+            "count": 631
+        },
+        "http_req_failed": {
+            "passes": 26,
+            "fails": 605,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0.04120443740095087
+        },
+        "group_duration": {
+            "avg": 176.21398020304568,
+            "min": 8.2566,
+            "med": 35.3881,
+            "p(90)": 1001.20138,
+            "p(95)": 1034.7909399999999,
+            "max": 1837.1209
+        }
+    }
+}

@@ -25,7 +25,6 @@ from app.repositories import (
     AuditLogRepository,
     CertificateRequestRepository,
     CertificateTypeRepository,
-    GraduationRecordRepository,
     ProgramRepository,
     StudentRepository,
 )
@@ -40,9 +39,12 @@ from app.schemas.certificate_request import (
     RequestsValidationResponse,
     DelayNoticeRequest,
     RejectionEmailRequest,
+    CheckingEmailRequest,
 )
 
 from app.services.request_service import (
+    auto_queue_approved_requests,
+    get_request_queue_context,
     update_request_status,
     update_student_data,
     add_note_to_request,
@@ -65,6 +67,7 @@ from app.services.release_hold_service import (
     hold_request_for_no_pickup,
     send_manual_delay_notice,
 )
+from app.services.request_review_service import get_request_validation_flags
 
 # Create router
 router = APIRouter(prefix="/requests", tags=["Certificate Requests"])
@@ -77,36 +80,51 @@ OUT_OF_RANGE_YEAR_NOTIFICATION = (
 )
 
 
-def extract_graduation_year(record) -> int | None:
-    if record is None:
-        return None
-
-    for value in (
-        getattr(record, "date_of_graduation", None),
-        getattr(record, "proposed_graduation_date", None),
-        getattr(record, "academic_year", None),
-    ):
-        if not value:
-            continue
-
-        match = re.search(r"\b(19|20)\d{2}\b", str(value))
-        if match:
-            return int(match.group(0))
-
-    return None
-
-
-def is_graduation_related_certificate(certificate_type_name: Optional[str]) -> bool:
-    normalized = str(certificate_type_name or "").strip().lower()
-    if not normalized:
-        return False
-
-    keywords = (
-        "graduation",
-        "honor graduate",
-        "completed academic requirement",
+def _build_audit_log_responses(
+    db: Session, logs: list[AuditLog]
+) -> list[AuditLogResponse]:
+    request_ids = sorted(
+        {
+            log.entity_id
+            for log in logs
+            if log.entity_type == "certificate_request" and log.entity_id is not None
+        }
     )
-    return any(keyword in normalized for keyword in keywords)
+    request_map = {}
+    if request_ids:
+        request_repo = CertificateRequestRepository(db)
+        request_map = {
+            request.id: request
+            for request in request_repo.query()
+            .filter(CertificateRequest.id.in_(request_ids))
+            .all()
+        }
+
+    items = []
+    for log in logs:
+        request = request_map.get(log.entity_id)
+        items.append(
+            AuditLogResponse(
+                id=log.id,
+                entity_type=log.entity_type,
+                entity_id=log.entity_id,
+                action=log.action,
+                field_name=log.field_name,
+                old_value=log.old_value,
+                new_value=log.new_value,
+                user_name=log.user_name,
+                notes=log.notes,
+                created_at=log.created_at,
+                request_reference=(
+                    request.reference_number if request is not None else None
+                ),
+                request_label=(request.request_label if request is not None else None),
+                student_name=(request.student_name if request is not None else None),
+                owner_username=(request.owner_username if request is not None else None),
+            )
+        )
+    return items
+
 
 # Helper function to generate reference number
 def generate_reference_number(db: Session) -> str:
@@ -129,6 +147,14 @@ def generate_reference_number(db: Session) -> str:
 def generate_pin() -> str:
     """Generate random 4-digit PIN"""
     return str(random.randint(1000, 9999))
+
+
+def _normalize_selection(items: list[str] | None) -> list[str]:
+    return [
+        str(item or "").strip()
+        for item in (items or [])
+        if str(item or "").strip()
+    ]
 
 # Helper function to save signature
 def save_signature(signature_data: str, reference_number: str) -> str:
@@ -206,6 +232,23 @@ async def create_certificate_request(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Certificate type not found or inactive"
             )
+
+    normalized_course_selection = _normalize_selection(
+        request_data.course_description_selection
+    )
+    normalized_grade_selection = _normalize_selection(request_data.grade_selection)
+
+    if cert_type is not None:
+        if is_course_description(cert_type.name) and not normalized_course_selection:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Please select at least one course for the course description request.",
+            )
+        if is_certification_of_grades(cert_type.name) and not normalized_grade_selection:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Please select at least one course for the certification of grades request.",
+            )
     
     # Generate reference number and PIN
     reference_number = generate_reference_number(db)
@@ -219,13 +262,20 @@ async def create_certificate_request(
     # Compute request cost on the server (pricing rules)
     computed_cost = None
     if cert_type is not None:
-        if resolved_sr_code and (
-            is_course_description(cert_type.name) or is_certification_of_grades(cert_type.name)
-        ):
-            student_courses = CertificateDependencyEngine._get_student_courses(
-                db, resolved_sr_code
-            )
-            computed_cost = compute_request_cost(cert_type.name, row_count=len(student_courses))
+        if is_course_description(cert_type.name):
+            row_count = len(normalized_course_selection)
+            if row_count == 0 and resolved_sr_code:
+                row_count = len(
+                    CertificateDependencyEngine._get_student_courses(db, resolved_sr_code)
+                )
+            computed_cost = compute_request_cost(cert_type.name, row_count=row_count)
+        elif is_certification_of_grades(cert_type.name):
+            row_count = len(normalized_grade_selection)
+            if row_count == 0 and resolved_sr_code:
+                row_count = len(
+                    CertificateDependencyEngine._get_student_courses(db, resolved_sr_code)
+                )
+            computed_cost = compute_request_cost(cert_type.name, row_count=row_count)
         else:
             computed_cost = compute_request_cost(cert_type.name)
 
@@ -259,6 +309,16 @@ async def create_certificate_request(
         major=request_data.major,
         year_graduated=request_data.year_graduated,
         signature_data=request_data.signature_data,
+        course_description_selection=(
+            json.dumps(normalized_course_selection)
+            if normalized_course_selection
+            else None
+        ),
+        grade_selection=(
+            json.dumps(normalized_grade_selection)
+            if normalized_grade_selection
+            else None
+        ),
         request_cost=computed_cost if computed_cost is not None else request_data.request_cost,
         verification_token=generate_verification_token()
         if request_type == RequestType.CERTIFICATE and not needs_historical_review
@@ -288,7 +348,9 @@ async def create_certificate_request(
             old_value=new_request.request_label,
             notes=OUT_OF_RANGE_YEAR_NOTIFICATION,
         )
-    
+    elif new_request.status == RequestStatus.APPROVED:
+        await auto_queue_approved_requests(db, user_name="System")
+
     # Send confirmation email (optional; can be deferred to processing step)
     try:
         send_on_create = os.getenv("SEND_CONFIRMATION_ON_CREATE", "0").lower() in (
@@ -330,9 +392,9 @@ async def create_certificate_request(
                 campus_email=campus_email,
                 campus_telNo=campus_telNo,
             )
-            print(f"✅ Email sent to {request_data.requestor_email}")
+            print(f"Email sent to {request_data.requestor_email}")
     except Exception as e:
-        print(f"⚠️ Email failed but request was created: {e}")
+        print(f"Email failed but request was created: {e}")
         # Don't fail the request if email fails
     
     return CertificateRequestResponse(
@@ -370,6 +432,8 @@ def track_certificate_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found. Please check your reference number and PIN."
         )
+
+    queue_position, queue_total, queue_scope = get_request_queue_context(db, request)
     
     return CertificateRequestTrackResponse(
         reference_number=request.reference_number,
@@ -380,8 +444,46 @@ def track_certificate_request(
         request_label=request.request_label,
         student_name=request.student_name,
         submitted_date=request.created_at,
-        updated_date=request.updated_at
+        updated_date=request.updated_at,
+        queue_position=queue_position,
+        queue_total=queue_total,
+        queue_scope=queue_scope,
     )
+
+
+@router.get("/course-options")
+def get_course_options_for_odr(
+    sr_code: Optional[str] = None,
+    student_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    resolved_sr_code = (sr_code or "").strip()
+    if not resolved_sr_code:
+        normalized_name = (student_name or "").strip()
+        if not normalized_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SR code or student name is required to load courses.",
+            )
+        matched_student = StudentRepository(db).get_by_student_name(normalized_name)
+        if matched_student is None or not matched_student.sr_code:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Student record not found for the provided details.",
+            )
+        resolved_sr_code = matched_student.sr_code
+
+    courses = CertificateDependencyEngine._get_student_courses(db, resolved_sr_code)
+    if not courses:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No enrolled courses were found for the selected student.",
+        )
+
+    return {
+        "sr_code": resolved_sr_code,
+        "courses": courses,
+    }
 
 # Endpoint 3: Get all requests
 @router.get("/", response_model=list[CertificateRequestDetail])
@@ -389,6 +491,7 @@ def get_all_requests(
     skip: int = 0,
     limit: int = 10,
     status_filter: Optional[str] = None,
+    owner_username: Optional[str] = None,
     db: Session = Depends(get_db),
     _: dict = Depends(require_permissions("requests.read")),
 ):
@@ -405,6 +508,9 @@ def get_all_requests(
                 detail=f"Invalid status '{status_filter}'. Valid values: {[s.name for s in RequestStatus]}"
             )
 
+    if owner_username:
+        query = query.filter(CertificateRequest.owner_username == owner_username)
+
     requests = query.order_by(CertificateRequest.created_at.desc()).offset(skip).limit(limit).all()
     return requests
 
@@ -416,68 +522,8 @@ def validate_requests(
     _: dict = Depends(require_permissions("requests.read")),
 ):
     request_repo = CertificateRequestRepository(db)
-    student_repo = StudentRepository(db)
-    program_repo = ProgramRepository(db)
-    graduation_repo = GraduationRecordRepository(db)
-    current_year = datetime.now().year
-
-    def normalize_name(name: Optional[str]) -> str:
-        if not name:
-            return ""
-        cleaned = " ".join(str(name).replace(",", " ").split())
-        return cleaned.strip().lower()
-
-    def tokenize_name(name: Optional[str]) -> list[str]:
-        if not name:
-            return []
-        # Split into letter-only tokens, so "De la Cruz" -> ["de", "la", "cruz"]
-        return [tok.lower() for tok in re.findall(r"[A-Za-z]+", str(name))]
-
-    def is_invalid_text(value: Optional[str]) -> bool:
-        if value is None:
-            return False
-        text = str(value).strip()
-        if not text:
-            return False
-
-        # Disallow obviously unsafe/suspicious characters
-        if re.search(r"[<>`{}\[\]|\\]", text):
-            return True
-
-        # Allow common characters across fields; flag anything outside this set
-        if re.search(r"[^A-Za-z0-9 .,'\-/#@&()_+:?/]", text):
-            return True
-
-        # Flag gibberish like "sdgsdg" (long alpha-only with no vowels)
-        alpha_only = re.sub(r"[^A-Za-z]", "", text)
-        if len(alpha_only) >= 6:
-            vowel_count = sum(1 for c in alpha_only.lower() if c in "aeiou")
-            if vowel_count == 0:
-                return True
-
-        return False
-
-    def add_invalid_flags(request_obj: CertificateRequest, flags_list: list[str]) -> None:
-        fields = [
-            ("requestor_name", "Requestor name"),
-            ("requestor_address", "Requestor address"),
-            ("requestor_relationship", "Requestor relationship"),
-            ("requestor_contact", "Requestor contact"),
-            ("requestor_email", "Requestor email"),
-            ("purpose", "Purpose"),
-            ("sr_code", "SR code"),
-            ("student_name", "Student name"),
-            ("program", "Program"),
-            ("major", "Major"),
-            ("year_graduated", "Year graduated"),
-        ]
-        for attr, label in fields:
-            if is_invalid_text(getattr(request_obj, attr, None)):
-                flags_list.append(f"Invalid input detected in {label}.")
-
     results = []
     for request_id in payload.request_ids:
-        flags = []
         request = request_repo.get_by_id(request_id)
         if not request:
             results.append(
@@ -488,102 +534,28 @@ def validate_requests(
                 }
             )
             continue
-
-        add_invalid_flags(request, flags)
-
-        sr_code = (request.sr_code or "").strip()
-        student = student_repo.get_by_sr_code(sr_code) if sr_code else None
-        if student is None and request.student_name:
-            student = student_repo.get_by_student_name(request.student_name)
-
-        if not student:
-            flags.append("Student record not found in registry.")
-        else:
-            if sr_code and student.sr_code and sr_code != student.sr_code:
-                flags.append(
-                    f"SR code does not match registry record ({student.sr_code})."
-                )
-
-            req_name = normalize_name(request.student_name)
-            student_name = normalize_name(
-                f"{student.first_name or ''} {student.middle_name or ''} {student.last_name or ''}"
-            )
-            if req_name and student_name:
-                req_tokens = set(tokenize_name(request.student_name))
-                student_tokens = (
-                    tokenize_name(student.first_name)
-                    + tokenize_name(student.middle_name)
-                    + tokenize_name(student.last_name)
-                )
-                matches = sum(1 for tok in set(student_tokens) if tok in req_tokens)
-                if matches < 2:
-                    flags.append("Student name does not match registry.")
-
-            if request.program and student.program and student.program.name:
-                if normalize_name(request.program) != normalize_name(
-                    student.program.name
-                ):
-                    flags.append("Program does not match registry.")
-
-        campus = None
-        if student is not None:
-            campus = student.campus or (student.program.campus if student.program else None)
-        if campus is None and request.program:
-            program = program_repo.get_by_name(request.program)
-            campus = program.campus if program else None
-
-        if campus is None:
-            flags.append("Campus could not be verified.")
-
-        grad_record = None
-        lookup_sr_code = sr_code or (student.sr_code if student is not None else "")
-        if lookup_sr_code:
-            grad_record = graduation_repo.get_by_sr_code(lookup_sr_code)
-        if grad_record is None and request.student_name:
-            grad_record = graduation_repo.get_by_student_name(request.student_name)
-
-        # Graduation year validation
-        if request.year_graduated:
-            year_text = str(request.year_graduated).strip()
-            if not re.fullmatch(r"\d{4}", year_text):
-                flags.append("Year graduated must be a 4-digit year.")
-            else:
-                year_value = int(year_text)
-                if year_value > current_year:
-                    flags.append(
-                        f"Graduation year cannot be later than {current_year}."
-                    )
-                if year_value <= 2022:
-                    flags.append("Graduation year is 2022 or below.")
-                if grad_record is not None and not grad_record.is_graduated:
-                    flags.append("Student is not yet graduated.")
-                else:
-                    recorded_year = extract_graduation_year(grad_record)
-                    if (
-                        grad_record is not None
-                        and recorded_year is not None
-                        and year_value != recorded_year
-                    ):
-                        flags.append(
-                            f"Graduation year does not match registry record ({recorded_year})."
-                        )
-
-        if (
-            is_graduation_related_certificate(request.certificate_type_name)
-            and grad_record is None
-        ):
-            flags.append(
-                "No graduation record found for this student for the requested certificate."
-            )
+        flags = get_request_validation_flags(db, request)
 
         results.append(
             {
                 "request_id": request.id,
-                "exists": student is not None,
+                "exists": "Student record not found in registry." not in flags,
                 "flags": flags,
             }
         )
     return {"results": results}
+
+
+@router.post("/auto-queue")
+async def auto_queue_requests(
+    db: Session = Depends(get_db),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
+):
+    result = await auto_queue_approved_requests(
+        db,
+        user_name=ctx["user"].username,
+    )
+    return result
 
 # Endpoint 4: Get single request details
 @router.get("/{request_id}", response_model=CertificateRequestDetail)
@@ -639,7 +611,7 @@ async def update_status(
     request_id: int,
     status_update: StatusUpdateRequest,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     # Convert schema enum to model enum to satisfy transition checks
     new_status = RequestStatus(status_update.new_status.value)
@@ -647,7 +619,7 @@ async def update_status(
         db=db,
         request_id=request_id,
         new_status=new_status,
-        user_name=status_update.user_name,
+        user_name=ctx["user"].username,
         notes=status_update.notes
     )
     return updated_request
@@ -658,7 +630,7 @@ def update_request_student_data(
     request_id: int,
     data_update: StudentDataUpdate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_data")),
+    ctx: dict = Depends(require_permissions("requests.update_data")),
 ):
     """
     Update student information on a request
@@ -684,7 +656,7 @@ def update_request_student_data(
         db=db,
         request_id=request_id,
         updates=updates,
-        user_name=data_update.user_name,
+        user_name=ctx["user"].username,
         notes=data_update.notes
     )
     
@@ -696,7 +668,7 @@ def create_note(
     request_id: int,
     note_data: RequestNoteCreate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.notes")),
+    ctx: dict = Depends(require_permissions("requests.notes")),
 ):
     """
     Add a note/comment to a request
@@ -709,7 +681,7 @@ def create_note(
         request_id=request_id,
         note_text=note_data.note,
         note_type=note_data.note_type,
-        user_name=note_data.user_name
+        user_name=ctx["user"].username
     )
     
     return note
@@ -728,7 +700,7 @@ def get_request_notes(
     audit_repo = AuditLogRepository(db)
     notes = audit_repo.request_notes(request_id).all()
     
-    return notes
+    return _build_audit_log_responses(db, notes)
 
 # Endpoint 9: Get audit logs for a request
 @router.get("/{request_id}/audit-logs", response_model=list[AuditLogResponse])
@@ -746,7 +718,7 @@ def get_request_audit_logs(
     audit_repo = AuditLogRepository(db)
     logs = audit_repo.for_request(request_id).all()
     
-    return logs
+    return _build_audit_log_responses(db, logs)
 
 # Endpoint 10: Get all audit logs (for admin/registrar)
 @router.get("/audit-logs/all", response_model=list[AuditLogResponse])
@@ -782,7 +754,7 @@ def get_all_audit_logs(
         .all()
     )
     
-    return logs
+    return _build_audit_log_responses(db, logs)
 
 # Endpoint 11: Verify certificate by token (public endpoint for QR code)
 @router.get("/verify/{verification_token}", response_model=CertificateVerificationResponse)
@@ -835,15 +807,14 @@ def verify_certificate(
 @router.post("/{request_id}/release", response_model=CertificateRequestDetail)
 async def mark_as_released(
     request_id: int,
-    user_name: str = "Registrar",
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("certificates.release")),
+    ctx: dict = Depends(require_permissions("certificates.release")),
 ):
     updated_request = await update_request_status(  
         db=db,
         request_id=request_id,
         new_status=RequestStatus.RELEASED,
-        user_name=user_name,
+        user_name=ctx["user"].username,
         notes="Certificate released to student"
     )
     return updated_request
@@ -853,7 +824,7 @@ async def mark_as_released(
 async def send_ready_email(
     request_id: int,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     request_repo = CertificateRequestRepository(db)
     student_repo = StudentRepository(db)
@@ -896,7 +867,72 @@ async def send_ready_email(
     request.ready_email_sent_at = datetime.now()
     db.commit()
     db.refresh(request)
+    log_action(
+        db,
+        action="READY_EMAIL_SENT",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        field_name="ready_email_sent_at",
+        user_name=ctx["user"].username,
+        notes=f"Sent ready-for-release email for {request.reference_number}.",
+    )
     return {"message": "Ready-for-release email sent."}
+
+
+@router.post("/{request_id}/send-checking-email")
+async def send_checking_email(
+    request_id: int,
+    payload: CheckingEmailRequest,
+    db: Session = Depends(get_db),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
+):
+    request_repo = CertificateRequestRepository(db)
+
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    if request.status != RequestStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only approved requests in checking can send this email.",
+        )
+    if not (request.requestor_email or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Requestor email is missing for this request.",
+        )
+
+    email_service = EmailService()
+    was_sent = await email_service.send_checking_update(
+        to_email=request.requestor_email,
+        subject=payload.subject,
+        message_body=payload.message,
+        reference_number=request.reference_number,
+        requestor_name=request.requestor_name,
+        student_name=request.student_name,
+        certificate_type=request.certificate_type_name or request.request_label,
+    )
+    if not was_sent:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Checking update email could not be sent. "
+                "Please verify the requestor email address and SMTP mail settings."
+            ),
+        )
+
+    log_action(
+        db,
+        action="CHECKING_EMAIL_SENT",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        user_name=ctx["user"].username,
+        notes=f"Sent checking update email for {request.reference_number}.",
+    )
+    return {"message": "Checking update email sent."}
 
 
 @router.post("/{request_id}/send-delay-notice")
@@ -904,7 +940,7 @@ async def send_delay_notice(
     request_id: int,
     payload: DelayNoticeRequest,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     request_repo = CertificateRequestRepository(db)
     student_repo = StudentRepository(db)
@@ -938,7 +974,7 @@ async def send_delay_notice(
         db,
         request,
         reason=reason,
-        user_name="Registrar",
+        user_name=ctx["user"].username,
     )
     if not was_sent:
         raise HTTPException(
@@ -956,7 +992,7 @@ async def send_delay_notice(
 def hold_for_requestor_no_pickup(
     request_id: int,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     request_repo = CertificateRequestRepository(db)
     request = request_repo.get_by_id(request_id)
@@ -979,7 +1015,7 @@ def hold_for_requestor_no_pickup(
     was_held = hold_request_for_no_pickup(
         db,
         request,
-        user_name="Registrar",
+        user_name=ctx["user"].username,
     )
     if not was_held:
         raise HTTPException(
@@ -994,7 +1030,7 @@ def hold_for_requestor_no_pickup(
 def mark_printed(
     request_id: int,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     request_repo = CertificateRequestRepository(db)
     request = request_repo.get_by_id(request_id)
@@ -1012,7 +1048,7 @@ def mark_printed(
     request.auto_print_error = None
     db.commit()
     db.refresh(request)
-    log_print_completed(db, request)
+    log_print_completed(db, request, user_name=ctx["user"].username)
     return {
         "message": "Marked as printed.",
         "auto_printed_at": request.auto_printed_at,
@@ -1025,7 +1061,7 @@ async def send_rejection_email(
     request_id: int,
     payload: RejectionEmailRequest,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_status")),
+    ctx: dict = Depends(require_permissions("requests.update_status")),
 ):
     request_repo = CertificateRequestRepository(db)
     student_repo = StudentRepository(db)
@@ -1064,6 +1100,14 @@ async def send_rejection_email(
         campus_email=campus_email,
         campus_telNo=campus_telNo,
     )
+    log_action(
+        db,
+        action="REJECTION_EMAIL_SENT",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        user_name=ctx["user"].username,
+        notes=f"Sent rejection email for {request.reference_number}.",
+    )
     return {"message": "Rejection email sent."}
 
 # Endpoint: Save course description selection for a request
@@ -1072,7 +1116,7 @@ def update_course_description_selection(
     request_id: int,
     data_update: CourseDescriptionSelectionUpdate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_data")),
+    ctx: dict = Depends(require_permissions("requests.update_data")),
 ):
     request_repo = CertificateRequestRepository(db)
     audit_repo = AuditLogRepository(db)
@@ -1105,7 +1149,7 @@ def update_course_description_selection(
         field_name="course_description_selection",
         old_value=old_value,
         new_value=new_value,
-        user_name=data_update.user_name,
+        user_name=ctx["user"].username,
         notes=data_update.notes or "Course description selection updated",
     )
     audit_repo.add(audit_log)
@@ -1120,7 +1164,7 @@ def update_grade_selection(
     request_id: int,
     data_update: GradeSelectionUpdate,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("requests.update_data")),
+    ctx: dict = Depends(require_permissions("requests.update_data")),
 ):
     request_repo = CertificateRequestRepository(db)
     audit_repo = AuditLogRepository(db)
@@ -1153,7 +1197,7 @@ def update_grade_selection(
         field_name="grade_selection",
         old_value=old_value,
         new_value=new_value,
-        user_name=data_update.user_name,
+        user_name=ctx["user"].username,
         notes=data_update.notes or "Certification of grades selection updated",
     )
     audit_repo.add(audit_log)
@@ -1164,11 +1208,10 @@ def update_grade_selection(
 
 # Endpoint 13: Generate certificate PDF
 @router.post("/{request_id}/generate-certificate")
-def generate_certificate(
+async def generate_certificate(
     request_id: int,
-    user_name: str = "System",
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("certificates.generate")),
+    ctx: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Generate PDF certificate for a request
@@ -1179,16 +1222,35 @@ def generate_certificate(
     3. Returns file path
     """
     
+    request_repo = CertificateRequestRepository(db)
+    request = request_repo.get_by_id(request_id)
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found"
+        )
+
     pdf_path = generate_certificate_pdf(
         db=db,
         request_id=request_id,
-        user_name=user_name
+        user_name=ctx["user"].username
     )
+
+    if request.status == RequestStatus.PROCESSING:
+        request = await update_request_status(
+            db=db,
+            request_id=request_id,
+            new_status=RequestStatus.FOR_RELEASING,
+            user_name=ctx["user"].username,
+            notes="Certificate generated manually after review.",
+            trigger_auto_queue=True,
+        )
     
     return {
         "message": "Certificate generated successfully",
         "pdf_path": pdf_path,
-        "filename": os.path.basename(pdf_path)
+        "filename": os.path.basename(pdf_path),
+        "status": request.status.value if hasattr(request.status, "value") else str(request.status),
     }
 
 # Endpoint 14: Download certificate PDF
@@ -1196,7 +1258,7 @@ def generate_certificate(
 def download_certificate(
     request_id: int,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permissions("certificates.generate")),
+    ctx: dict = Depends(require_permissions("certificates.generate")),
 ):
     """
     Download the generated certificate PDF
@@ -1236,6 +1298,14 @@ def download_certificate(
         )
     
     # Return file for download
+    log_action(
+        db,
+        action="CERTIFICATE_DOWNLOADED",
+        entity_type="certificate_request",
+        entity_id=request.id,
+        user_name=ctx["user"].username,
+        notes=f"Downloaded certificate for {request.reference_number}.",
+    )
     return FileResponse(
         path=pdf_path,
         media_type='application/pdf',

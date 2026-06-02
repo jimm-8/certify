@@ -1,9 +1,13 @@
 const LOCAL_NOTIFICATION_STORAGE_KEY = "certify.notifications.localItems";
 const DELAY_ALERT_STAGE_STORAGE_KEY = "certify.delayAlerts.firedStages";
+export const LOCAL_NOTIFICATIONS_UPDATED_EVENT =
+  "certify:local-notifications-updated";
 
 export const NOTIFICATION_STORAGE_KEY = "certify.notifications.lastSeenId";
 export const DISMISSED_NOTIFICATION_STORAGE_KEY =
   "certify.notifications.dismissedIds";
+export const ANOMALY_SOUND_PLAYED_STORAGE_KEY =
+  "certify.notifications.anomalySoundPlayedRequestIds";
 
 export const STAGE_DEFINITIONS = {
   early: {
@@ -69,8 +73,28 @@ export const NOTIFICATION_ACTIONS = [
   "REQUEST_DELAY_NOTICE_SENT",
 ];
 
+export const AUTO_VALIDATION_NOTIFICATION_ACTION =
+  "REQUEST_AUTO_VALIDATION_REVIEW";
+
 const sortByNewest = (items) =>
   [...items].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+const normalizeNotificationForComparison = (item = {}) => ({
+  id: item.id ?? null,
+  action: item.action ?? "",
+  entity_type: item.entity_type ?? "",
+  entity_id: item.entity_id ?? null,
+  field_name: item.field_name ?? "",
+  old_value: item.old_value ?? "",
+  new_value: item.new_value ?? "",
+  user_name: item.user_name ?? "",
+  notes: item.notes ?? "",
+  localOnly: Boolean(item.localOnly),
+});
+
+const isSameNotificationPayload = (left, right) =>
+  JSON.stringify(normalizeNotificationForComparison(left)) ===
+  JSON.stringify(normalizeNotificationForComparison(right));
 
 const safeJsonParse = (value, fallback) => {
   try {
@@ -91,6 +115,30 @@ export const getDismissedNotificationIds = () => {
     : [];
 };
 
+export const getAnomalySoundPlayedRequestIds = () => {
+  if (typeof window === "undefined") return [];
+  const parsed = safeJsonParse(
+    window.localStorage.getItem(ANOMALY_SOUND_PLAYED_STORAGE_KEY),
+    [],
+  );
+  return Array.isArray(parsed)
+    ? parsed.map((value) => Number(value)).filter(Number.isFinite)
+    : [];
+};
+
+export const saveAnomalySoundPlayedRequestIds = (requestIds) => {
+  if (typeof window === "undefined") return;
+  const normalized = Array.from(
+    new Set(
+      (requestIds || []).map((value) => Number(value)).filter(Number.isFinite),
+    ),
+  ).sort((left, right) => left - right);
+  window.localStorage.setItem(
+    ANOMALY_SOUND_PLAYED_STORAGE_KEY,
+    JSON.stringify(normalized),
+  );
+};
+
 export const getLocalNotifications = () => {
   if (typeof window === "undefined") return [];
   const parsed = safeJsonParse(
@@ -100,21 +148,68 @@ export const getLocalNotifications = () => {
   return Array.isArray(parsed) ? sortByNewest(parsed) : [];
 };
 
-export const saveLocalNotifications = (items) => {
+export const saveLocalNotifications = (items, options = {}) => {
   if (typeof window === "undefined") return;
+  const sortedItems = sortByNewest(items);
+  const currentItems = getLocalNotifications();
+  if (JSON.stringify(currentItems) === JSON.stringify(sortedItems)) {
+    return;
+  }
   window.localStorage.setItem(
     LOCAL_NOTIFICATION_STORAGE_KEY,
-    JSON.stringify(sortByNewest(items)),
+    JSON.stringify(sortedItems),
+  );
+  window.dispatchEvent(
+    new CustomEvent(LOCAL_NOTIFICATIONS_UPDATED_EVENT, {
+      detail: {
+        items: sortedItems,
+        silent: Boolean(options.silent),
+      },
+    }),
   );
 };
 
-export const appendLocalNotification = (notification) => {
+export const appendLocalNotification = (notification, options = {}) => {
   const current = getLocalNotifications();
   const exists = current.some((item) => item.id === notification.id);
   if (exists) return current;
   const next = sortByNewest([notification, ...current]);
-  saveLocalNotifications(next);
+  saveLocalNotifications(next, options);
   return next;
+};
+
+export const upsertLocalNotification = (
+  notification,
+  matcher,
+  options = {},
+) => {
+  const current = getLocalNotifications();
+  const matchIndex = current.findIndex((item) =>
+    typeof matcher === "function" ? matcher(item) : item.id === notification.id,
+  );
+
+  if (matchIndex === -1) {
+    const next = sortByNewest([notification, ...current]);
+    saveLocalNotifications(next, options);
+    return next;
+  }
+
+  const next = [...current];
+  const existingItem = next[matchIndex];
+  const mergedItem = {
+    ...existingItem,
+    ...notification,
+    id: existingItem.id,
+    created_at: existingItem.created_at,
+  };
+
+  if (isSameNotificationPayload(existingItem, mergedItem)) {
+    return current;
+  }
+
+  next[matchIndex] = mergedItem;
+  saveLocalNotifications(next, options);
+  return sortByNewest(next);
 };
 
 export const getDelayAlertStageMap = () => {
@@ -128,7 +223,10 @@ export const getDelayAlertStageMap = () => {
 
 export const saveDelayAlertStageMap = (value) => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(DELAY_ALERT_STAGE_STORAGE_KEY, JSON.stringify(value));
+  window.localStorage.setItem(
+    DELAY_ALERT_STAGE_STORAGE_KEY,
+    JSON.stringify(value),
+  );
 };
 
 export const clearNotificationStorage = () => {
@@ -138,6 +236,7 @@ export const clearNotificationStorage = () => {
     DELAY_ALERT_STAGE_STORAGE_KEY,
     NOTIFICATION_STORAGE_KEY,
     DISMISSED_NOTIFICATION_STORAGE_KEY,
+    ANOMALY_SOUND_PLAYED_STORAGE_KEY,
   ].forEach((key) => {
     window.localStorage.removeItem(key);
   });
@@ -169,12 +268,26 @@ export const getRequestHoldSecondsMs = (request, nowMs = Date.now()) => {
   return Math.max(0, (totalSeconds + activeSeconds) * 1000);
 };
 
+export const getProcessingHoldSecondsMs = (request, nowMs = Date.now()) => {
+  const totalSeconds = Number(request?.processing_hold_total_seconds || 0);
+  let activeSeconds = 0;
+
+  if (request?.processing_hold_active && request?.processing_hold_started_at) {
+    const startedAt = new Date(request.processing_hold_started_at).getTime();
+    if (Number.isFinite(startedAt)) {
+      activeSeconds = Math.max(0, Math.floor((nowMs - startedAt) / 1000));
+    }
+  }
+
+  return Math.max(0, (totalSeconds + activeSeconds) * 1000);
+};
+
 export const getForReleasingStartedAtMs = (request) => {
   const candidateValues = [
+    request?.created_at,
     request?.for_releasing_started_at,
     request?.auto_print_requested_at,
     request?.ready_email_sent_at,
-    request?.created_at,
     request?.updated_at,
   ];
 
@@ -192,7 +305,12 @@ export const getForReleasingElapsedMs = (request, nowMs = Date.now()) => {
   if (!Number.isFinite(startedAt)) return 0;
 
   const rawElapsed = Math.max(0, nowMs - startedAt);
-  return Math.max(0, rawElapsed - getRequestHoldSecondsMs(request, nowMs));
+  return Math.max(
+    0,
+    rawElapsed -
+      getProcessingHoldSecondsMs(request, nowMs) -
+      getRequestHoldSecondsMs(request, nowMs),
+  );
 };
 
 export const buildDelayAlertMessage = ({
@@ -228,8 +346,7 @@ export const createDelayAlertNotification = ({
   const highestElapsedMs = Math.max(
     ...requests.map((request) => getForReleasingElapsedMs(request)),
   );
-  const remainingMs =
-    STAGE_DEFINITIONS.breach.thresholdMs - highestElapsedMs;
+  const remainingMs = STAGE_DEFINITIONS.breach.thresholdMs - highestElapsedMs;
 
   return {
     id: Date.now() * 10 + stageMeta.severity,
@@ -249,6 +366,123 @@ export const createDelayAlertNotification = ({
     created_at: createdAt,
     localOnly: true,
   };
+};
+
+export const createAutoValidationNotification = ({
+  request,
+  flags,
+  createdAt = new Date().toISOString(),
+}) => {
+  const uniqueFlags = Array.from(new Set((flags || []).filter(Boolean)));
+  const summary =
+    uniqueFlags.length === 1
+      ? uniqueFlags[0]
+      : uniqueFlags.map((flag) => `- ${flag}`).join("\n");
+
+  return {
+    id: Number(request?.id) * 1000 + 81,
+    action: AUTO_VALIDATION_NOTIFICATION_ACTION,
+    entity_type: "certificate_request",
+    entity_id: request?.id ?? null,
+    field_name: "auto_validation",
+    old_value:
+      request?.request_label ||
+      request?.certificate_type_name ||
+      "Certificate request",
+    new_value: String(uniqueFlags.length),
+    user_name: "System",
+    notes:
+      uniqueFlags.length === 1
+        ? `Auto-validation flagged this request for review: ${summary}`
+        : `Auto-validation flagged this request for review:\n${summary}`,
+    created_at: createdAt,
+    localOnly: true,
+  };
+};
+
+export const collectRequestValidationFlags = (request, backendFlags = []) => {
+  const flags = [];
+
+  backendFlags.filter(Boolean).forEach((flag) => {
+    if (typeof flag === "string") flags.push(flag);
+  });
+
+  if (!request?.student_name) flags.push("Missing student name.");
+  if (!request?.program) flags.push("Missing program.");
+  if (!request?.certificate_type_name) flags.push("Missing certificate type.");
+  if (!request?.created_at) flags.push("Missing request date.");
+  if (!request?.requestor_name) flags.push("Missing requestor name.");
+
+  const email = request?.requestor_email || request?.email;
+  if (!email) {
+    flags.push("Missing requestor email.");
+  } else {
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email));
+    if (!emailOk) flags.push("Invalid requestor email.");
+  }
+
+  return Array.from(new Set(flags));
+};
+
+const isAutoValidationNotification = (item) =>
+  item?.action === AUTO_VALIDATION_NOTIFICATION_ACTION &&
+  item?.field_name === "auto_validation";
+
+export const syncAutoValidationNotifications = ({
+  requests = [],
+  validationMap = {},
+  silent = false,
+}) => {
+  const current = getLocalNotifications();
+  const preservedNotifications = current.filter(
+    (item) => !isAutoValidationNotification(item),
+  );
+  const existingNotifications = new Map(
+    current
+      .filter(isAutoValidationNotification)
+      .map((item) => [Number(item.entity_id), item]),
+  );
+
+  const nextAutoValidationNotifications = requests.reduce((items, request) => {
+    const requestId = Number(request?.id);
+    if (!Number.isFinite(requestId)) return items;
+
+    const flags = collectRequestValidationFlags(
+      request,
+      validationMap?.[requestId]?.flags || [],
+    );
+    if (flags.length === 0) return items;
+
+    const existing = existingNotifications.get(requestId);
+    const nextNotification = createAutoValidationNotification({
+      request,
+      flags,
+      createdAt: existing?.created_at || new Date().toISOString(),
+    });
+
+    if (existing && isSameNotificationPayload(existing, nextNotification)) {
+      items.push(existing);
+      return items;
+    }
+
+    items.push({
+      ...nextNotification,
+      created_at: existing?.created_at || nextNotification.created_at,
+    });
+    return items;
+  }, []);
+
+  const nextNotifications = sortByNewest([
+    ...preservedNotifications,
+    ...nextAutoValidationNotifications,
+  ]);
+
+  if (JSON.stringify(current) === JSON.stringify(nextNotifications)) {
+    return current;
+  }
+
+  saveLocalNotifications(nextNotifications, { silent });
+  return nextNotifications;
 };
 
 export const getNotificationMeta = (item) => {
@@ -282,7 +516,18 @@ export const getNotificationMeta = (item) => {
     };
   }
 
-  const stageMeta = STAGE_DEFINITIONS[item.field_name] || STAGE_DEFINITIONS.early;
+  if (item.action === AUTO_VALIDATION_NOTIFICATION_ACTION) {
+    return {
+      title: "Anomaly Detected",
+      badge: item.old_value || "Certificate request",
+      message: item.notes,
+      tone: "border-amber-200 bg-amber-50/40",
+      badgeTone: "text-amber-700",
+    };
+  }
+
+  const stageMeta =
+    STAGE_DEFINITIONS[item.field_name] || STAGE_DEFINITIONS.early;
   return {
     title: stageMeta.title,
     badge: item.old_value || "For Release",

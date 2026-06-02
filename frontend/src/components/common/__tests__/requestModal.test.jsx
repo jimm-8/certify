@@ -1,20 +1,20 @@
-import { render, screen, waitFor } from "@testing-library/react";
+// @vitest-environment jsdom
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import RequestModal from "../requestModal";
 import requestService from "../../../services/requestService";
 
 vi.mock("../../../services/requestService", () => ({
   default: {
     getRequestNotes: vi.fn(),
-    getRequestTakenCourses: vi.fn(),
-    updateCourseDescriptionSelection: vi.fn(),
-    updateGradeSelection: vi.fn(),
   },
 }));
 
 describe("RequestModal", () => {
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -53,7 +53,72 @@ describe("RequestModal", () => {
     );
   });
 
-  it("requires course selection before approving course description", async () => {
+  it("suggests verifying latin honor for honor graduate validation flags", async () => {
+    const user = userEvent.setup();
+    const request = {
+      id: 2,
+      status: "PENDING",
+      certificate_type_name: "Certification of Honor Graduate",
+      requestor_email: "student@example.com",
+    };
+
+    render(
+      <RequestModal
+        request={request}
+        onClose={() => {}}
+        onRejectAndSend={() => {}}
+        validationFlags={[
+          "No latin honor record found for this student for the requested honor graduate certificate.",
+        ]}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: /reject|decline/i }));
+    const suggested = await screen.findByRole("button", {
+      name: /no latin honor record was found/i,
+    });
+    await user.click(suggested);
+
+    const textarea = screen.getByPlaceholderText(/reason for rejecting/i);
+    expect(textarea).toHaveValue(
+      "No latin honor record was found. Request cannot be processed as an honor graduate certificate until the latin honor is verified."
+    );
+  });
+
+  it("suggests graduation verification for cav validation flags", async () => {
+    const user = userEvent.setup();
+    const request = {
+      id: 3,
+      status: "PENDING",
+      certificate_type_name:
+        "Certification Authentication and Verification (CAV)",
+      requestor_email: "student@example.com",
+    };
+
+    render(
+      <RequestModal
+        request={request}
+        onClose={() => {}}
+        onRejectAndSend={() => {}}
+        validationFlags={[
+          "Student is not yet graduated for the requested CAV certificate.",
+        ]}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: /reject|decline/i }));
+    const suggested = await screen.findByRole("button", {
+      name: /student is not yet graduated\. request cannot be processed until graduation is confirmed/i,
+    });
+    await user.click(suggested);
+
+    const textarea = screen.getByPlaceholderText(/reason for rejecting/i);
+    expect(textarea).toHaveValue(
+      "Student is not yet graduated. Request cannot be processed until graduation is confirmed."
+    );
+  });
+
+  it("approves a course description request without prompting for course selection", async () => {
     const user = userEvent.setup();
     const request = {
       id: 22,
@@ -61,17 +126,6 @@ describe("RequestModal", () => {
       certificate_type_name: "Course Description",
       requestor_email: "student@example.com",
     };
-
-    requestService.getRequestTakenCourses.mockResolvedValue([
-      {
-        course_code: "CS101",
-        course_title: "Intro",
-        units: 3,
-        grade: "1.5",
-      },
-    ]);
-    requestService.updateCourseDescriptionSelection.mockResolvedValue({});
-
     const onApprove = vi.fn();
 
     render(
@@ -83,17 +137,13 @@ describe("RequestModal", () => {
       />
     );
 
-    const approve = await screen.findByRole("button", { name: /approve/i });
-    expect(approve).toBeDisabled();
+    expect(
+      screen.queryByText(/course description selection/i),
+    ).not.toBeInTheDocument();
 
-    const checkbox = await screen.findByRole("checkbox");
-    await user.click(checkbox);
-
-    expect(approve).toBeEnabled();
-    await user.click(approve);
+    await user.click(screen.getByRole("button", { name: /approve/i }));
 
     await waitFor(() => {
-      expect(requestService.updateCourseDescriptionSelection).toHaveBeenCalled();
       expect(onApprove).toHaveBeenCalledWith(request);
     });
   });

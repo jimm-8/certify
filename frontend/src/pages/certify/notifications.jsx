@@ -5,15 +5,18 @@ import requestService from "../../services/requestService";
 import {
   getLocalNotifications,
   getNotificationMeta,
+  LOCAL_NOTIFICATIONS_UPDATED_EVENT,
   mergeNotifications,
   NOTIFICATION_ACTIONS,
 } from "../../utils/notificationCenter";
+import { getTokenPayload } from "../../utils/auth";
 
 const Notifications = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [localLogs, setLocalLogs] = useState(() => getLocalNotifications());
   const [loading, setLoading] = useState(true);
+  const username = getTokenPayload()?.sub || "";
 
   useEffect(() => {
     let active = true;
@@ -23,8 +26,10 @@ const Notifications = () => {
       .then((data) => {
         if (!active) return;
         const all = Array.isArray(data) ? data : data.items || [];
-        const filtered = all.filter((log) =>
-          NOTIFICATION_ACTIONS.includes(log.action),
+        const filtered = all.filter(
+          (log) =>
+            NOTIFICATION_ACTIONS.includes(log.action) &&
+            (!log.owner_username || log.owner_username === username),
         );
         setLogs(filtered);
         setLocalLogs(getLocalNotifications());
@@ -41,6 +46,27 @@ const Notifications = () => {
 
     return () => {
       active = false;
+    };
+  }, [username]);
+
+  useEffect(() => {
+    const handleLocalNotificationsUpdated = (event) => {
+      const nextItems = Array.isArray(event.detail?.items)
+        ? event.detail.items
+        : getLocalNotifications();
+      setLocalLogs(nextItems);
+    };
+
+    window.addEventListener(
+      LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+      handleLocalNotificationsUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        LOCAL_NOTIFICATIONS_UPDATED_EVENT,
+        handleLocalNotificationsUpdated,
+      );
     };
   }, []);
 

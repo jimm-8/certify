@@ -4,6 +4,8 @@ import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
 import FeedbackDialog from "../../components/common/feedbackDialog";
 import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { syncAutoValidationNotifications } from "../../utils/notificationCenter";
+import { getTokenPayload } from "../../utils/auth";
 import {
   BsSearch,
   BsCalendar3,
@@ -128,10 +130,17 @@ const Checking = () => {
   const [validationLoading, setValidationLoading] = useState(false);
   const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
   const [emailLoading, setEmailLoading] = useState({});
+  const [composeEmailModal, setComposeEmailModal] = useState({
+    open: false,
+    request: null,
+    subject: "",
+    message: "",
+  });
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const hasInitializedAnomalyNotificationsRef = useRef(false);
   const [feedbackModal, setFeedbackModal] = useState({
     open: false,
     title: "",
@@ -149,13 +158,10 @@ const Checking = () => {
     total: 0,
     done: false,
   });
+  const lastAutoQueueAttemptRef = useRef(0);
+  const ownerUsername = getTokenPayload()?.sub || "";
 
-  const showFeedback = (
-    title,
-    message,
-    tone = "default",
-    options = {},
-  ) => {
+  const showFeedback = (title, message, tone = "default", options = {}) => {
     setFeedbackModal({
       open: true,
       title,
@@ -184,6 +190,15 @@ const Checking = () => {
       done,
     });
   };
+
+  const getErrorDetail = (
+    error,
+    fallback = "Failed to process the certificate request.",
+  ) =>
+    error.response?.data?.detail ||
+    error.response?.data?.message ||
+    error.message ||
+    fallback;
 
   useEffect(
     () => setCurrentPage(1),
@@ -227,41 +242,68 @@ const Checking = () => {
     return Array.from(new Set(flags));
   };
 
+  const fetchRequestsSnapshot = async () => {
+    const data = await requestService.getAllRequests({
+      page: 1,
+      limit: 100,
+      ownerUsername,
+    });
+    const all = filterCertifyEligibleRequests(
+      Array.isArray(data) ? data : data.items || [],
+    );
+    const approved = all.filter((r) => r.status === "PROCESSING");
+    let map = {};
+
+    if (approved.length) {
+      setValidationLoading(true);
+      try {
+        const res = await requestService.validateRequests(
+          approved.map((r) => r.id),
+        );
+        const results = res?.results || [];
+        map = results.reduce((acc, row) => {
+          acc[row.request_id] = {
+            exists: row.exists,
+            flags: row.flags || [],
+          };
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error("Validation failed:", error);
+      } finally {
+        setValidationLoading(false);
+      }
+    }
+
+    return {
+      approved,
+      validationMap: map,
+    };
+  };
+
+  const maybeRefreshAutoQueue = async () => {
+    const now = Date.now();
+    if (now - lastAutoQueueAttemptRef.current < 30000) return;
+    lastAutoQueueAttemptRef.current = now;
+    try {
+      await requestService.autoQueueApprovedRequests();
+    } catch (error) {
+      console.error("Auto-queue refresh failed:", error);
+    }
+  };
+
   const fetchRequests = async (opts = { silent: false }) => {
     try {
       if (!opts.silent) setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const all = filterCertifyEligibleRequests(
-        Array.isArray(data) ? data : data.items || [],
-      );
-      const approved = all.filter((r) => r.status === "APPROVED");
-      setRequests(approved);
-      if (approved.length) {
-        setValidationLoading(true);
-        try {
-          const res = await requestService.validateRequests(
-            approved.map((r) => r.id),
-          );
-          const results = res?.results || [];
-          const map = results.reduce((acc, row) => {
-            acc[row.request_id] = {
-              exists: row.exists,
-              flags: row.flags || [],
-            };
-            return acc;
-          }, {});
-          setValidationMap(map);
-        } catch (error) {
-          console.error("Validation failed:", error);
-        } finally {
-          setValidationLoading(false);
-        }
-      } else {
-        setValidationMap({});
-      }
+      await maybeRefreshAutoQueue();
+      const snapshot = await fetchRequestsSnapshot();
+      setRequests(snapshot.approved);
+      setValidationMap(snapshot.validationMap);
       setLastUpdatedAt(Date.now());
+      return snapshot;
     } catch (error) {
       console.error("Failed to fetch requests:", error);
+      throw error;
     } finally {
       if (!opts.silent) setLoading(false);
     }
@@ -269,17 +311,26 @@ const Checking = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => fetchRequests({ silent: true }), 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [ownerUsername]);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    syncAutoValidationNotifications({
+      requests,
+      validationMap,
+      silent: !hasInitializedAnomalyNotificationsRef.current,
+    });
+    hasInitializedAnomalyNotificationsRef.current = true;
+  }, [requests, validationMap]);
 
   useEffect(() => {
     requestService
@@ -328,68 +379,184 @@ const Checking = () => {
     ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
     : "-";
 
+  const isTimeoutLikeError = (error) =>
+    error?.code === "ECONNABORTED" ||
+    error?.name === "AbortError" ||
+    /timeout/i.test(String(error?.message || ""));
+
+  const wasRequestAdvanced = (snapshot, req) =>
+    Boolean(req?.id) &&
+    Boolean(snapshot) &&
+    !snapshot.approved.some((item) => item.id === req.id);
+
   const handleAdvance = async (req) => {
     if (requiresCourseSelection(req.certificate_type_name)) {
       setSelectedRequest(req);
       return;
     }
-    const nextStatus = "PROCESSING";
     setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: true }));
     try {
-      await requestService.updateStatus(
-        req.id,
-        nextStatus,
-        "Request moved to processing",
-      );
-      fetchRequests();
+      await requestService.generateCertificate(req.id);
+      await fetchRequests({ silent: true });
     } catch (error) {
       console.error("Failed to advance request:", error);
+      if (isTimeoutLikeError(error)) {
+        try {
+          const snapshot = await fetchRequests({ silent: true });
+          if (wasRequestAdvanced(snapshot, req)) {
+            showFeedback(
+              "Request Processed",
+              "The request was processed successfully. The page has been refreshed to reflect the latest status.",
+              "success",
+            );
+            return;
+          }
+        } catch (refreshError) {
+          console.error(
+            "Failed to verify request status after timeout:",
+            refreshError,
+          );
+        }
+      }
+      showFeedback("Processing Failed", getErrorDetail(error), "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [`advance_${req.id}`]: false }));
     }
   };
 
-  const handleEmail = (req) => {
-    const to = req.requestor_email || req.email || "";
-    const subject = "Certificate Request Update";
-    const gmailUrl =
-      "https://mail.google.com/mail/?view=cm&fs=1" +
-      `&to=${encodeURIComponent(to)}` +
-      `&su=${encodeURIComponent(subject)}`;
-    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+  const handleEmail = async (req) => {
+    if (!req) return;
+    const requestLabel =
+      req.certificate_type_name || req.request_label || "certificate request";
+    const referenceNumber = req.reference_number || "Pending Reference";
+    setComposeEmailModal({
+      open: true,
+      request: req,
+      subject: `About your certificate request ${referenceNumber}`,
+      message:
+        `Hello ${req.requestor_name || "Requestor"},\n\n` +
+        `We are reviewing your ${requestLabel}. We need a few more details regarding your request.\n\n` +
+        "Please reply with the information needed so we can continue processing it.\n\n" +
+        "Thank you.",
+    });
   };
 
-  const handleModalApprove = async (req) => {
-    const nextStatus = "PROCESSING";
-    setSelectedRequest(null);
+  const closeComposeEmailModal = () => {
+    setComposeEmailModal({
+      open: false,
+      request: null,
+      subject: "",
+      message: "",
+    });
+  };
+
+  const handleComposeEmailSend = async () => {
+    const req = composeEmailModal.request;
+    if (!req) return;
+    const subject = composeEmailModal.subject.trim();
+    const message = composeEmailModal.message.trim();
+
+    if (!subject) {
+      showFeedback(
+        "Missing Subject",
+        "Please enter an email subject.",
+        "error",
+      );
+      return;
+    }
+    if (!message) {
+      showFeedback(
+        "Missing Message",
+        "Please enter an email message.",
+        "error",
+      );
+      return;
+    }
+
+    setEmailLoading((prev) => ({ ...prev, [`checking_${req.id}`]: true }));
     showFeedback(
-      "Submitting Request",
-      "Please wait while the certificate request is being submitted.",
+      "Sending Email",
+      "Please wait while the email is being sent to the requestor.",
       "info",
       {
         loading: true,
-        confirmLabel: "Submitting...",
+        confirmLabel: "Sending...",
       },
     );
     try {
-      await requestService.updateStatus(
-        req.id,
-        nextStatus,
-        "Request moved to processing",
-      );
-      await fetchRequests({ silent: true });
+      await requestService.sendCheckingEmail(req.id, { subject, message });
+      closeComposeEmailModal();
+      showFeedback("Email Sent", "Message sent to the requestor.", "success");
+    } catch (error) {
+      console.error("Failed to send checking email:", error);
       showFeedback(
-        "Request Submitted",
-        "Certificate request submitted successfully.",
+        "Email Failed",
+        getErrorDetail(error, "Failed to send message to the requestor."),
+        "error",
+      );
+    } finally {
+      setEmailLoading((prev) => ({ ...prev, [`checking_${req.id}`]: false }));
+    }
+  };
+
+  const handleModalApprove = async (req) => {
+    if (!req) return;
+    setModalLoading(true);
+    showFeedback(
+      "Generating Certificate",
+      "Please wait while the certificate is being generated.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Generating...",
+      },
+    );
+    try {
+      await requestService.generateCertificate(req.id);
+      await fetchRequests({ silent: true });
+      setSelectedRequest(null);
+      showFeedback(
+        "Certificate Generated",
+        "Certificate request moved to tracker successfully.",
         "success",
       );
     } catch (error) {
       console.error("Failed to advance request:", error);
+      if (isTimeoutLikeError(error)) {
+        showFeedback(
+          "Checking Request Status",
+          "The server took too long to reply, so we're verifying whether the certificate was still generated.",
+          "info",
+          {
+            loading: true,
+            confirmLabel: "Checking...",
+          },
+        );
+        try {
+          const snapshot = await fetchRequests({ silent: true });
+          if (wasRequestAdvanced(snapshot, req)) {
+            setSelectedRequest(null);
+            showFeedback(
+              "Certificate Generated",
+              "Certificate request was generated successfully. The page has been refreshed to reflect the latest status.",
+              "success",
+            );
+            return;
+          }
+        } catch (refreshError) {
+          console.error(
+            "Failed to verify modal approval after timeout:",
+            refreshError,
+          );
+        }
+      }
       showFeedback(
-        "Submission Failed",
-        "Failed to submit the certificate request.",
+        "Generation Failed",
+        getErrorDetail(error, "Failed to generate the certificate request."),
         "error",
       );
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -415,20 +582,25 @@ const Checking = () => {
     if (!req) return;
     setModalLoading(true);
     setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: true }));
+    showFeedback(
+      "Sending Rejection Email",
+      "Please wait while the rejection is recorded and the email is sent.",
+      "info",
+      {
+        loading: true,
+        confirmLabel: "Sending...",
+      },
+    );
     try {
       const finalNotes = notes || "Request rejected during validation.";
       await requestService.updateStatus(req.id, "REJECTED", finalNotes);
       await requestService.sendRejectionEmail(req.id, finalNotes);
-      setSelectedRequest({ ...req, status: "REJECTED" });
-      fetchRequests();
+      setSelectedRequest(null);
+      await fetchRequests({ silent: true });
       showFeedback("Email Sent", "Rejection email sent.", "success");
     } catch (error) {
       console.error("Failed to reject request:", error);
-      showFeedback(
-        "Email Failed",
-        "Failed to send rejection email.",
-        "error",
-      );
+      showFeedback("Email Failed", "Failed to send rejection email.", "error");
     } finally {
       setModalLoading(false);
       setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
@@ -443,11 +615,7 @@ const Checking = () => {
       showFeedback("Email Sent", "Rejection email sent.", "success");
     } catch (error) {
       console.error("Failed to send rejection email:", error);
-      showFeedback(
-        "Email Failed",
-        "Failed to send rejection email.",
-        "error",
-      );
+      showFeedback("Email Failed", "Failed to send rejection email.", "error");
     } finally {
       setEmailLoading((prev) => ({ ...prev, [`reject_${req.id}`]: false }));
     }
@@ -470,11 +638,7 @@ const Checking = () => {
       });
       for (let i = 0; i < filteredRequests.length; i += 1) {
         const request = filteredRequests[i];
-        await requestService.updateStatus(
-          request.id,
-          "PROCESSING",
-          "Request moved to processing",
-        );
+        await requestService.generateCertificate(request.id);
         showBulkDialog({
           title: "Processing Requests",
           message: `${i + 1} of ${filteredRequests.length} request${filteredRequests.length !== 1 ? "s" : ""} processed.`,
@@ -485,7 +649,7 @@ const Checking = () => {
       fetchRequests();
       showBulkDialog({
         title: "Bulk Process Complete",
-        message: `${filteredRequests.length} request${filteredRequests.length !== 1 ? "s were" : " was"} moved to processing.`,
+        message: `${filteredRequests.length} request${filteredRequests.length !== 1 ? "s were" : " was"} moved to tracker.`,
         tone: "success",
         current: filteredRequests.length,
         total: filteredRequests.length,
@@ -594,9 +758,15 @@ const Checking = () => {
           </button>
           <button
             onClick={() => handleEmail(row)}
-            className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors"
+            aria-label="Send checking email"
+            disabled={emailLoading[`checking_${row.id}`]}
+            className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
-            <BsEnvelopeArrowUp size={18} />
+            {emailLoading[`checking_${row.id}`] ? (
+              "..."
+            ) : (
+              <BsEnvelopeArrowUp size={18} />
+            )}
           </button>
           <button
             onClick={() => setSelectedRequest(row)}
@@ -629,7 +799,7 @@ const Checking = () => {
             {bulkApproveLoading && (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )}
-            Process All
+            Generate All
           </button>
         </div>
 
@@ -731,8 +901,9 @@ const Checking = () => {
       {/* Validation Summary */}
       <div className="mb-2 -mt-2 flex items-center justify-between gap-2">
         <div className="text-[11px] text-gray-500">
-          Auto-validation flags missing or inconsistent data for registrar
-          review.
+          This tab shows the requests currently assigned to your checking queue.
+          When a request leaves this queue, the next queued request enters
+          automatically when a slot is free.
         </div>
         <div className="flex items-center gap-3 text-[11px]">
           <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
@@ -831,6 +1002,94 @@ const Checking = () => {
           selectedRequest ? getValidationFlags(selectedRequest) : []
         }
       />
+      {composeEmailModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-sm font-semibold text-gray-900">
+                Compose Email
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                To:{" "}
+                {composeEmailModal.request?.requestor_email ||
+                  composeEmailModal.request?.email ||
+                  "-"}
+              </p>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <div>
+                <label
+                  htmlFor="checking-email-subject"
+                  className="mb-1 block text-xs font-medium text-gray-700"
+                >
+                  Subject
+                </label>
+                <input
+                  id="checking-email-subject"
+                  type="text"
+                  value={composeEmailModal.subject}
+                  onChange={(e) =>
+                    setComposeEmailModal((current) => ({
+                      ...current,
+                      subject: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#ee1133] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="checking-email-message"
+                  className="mb-1 block text-xs font-medium text-gray-700"
+                >
+                  Message
+                </label>
+                <textarea
+                  id="checking-email-message"
+                  rows={10}
+                  value={composeEmailModal.message}
+                  onChange={(e) =>
+                    setComposeEmailModal((current) => ({
+                      ...current,
+                      message: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#ee1133] focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeComposeEmailModal}
+                disabled={
+                  composeEmailModal.request
+                    ? emailLoading[`checking_${composeEmailModal.request.id}`]
+                    : false
+                }
+                className="rounded-md border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleComposeEmailSend}
+                disabled={
+                  composeEmailModal.request
+                    ? emailLoading[`checking_${composeEmailModal.request.id}`]
+                    : false
+                }
+                className="rounded-md bg-[#ee1133] px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {composeEmailModal.request &&
+                emailLoading[`checking_${composeEmailModal.request.id}`]
+                  ? "Sending..."
+                  : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BulkStatusDialog
         open={bulkDialog.open}
         title={bulkDialog.title}
