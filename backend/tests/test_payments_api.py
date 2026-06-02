@@ -52,10 +52,26 @@ def _seed_processing_request(db):
     return request
 
 
-def test_create_payment_keeps_processing_request_status_unchanged(tmp_path, monkeypatch):
+def test_create_payment_advances_processing_request_when_auto_generation_succeeds(
+    tmp_path, monkeypatch
+):
     Session = _make_session_factory(tmp_path)
     db = Session()
     request = _seed_processing_request(db)
+
+    called = {"value": False}
+
+    async def fake_auto_generate_processing_request(db, request, user_name, trigger_auto_queue=True):
+        called["value"] = True
+        request.status = RequestStatus.FOR_RELEASING
+        db.commit()
+        return request
+
+    monkeypatch.setattr(
+        payments_api,
+        "auto_generate_processing_request",
+        fake_auto_generate_processing_request,
+    )
 
     payment = payments_api.create_payment(
         PaymentCreate(
@@ -72,6 +88,7 @@ def test_create_payment_keeps_processing_request_status_unchanged(tmp_path, monk
     db.refresh(request)
 
     assert payment.payment_status == "PAID"
-    assert request.status == RequestStatus.PROCESSING
+    assert called["value"] is True
+    assert request.status == RequestStatus.FOR_RELEASING
 
     db.close()

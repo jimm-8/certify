@@ -1,4 +1,5 @@
 from datetime import datetime
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,7 +19,10 @@ from app.schemas.payment import (
     PaymentInfo,
     PaymentInfoListResponse,
 )
-from app.services.request_service import trigger_for_releasing_flow
+from app.services.request_service import (
+    auto_generate_processing_request,
+    trigger_for_releasing_flow,
+)
 from app.repositories import CertificateRequestRepository, PaymentRepository
 import anyio
 from app.api.v1.auth import require_permissions
@@ -27,6 +31,13 @@ from app.services.release_hold_service import stop_processing_hold
 
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
+
+
+def _run_async_task(async_callable, *args):
+    try:
+        return anyio.from_thread.run(async_callable, *args)
+    except RuntimeError:
+        return asyncio.run(async_callable(*args))
 
 
 def _payment_purpose_label(request: CertificateRequest) -> str:
@@ -120,8 +131,15 @@ def create_payment(
                 ),
             )
 
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
-        anyio.from_thread.run(
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+        _run_async_task(
+            auto_generate_processing_request,
+            db,
+            request,
+            ctx["user"].username if ctx.get("user") else "System",
+        )
+    elif payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
+        _run_async_task(
             trigger_for_releasing_flow,
             db,
             request,
@@ -268,8 +286,15 @@ def create_payment_by_reference(
                 ),
             )
 
-    if payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
-        anyio.from_thread.run(
+    if payment_status.upper() == "PAID" and request.status == RequestStatus.PROCESSING:
+        _run_async_task(
+            auto_generate_processing_request,
+            db,
+            request,
+            "System",
+        )
+    elif payment_status.upper() == "PAID" and request.status == RequestStatus.FOR_RELEASING:
+        _run_async_task(
             trigger_for_releasing_flow,
             db,
             request,
