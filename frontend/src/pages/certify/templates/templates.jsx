@@ -1,0 +1,938 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import templateService from "../../../services/templateService";
+import { useNavigate } from "react-router-dom";
+import { BsChevronLeft } from "react-icons/bs";
+import {
+  BiUndo,
+  BiRedo,
+  BiBold,
+  BiItalic,
+  BiUnderline,
+  BiAlignLeft,
+  BiAlignMiddle,
+  BiAlignRight,
+  BiListUl,
+  BiListOl,
+} from "react-icons/bi";
+import { FaXmark } from "react-icons/fa6";
+import FeedbackDialog from "../../../components/common/feedbackDialog";
+
+const INJECTED_PAPER_STYLE = `
+  <style>
+    body { 
+      background-color: #e5e7eb !important; 
+      display: flex; 
+      align-items: flex-start;
+      justify-content: center; 
+      margin: 0; 
+      padding: 24px 0 40px;
+      box-sizing: border-box;
+    }
+    .paper-shell {
+      background-color: white !important;
+      width: 8.5in;
+      min-height: 11in;
+      padding: 0;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      box-sizing: border-box;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .paper-shell:focus {
+      outline: none;
+    }
+  </style>
+`;
+
+const LETTER_PAPER_STYLE = `
+  <style>
+    .paper-shell {
+      position: relative;
+      padding: 0.4in 0.5in;
+      min-height: 11in;
+    }
+    .paper-shell .paper-table {
+      width: 100% !important;
+      min-height: calc(11in - 0.8in) !important;
+      background: #fff !important;
+    }
+    .paper-shell .footer-tagline {
+      position: absolute !important;
+      left: 0.5in !important;
+      right: 0.5in !important;
+      bottom: 0.18in !important;
+      padding: 0 !important;
+      background: transparent !important;
+    }
+  </style>
+`;
+
+const DUMMY_FILL_STYLE = `
+<style>
+.blank,
+.fill-cert,
+.underline,
+.line {
+  border-bottom: none !important;
+  text-decoration: none !important;
+}
+
+hr {
+  border: none !important;
+}
+</style>
+`;
+
+const DUMMY_SIGNATURE_STYLE = `
+<style>
+img.signature-img,
+img.signature,
+img[alt*="sign" i] {
+  width: 160px;
+  height: 50px;
+  border-bottom: 2px solid #1e40af;
+}
+</style>
+`;
+
+const HIDDEN_TEMPLATE_NAMES = new Set([
+  "certification authentication and verification",
+]);
+
+const normalizeTemplateName = (name) =>
+  String(name || "")
+    .replace(/\.html$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .toLowerCase();
+
+const Templates = () => {
+  const [templates, setTemplates] = useState([]);
+  const [selected, setSelected] = useState("");
+  const [content, setContent] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+  const [viewMode, setViewMode] = useState("visual");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveTarget, setSaveTarget] = useState("template");
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [useDummyData, setUseDummyData] = useState(true);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+  const iframeRef = useRef(null);
+  const navigate = useNavigate();
+  const initializedRef = useRef(false);
+
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+  const assetsBase = `${apiBase}/templates/assets/`;
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
+
+  const normalizeAssetLinks = (html) => {
+    if (!html) return html;
+    return html.replace(
+      /(src|href)=["'](?!https?:|data:|\/api\/v1\/templates\/assets\/)([^"']+)["']/gi,
+      (_, attr, url) => {
+        if (url.startsWith("/"))
+          return `${attr}="${assetsBase}${url.slice(1)}"`;
+        return `${attr}="${assetsBase}${url}"`;
+      },
+    );
+  };
+
+  const applyDummyTemplateData = (html) => {
+    if (!html) return html;
+
+    const placeholders = {
+      student_name: "JUAN DELA CRUZ",
+      student_honorific: "Mr.",
+      student_surname: "DELA CRUZ",
+      program: "BS Computer Engineering",
+      program_name: "BS Computer Engineering",
+      college_name: "College of Engineering",
+      campus_name: "Main",
+      campus_address: "Sample Address, Batangas City",
+      campus_telNo: "(043) 000-0000",
+      campus_email: "registrar@batstate-u.edu.ph",
+      date_issued: "January 1, 2026",
+      date_issued_day: "1",
+      date_issued_month: "January",
+      date_issued_year: "2026",
+      request_purpose: "employment",
+      academic_year: "2025-2026",
+      first_enrollment_semester: "1st",
+      first_enrollment_academic_year: "2022-2023",
+      enrollment_to_semester: "2nd",
+      enrollment_to_academic_year: "2024-2025",
+      course_name: "Sample Curriculum",
+      curriculum_acad_year: "2022-2023",
+      campus_certCode: "BSU-MAIN",
+      control_num: "OR-2026-00001",
+      name_official: "MARIA SANTOS",
+      official_title: "Head, Registration Services",
+      or_number: "2026-001234",
+      date_of_payment: "2026-01-01",
+      current_sem: "2nd",
+      enrollment_from_semester: "1st",
+      enrollment_from_academic_year: "2022-2023",
+    };
+
+    const sampleCollections = {
+      grades_detail: [
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          units: "3",
+          grade: "1.50",
+        },
+        {
+          course_code: "ENGG 102",
+          course_title: "Engineering Drawing",
+          units: "2",
+          grade: "1.75",
+        },
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          units: "3",
+          grade: "1.25",
+        },
+      ],
+      course_descriptions: [
+        {
+          course_code: "COSC 103",
+          course_title: "Programming Fundamentals",
+          course_credits: "3",
+          course_description:
+            "Introduction to problem solving, algorithm design, and basic programming concepts.",
+        },
+        {
+          course_code: "MATH 101",
+          course_title: "Calculus 1",
+          course_credits: "3",
+          course_description:
+            "Study of limits, derivatives, and applications of differential calculus.",
+        },
+      ],
+    };
+
+    const replaceLoopBlock = (source) =>
+      source.replace(
+        /{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%}([\s\S]*?){%\s*endfor\s*%}/g,
+        (_, itemName, collectionName, block) => {
+          const items = sampleCollections[collectionName];
+          if (!Array.isArray(items) || items.length === 0) return "";
+
+          return items
+            .map((item) =>
+              block.replace(
+                /{{\s*([^}]+)\s*}}/g,
+                (match, expr) => {
+                  const normalized = String(expr || "").trim();
+
+                  if (
+                    normalized.startsWith(`${itemName}.`) ||
+                    normalized.includes(` ${itemName}.`) ||
+                    normalized.includes(`(${itemName}.`)
+                  ) {
+                    const key = normalized
+                      .split("|")[0]
+                      .trim()
+                      .replace(new RegExp(`^${itemName}\\.`), "")
+                      .split(".")
+                      .pop()
+                      .trim();
+
+                    return item[key] || "&nbsp;";
+                  }
+
+                  return match;
+                },
+              ),
+            )
+            .join("");
+        },
+      );
+
+    const replaceVariable = (_, expr) => {
+      const key = String(expr || "")
+        .trim()
+        .split("|")[0]
+        .split(".")
+        .pop()
+        .trim();
+
+      return placeholders[key] || "&nbsp;";
+    };
+
+    let result = replaceLoopBlock(html)
+      .replace(/{%[\s\S]*?%}/g, "")
+      .replace(/{{\s*([^}]+)\s*}}/g, replaceVariable);
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(result, "text/html");
+
+    // Safe class cleanup
+    doc
+      .querySelectorAll(".blank, .fill-cert, .underline, .line")
+      .forEach((el) => {
+        el.classList.remove("blank", "fill-cert", "underline", "line");
+      });
+
+    // Dummy signature
+    const dummySig = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='50'%3E%3Cpath d='M10 35 C30 10, 50 40, 70 20 C90 5, 110 38, 150 25' stroke='%231e3a8a' stroke-width='2.5' fill='none'/%3E%3C/svg%3E`;
+
+    doc.querySelectorAll("img").forEach((img) => {
+      const cls = (img.className || "").toLowerCase();
+      const alt = (img.alt || "").toLowerCase();
+      const src = img.getAttribute("src") || "";
+
+      if (cls.includes("sign") || alt.includes("sign") || !src || src === "#") {
+        img.src = dummySig;
+        img.style.width = "160px";
+        img.style.height = "50px";
+      }
+    });
+
+    const isFullDoc = /<html[\s>]/i.test(html);
+    return isFullDoc ? doc.documentElement.outerHTML : doc.body.innerHTML;
+  };
+
+  const applyPaperShell = (html, extraHead = "") => {
+    if (!html) return html;
+
+    const isFullDoc = /<html[\s>]/i.test(html);
+
+    if (isFullDoc) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const headMarkup = `${INJECTED_PAPER_STYLE}${extraHead}`;
+      const existingShell = doc.body.querySelector(":scope > .paper-shell");
+
+      if (!existingShell) {
+        const shell = doc.createElement("div");
+        shell.className = "paper-shell";
+
+        while (doc.body.firstChild) {
+          shell.appendChild(doc.body.firstChild);
+        }
+
+        doc.body.appendChild(shell);
+      }
+
+      if (doc.head) {
+        doc.head.insertAdjacentHTML("beforeend", headMarkup);
+      } else {
+        const head = doc.createElement("head");
+        head.innerHTML = headMarkup;
+        doc.documentElement.insertBefore(head, doc.body);
+      }
+
+      return doc.documentElement.outerHTML;
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>${INJECTED_PAPER_STYLE}${extraHead}</head>
+        <body>
+          <div class="paper-shell">${html}</div>
+        </body>
+      </html>
+    `;
+  };
+
+  const needsPaperStyle = useMemo(() => {
+    return [
+      "certificate_of_course_description.html",
+      "certificate_of_grades.html",
+    ].includes(selected);
+  }, [selected]);
+
+  const editorHtml = useMemo(() => {
+    if (!content) return "";
+
+    let html = normalizeAssetLinks(content);
+
+    if (useDummyData) {
+      html = applyDummyTemplateData(html);
+    }
+
+    const dummyStyle = useDummyData
+      ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
+      : "";
+
+    if (needsPaperStyle) {
+      return applyPaperShell(html, `${LETTER_PAPER_STYLE}${dummyStyle}`);
+    }
+
+    return html;
+  }, [content, needsPaperStyle, useDummyData]);
+
+  const previewHtml = useMemo(() => {
+    if (!content) return "";
+
+    let html = normalizeAssetLinks(content);
+
+    if (useDummyData) {
+      html = applyDummyTemplateData(html);
+    }
+
+    const dummyStyle = useDummyData
+      ? DUMMY_FILL_STYLE + DUMMY_SIGNATURE_STYLE
+      : "";
+
+    const baseTag = `<base href="${assetsBase}">`;
+    const previewHead = `${baseTag}${INJECTED_PAPER_STYLE}${dummyStyle}`;
+
+    if (needsPaperStyle) {
+      return applyPaperShell(
+        html,
+        `${baseTag}${LETTER_PAPER_STYLE}${dummyStyle}`,
+      );
+    }
+
+    const isFullDoc = html.includes("<html");
+
+    if (isFullDoc) {
+      return html.replace("<head>", `<head>${previewHead}`);
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>${previewHead}</head>
+        <body>
+          <div class="paper-shell">${html}</div>
+        </body>
+      </html>
+    `;
+  }, [content, useDummyData, assetsBase, needsPaperStyle]);
+
+  // const editorHtml = useMemo(() => {
+  //   if (!content) return "";
+  //   // We apply the same wrapper logic here for the visual editor
+  //   const wrapped = `<!doctype html><html><head>${PAPER_STYLE}</head><body><div class="paper-container">${content}</div></body></html>`;
+  //   return normalizeAssetLinks(wrapped);
+  // }, [content]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await templateService.listTemplates();
+        const list = (data?.templates || []).filter(
+          (name) => !HIDDEN_TEMPLATE_NAMES.has(normalizeTemplateName(name)),
+        );
+        setTemplates(list);
+        if (list.length) {
+          setSelected(list[0]);
+        }
+      } catch (err) {
+        showFeedback(
+          "Load Failed",
+          "Failed to load templates.",
+          "error",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    const loadTemplate = async () => {
+      try {
+        setLoading(true);
+        const data = await templateService.getTemplate(selected);
+        const html = data.content || "";
+        setContent(html);
+        setOriginalContent(html);
+      } catch (err) {
+        showFeedback(
+          "Template Load Failed",
+          "Failed to load template content.",
+          "error",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTemplate();
+  }, [selected]);
+
+  const handleResetToDefault = async () => {
+    if (!selected) return;
+
+    // 2. Re-load from the default template file (source of truth)
+    let fileContent = "";
+    try {
+      setLoading(true);
+      setSaving(true);
+      const data = await templateService.getDefaultTemplate(selected);
+      fileContent = data.content || "";
+      await templateService.updateTemplate(selected, fileContent);
+      setContent(fileContent);
+      setOriginalContent(fileContent);
+      showFeedback(
+        "Template Reset",
+        "The template was restored to its default content.",
+        "success",
+      );
+    } catch (err) {
+      showFeedback(
+        "Reset Failed",
+        "Failed to reload default template. Ensure backend has templates_defaults.",
+        "error",
+      );
+      return;
+    } finally {
+      setSaving(false);
+      setLoading(false);
+    }
+
+    // 3. Force the Iframe to re-render with the 'Paper' shell if needed
+    if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+      const doc = iframeRef.current.contentDocument;
+
+      // Construct the reset HTML with the Paper Shell logic
+      let resetHtml = normalizeAssetLinks(fileContent);
+      if (useDummyData) {
+        resetHtml = applyDummyTemplateData(resetHtml);
+      }
+
+      if (needsPaperStyle) {
+        resetHtml = applyPaperShell(resetHtml, LETTER_PAPER_STYLE);
+      }
+
+      doc.open();
+      doc.write(resetHtml);
+      doc.close();
+
+      // Re-enable editing
+      setTimeout(() => {
+        if (iframeRef.current?.contentDocument) {
+          iframeRef.current.contentDocument.designMode = "on";
+        }
+      }, 50);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      let nextContent = content;
+
+      if (viewMode === "visual" && iframeRef.current?.contentDocument) {
+        if (useDummyData) {
+          showFeedback(
+            "Save Blocked",
+            "Disable sample data before saving from the Visual editor.",
+            "warning",
+          );
+          return;
+        }
+        const doc = iframeRef.current.contentDocument;
+
+        if (needsPaperStyle) {
+          // Only grab what is INSIDE the paper shell
+          const shell = doc.querySelector(".paper-shell");
+          nextContent = shell ? shell.innerHTML : doc.body.innerHTML;
+        } else {
+          nextContent = doc.documentElement.outerHTML;
+          const baseTag = `<base href="${assetsBase}">`;
+          nextContent = nextContent.replace(baseTag, "");
+        }
+
+        nextContent = nextContent.replaceAll(assetsBase, "");
+      }
+
+      await templateService.updateTemplate(selected, nextContent, {
+        target: saveTarget === "default" ? "defaults" : undefined,
+      });
+      if (viewMode !== "visual") setContent(nextContent);
+      showFeedback(
+        "Save Successful",
+        saveTarget === "default"
+          ? "Default template saved."
+          : "Template saved.",
+        "success",
+      );
+    } catch (err) {
+      showFeedback("Save Failed", "Failed to save template.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const exec = (cmd, value = null) => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    doc.execCommand(cmd, false, value);
+  };
+
+  const handleIframeLoad = () => {
+    setTimeout(() => {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) doc.designMode = useDummyData ? "off" : "on";
+    }, 50);
+  };
+
+  useEffect(() => {
+    if (viewMode !== "visual") return;
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    doc.designMode = useDummyData ? "off" : "on";
+  }, [useDummyData, viewMode, selected]);
+
+  const handleOpenPreview = () => {
+    if (
+      viewMode === "visual" &&
+      !useDummyData &&
+      iframeRef.current?.contentDocument
+    ) {
+      const doc = iframeRef.current.contentDocument;
+      let live = doc.documentElement.outerHTML;
+      live = live.replace(`<base href="${assetsBase}">`, "");
+      live = live.replaceAll(assetsBase, "");
+      setContent(live);
+    }
+    setPreviewOpen(true);
+  };
+
+  const toolbarBtn =
+    "flex items-center gap-1 px-2 py-1 text-lg border border-gray-200 rounded bg-white hover:bg-gray-100";
+
+  const formatName = (name) =>
+    name
+      .replace(/\.html$/, "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return (
+    <div className="py-3">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-2">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <button
+              onClick={() => navigate("/dashboard")}
+              title="Back to Dashboard"
+              className="text-lg font-bold text-gray-700 flex items-center gap-1 hover:text-[#B22222] transition-colors  rounded"
+            >
+              <BsChevronLeft style={{ strokeWidth: "0.5" }} />
+              <span>Template Editor</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-gray-200 rounded-md overflow-hidden text-xs">
+              <button
+                onClick={() => setViewMode("visual")}
+                className={`px-3 py-1.5 ${
+                  viewMode === "visual"
+                    ? "bg-gray-900 text-white"
+                    : "bg-white text-gray-600"
+                }`}
+              >
+                Visual
+              </button>
+              <button
+                onClick={() => setViewMode("html")}
+                className={`px-3 py-1.5 ${
+                  viewMode === "html"
+                    ? "bg-gray-900 text-white"
+                    : "bg-white text-gray-600"
+                }`}
+              >
+                HTML
+              </button>
+            </div>
+            <label className="flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md gap-2 ">
+              <input
+                type="checkbox"
+                className="h-3 w-3"
+                checked={useDummyData}
+                onChange={(e) => setUseDummyData(e.target.checked)}
+              />
+              View with Sample Data
+            </label>
+            <button
+              onClick={() => setConfirmResetOpen(true)}
+              disabled={!originalContent || saving}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Reset to Default
+            </button>
+            <button
+              onClick={handleOpenPreview}
+              disabled={!content}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Preview
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setSaveMenuOpen((open) => !open)}
+                disabled={!selected || saving}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              {saveMenuOpen && !saving && (
+                <div className="absolute right-0 mt-1 w-44 rounded-md border border-gray-200 bg-white shadow-lg z-10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveTarget("template");
+                      setSaveMenuOpen(false);
+                      handleSave();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    Save Template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveTarget("default");
+                      setSaveMenuOpen(false);
+                      handleSave();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    Save as New Default
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          {/* Editor */}
+          <div className="space-y-4">
+            <div>
+              <label className="block -mt-3 text-xs font-medium text-gray-600 mb-1">
+                Template File
+              </label>
+              <select
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                {templates.map((name) => (
+                  <option key={name} value={name}>
+                    {formatName(name)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {viewMode === "visual" ? (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Template Editor
+                </label>
+                <div className="flex flex-wrap gap-1 border border-gray-200 rounded-md p-2 bg-gray-50">
+                  <button
+                    onClick={() => exec("bold")}
+                    className={toolbarBtn}
+                    title="Bold"
+                  >
+                    <BiBold />
+                  </button>
+                  <button
+                    onClick={() => exec("italic")}
+                    className={toolbarBtn}
+                    title="Italic"
+                  >
+                    <BiItalic />
+                  </button>
+                  <button
+                    onClick={() => exec("underline")}
+                    className={toolbarBtn}
+                    title="Underline"
+                  >
+                    <BiUnderline />
+                  </button>
+                  <button
+                    onClick={() => exec("justifyLeft")}
+                    className={toolbarBtn}
+                    title="Align Left"
+                  >
+                    <BiAlignLeft />
+                  </button>
+                  <button
+                    onClick={() => exec("justifyCenter")}
+                    className={toolbarBtn}
+                    title="Align Center"
+                  >
+                    <BiAlignMiddle />
+                  </button>
+                  <button
+                    onClick={() => exec("justifyRight")}
+                    className={toolbarBtn}
+                    title="Align Right"
+                  >
+                    <BiAlignRight />
+                  </button>
+                  <button
+                    onClick={() => exec("insertUnorderedList")}
+                    className={toolbarBtn}
+                    title="Bullet List"
+                  >
+                    <BiListUl />
+                  </button>
+                  <button
+                    onClick={() => exec("insertOrderedList")}
+                    className={toolbarBtn}
+                    title="Numbered List"
+                  >
+                    <BiListOl />
+                  </button>
+                  <button
+                    onClick={() => exec("undo")}
+                    className={toolbarBtn}
+                    title="Undo"
+                  >
+                    <BiUndo />
+                  </button>
+                  <button
+                    onClick={() => exec("redo")}
+                    className={toolbarBtn}
+                    title="Redo"
+                  >
+                    <BiRedo />
+                  </button>
+                  <select
+                    onChange={(e) => exec("fontSize", e.target.value)}
+                    className="px-2 py-1 text-xs border border-gray-200 rounded bg-white"
+                    defaultValue="3"
+                  >
+                    <option value="2">Small</option>
+                    <option value="3">Normal</option>
+                    <option value="4">Large</option>
+                    <option value="5">XL</option>
+                  </select>
+                </div>
+                <iframe
+                  key={selected}
+                  ref={iframeRef}
+                  title="template-editor"
+                  srcDoc={editorHtml}
+                  onLoad={handleIframeLoad}
+                  className="w-full h-[720px] border border-gray-300 rounded-md mt-2 bg-white"
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-[11px] text-gray-400">
+                    Editing the real template file from the backend.
+                  </p>
+
+                  {useDummyData && (
+                    <p className="text-[11px] text-amber-600">
+                      Dummy data is on. Visual editing is disabled while
+                      previewing placeholders.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Template HTML
+                </label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={18}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs font-mono leading-5"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Editing the real template file from the backend.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {previewOpen && (
+        <div
+          onClick={() => setPreviewOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100">
+              <div className="text-sm font-semibold text-gray-800">
+                Template Preview
+              </div>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="text-lg rounded-md  border-gray-200 hover:text-[#B22222]"
+              >
+                <FaXmark />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-50 p-2 overflow-auto">
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                  Loading template...
+                </div>
+              ) : (
+                <iframe
+                  title="template-preview"
+                  srcDoc={previewHtml}
+                  className="w-full h-full border-0 bg-white rounded-md"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      <FeedbackDialog
+        open={confirmResetOpen}
+        title="Reset To Default"
+        message="This will revert all unsaved changes to the original template file."
+        tone="warning"
+        confirmLabel="Reset Template"
+        cancelLabel="Cancel"
+        loading={saving}
+        onConfirm={async () => {
+          setConfirmResetOpen(false);
+          await handleResetToDefault();
+        }}
+        onClose={() => setConfirmResetOpen(false)}
+      />
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
+    </div>
+  );
+};
+
+export default Templates;

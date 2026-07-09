@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.models.student import Program
+from app.models.program import Program
+from app.repositories import ProgramRepository
 from app.schemas.student import ProgramResponse
 
 # Create router
@@ -20,8 +21,7 @@ def get_programs(
     Returns a list of all programs for the datalist in the form.
     """
     
-    programs = db.query(Program).filter(
-        Program.is_active == 1
-    ).order_by(Program.name).all()
+    program_repo = ProgramRepository(db)
+    programs = program_repo.active().order_by(Program.name).all()
     
     return programs

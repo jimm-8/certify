@@ -1,0 +1,578 @@
+[
+  {
+    "sr_code": "25-05148",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.12,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-07058",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.46,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "21-00472",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 1.87,
+    "total_units_earned": 200,
+    "cumulative_units_earned": 200,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "24-08452",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.65,
+    "total_units_earned": 57,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-08011",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.88,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 191,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-07031",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.07,
+    "total_units_earned": 96,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-07051",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.19,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-01234",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 1.45,
+    "total_units_earned": 200,
+    "cumulative_units_earned": 200,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "20-02871",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.05,
+    "total_units_earned": 188,
+    "cumulative_units_earned": 188,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "20-03456",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.94,
+    "total_units_earned": 193,
+    "cumulative_units_earned": 193,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-01192",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 2.82,
+    "total_units_earned": 175,
+    "cumulative_units_earned": 175,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-02385",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 2.78,
+    "total_units_earned": 181,
+    "cumulative_units_earned": 181,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-03741",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 1.39,
+    "total_units_earned": 191,
+    "cumulative_units_earned": 191,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-04582",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.97,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-05318",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.26,
+    "total_units_earned": 179,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-06094",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.88,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 188,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-01047",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.25,
+    "total_units_earned": 128,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-02583",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.88,
+    "total_units_earned": 126,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-03912",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.87,
+    "total_units_earned": 74,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-04770",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.02,
+    "total_units_earned": 132,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-05601",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.75,
+    "total_units_earned": 130,
+    "cumulative_units_earned": 191,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-01388",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.23,
+    "total_units_earned": 83,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-02914",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.88,
+    "total_units_earned": 79,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-03725",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.0,
+    "total_units_earned": 79,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-04866",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.35,
+    "total_units_earned": 80,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-05934",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.74,
+    "total_units_earned": 78,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-06741",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.84,
+    "total_units_earned": 81,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-01093",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.61,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-02274",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.92,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 191,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-03385",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.17,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-04496",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.81,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-06182",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.49,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-07359",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.13,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-04517",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 1.92,
+    "total_units_earned": 193,
+    "cumulative_units_earned": 193,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "20-05882",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.78,
+    "total_units_earned": 191,
+    "cumulative_units_earned": 191,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-04813",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 1.6,
+    "total_units_earned": 200,
+    "cumulative_units_earned": 200,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-05970",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 2.12,
+    "total_units_earned": 194,
+    "cumulative_units_earned": 194,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-08214",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.8,
+    "total_units_earned": 167,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "22-09037",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.62,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-06422",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.12,
+    "total_units_earned": 126,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-07849",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.96,
+    "total_units_earned": 180,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-07388",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.52,
+    "total_units_earned": 83,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-09112",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.05,
+    "total_units_earned": 85,
+    "cumulative_units_earned": 191,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-06341",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.39,
+    "total_units_earned": 175,
+    "cumulative_units_earned": 175,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-06284",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 1.33,
+    "total_units_earned": 181,
+    "cumulative_units_earned": 181,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-10185",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.89,
+    "total_units_earned": 174,
+    "cumulative_units_earned": 193,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-08603",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.21,
+    "total_units_earned": 126,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-10047",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.41,
+    "total_units_earned": 78,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-09204",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.83,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-07198",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 1.48,
+    "total_units_earned": 200,
+    "cumulative_units_earned": 200,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-07326",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 2.11,
+    "total_units_earned": 191,
+    "cumulative_units_earned": 191,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-11024",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.92,
+    "total_units_earned": 170,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-09741",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.12,
+    "total_units_earned": 136,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-11385",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.59,
+    "total_units_earned": 79,
+    "cumulative_units_earned": 183,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-10316",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.89,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 175,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-08452",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.84,
+    "total_units_earned": 181,
+    "cumulative_units_earned": 181,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-08519",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 2.53,
+    "total_units_earned": 193,
+    "cumulative_units_earned": 193,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-12093",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.97,
+    "total_units_earned": 170,
+    "cumulative_units_earned": 191,
+    "status": "regular"
+  },
+  {
+    "sr_code": "23-10854",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.35,
+    "total_units_earned": 125,
+    "cumulative_units_earned": 194,
+    "status": "regular"
+  },
+  {
+    "sr_code": "24-12476",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.41,
+    "total_units_earned": 81,
+    "cumulative_units_earned": 181,
+    "status": "regular"
+  },
+  {
+    "sr_code": "25-11437",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 1.54,
+    "total_units_earned": 25,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  },
+  {
+    "sr_code": "20-09503",
+    "academic_year": "2023-2024",
+    "semester": "2nd",
+    "gwa": 2.59,
+    "total_units_earned": 175,
+    "cumulative_units_earned": 175,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "21-09681",
+    "academic_year": "2024-2025",
+    "semester": "2nd",
+    "gwa": 1.79,
+    "total_units_earned": 188,
+    "cumulative_units_earned": 188,
+    "status": "graduated"
+  },
+  {
+    "sr_code": "22-13107",
+    "academic_year": "2025-2026",
+    "semester": "2nd",
+    "gwa": 2.19,
+    "total_units_earned": 179,
+    "cumulative_units_earned": 200,
+    "status": "regular"
+  }
+]

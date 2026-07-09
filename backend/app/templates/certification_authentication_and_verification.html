@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certication, Authentication and Verification</title>
+  <style>
+    @page {
+      size: 8.5in 13in;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      background: #e5e5e5;
+    }
+
+    .paper {
+      width: 8.5in;
+      min-height: 13in;
+      background: #fff;
+      padding: 0.5in;
+      box-sizing: border-box;
+      font-family: "Times New Roman", serif;
+    }
+
+    /* ================= HEADER ================= */
+
+    .header {
+      position: relative;
+      text-align: center;
+    }
+
+    .logo {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 132.48px;
+      height: 124.8px;
+    }
+
+    /* .header-center {
+        text-align: center;
+        line-height: 1.15;
+      } */
+
+    .republic {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .university {
+      font-size: 21.33px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #d10000;
+    }
+
+    .details {
+      font-size: 16px;
+      /* line-height: 1.35; */
+    }
+
+    .details .campus {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .details .address {
+      font-weight: bold;
+      font-size: 13.33px;
+    }
+
+    .telNo {
+      font-size: 13.33px;
+    }
+
+    .email {
+      font-size: 13.33px;
+    }
+
+    .divider {
+      border-top: 1pt solid #000;
+      margin: 2px 0 14px 0;
+    }
+
+    /* ================= TITLES ================= */
+
+    .registrar {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .cert-title {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      margin-bottom: 15px;
+      margin-top: 20px;
+    }
+
+    .cav-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      margin-left: 0.4in;
+    }
+
+    .cav-no {
+      flex: 1;
+      border-bottom: 1pt solid #000;
+      min-height: 1.2em;
+      width: fit-content;
+    }
+
+    .series-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      margin-left: 0.4in;
+    }
+
+    .series-no {
+      flex: 1;
+      border-bottom: 1pt solid #000;
+      min-height: 1.2em;
+      width: fit-content;
+    }
+
+    .date-block {
+      margin-right: 0.4in;
+    }
+
+    .date {
+      display: block;
+      /* important */
+      width: fit-content;
+      /* keeps underline tight */
+      border-bottom: 1pt solid #000;
+      margin: 10px 0 10px auto;
+      /* pushes to right */
+      text-align: right;
+    }
+
+    /* ================= BODY ================= */
+
+    .text-body {
+      margin-left: 0.4in;
+      margin-right: 0.4in;
+    }
+
+    .content {
+      font-size: 12pt;
+      line-height: 1.2;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+
+    .paragraph {
+      text-indent: 0.5in;
+      margin-bottom: 2px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .name {
+      text-transform: uppercase;
+    }
+
+    .f {
+      display: inline;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .f.blank {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      height: 0.9em;
+      vertical-align: bottom;
+    }
+
+    .f-short {
+      width: 0.8in;
+    }
+
+    .f-medium {
+      width: 1.3in;
+    }
+
+    .f-long {
+      width: 2in;
+    }
+
+    /* ================= SIGNATURE ================= */
+
+    .signature {
+      margin-top: 70px;
+      width: 3.5in;
+      margin-left: 3.5in;
+      text-align: center;
+      font-size: 12pt;
+      margin-bottom: 40px;
+    }
+
+    .signature-line {
+      width: 100%;
+      border-top: 1px solid #000;
+      margin-bottom: 6px;
+    }
+
+    .footer-note {
+      margin-left: 0.4in;
+      margin-top: 10px;
+      font-size: 9pt;
+      font-style: italic;
+      text-align: left;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .ref {
+      font-size: 13.33px;
+      margin-left: 0.4in;
+      margin-top: 0;
+      margin-bottom: 0;
+      text-align: left;
+    }
+
+    /* Table */
+    .block {
+      margin-top: 15px;
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .block td {
+      padding: 2px 6px;
+      line-height: 1.2;
+      height: auto;
+    }
+
+    .label {
+      width: 200px;
+    }
+
+    .colon {
+      width: 10px;
+      text-align: center;
+    }
+
+    .footer-block {
+      margin-left: 0.3in;
+      font-size: 9pt;
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .footer-block td {
+      padding: 2px 6px;
+      line-height: 1;
+      height: auto;
+      text-align: left;
+    }
+
+    .footer-label {
+      width: 100px;
+      text-align: left;
+    }
+
+    .footer-colon {
+      width: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="paper">
+    <div class="header">
+      <div class="logo-cell">
+        <img src="bsu.png" class="logo" />
+      </div>
+      <div class="republic">Republic of the Philippines</div>
+      <div class="university">BATANGAS STATE UNIVERSITY</div>
+      <div class="subtitle">The National Engineering University</div>
+      <div class="details">
+        <div class="campus">
+          {{ campus_name }}{% if campus_name %} Campus{% endif %}
+        </div>
+        <div class="address">{{ campus_address }}</div>
+        <div class="telNo">{{ campus_telNo }}</div>
+        <div class="email">Email Address:
+          {{ campus_email }} | Website Address:
+          https://www.batstate-u.edu.ph
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="registrar">OFFICE OF THE REGISTRAR</div>
+      <div class="date-block">
+        <div class="date">{{ date_issued }}</div>
+      </div>
+      <div class="cav-block">
+        <span class="cav">CAV No.:</span>
+        <span class="cav-no">{{ cav_no }}</span>
+      </div>
+      <div class="series-block">
+        <span class="series">Series:</span>
+        <span class="series-no">{{ series_no }}</span>
+      </div>
+      <div class="cert-title">CERTIFICATION, AUTHENTICATION AND VERIFICATION</div>
+      <div class="text-body">
+        <div class="content">
+          <div>To whom it may concern:</div>
+          <br>
+          <div class="paragraph">
+            This is to certify that based on our record, metioned below:
+          </div>
+          <table class="block">
+            <tr>
+              <td class="label">Name of Student</td>
+              <td class="colon">:</td>
+              <td>{{ student_name }}</td>
+            </tr>
+            <tr>
+              <td class="label">Degree</td>
+              <td class="colon">:</td>
+              <td>{{ course_name }}</td>
+            </tr>
+            <tr>
+              <td class="label">Date of Graduation</td>
+              <td class="colon">:</td>
+              <td>{{ graduated_date }}</td>
+            </tr>
+            <tr>
+              <td class="label">Name of Institution</td>
+              <td class="colon">:</td>
+              <td>Batangas State University</td>
+            </tr>
+            <tr>
+              <td class="label">Address</td>
+              <td class="colon">:</td>
+              <td>{{ campus_address }}</td>
+            </tr>
+          </table>
+          <div class="paragraph">
+            This is to certify that the above institution is a duly authorized
+            public higher institution created by the virtue of RA 9045 hence it is exempted
+            from the issuance of Special Order by the Commission on Higher Education.
+          </div>
+          <br>
+          <div class="paragraph">
+            This certification must not be honored if the copies of the student's Transcript of Record and
+            Diploma presented are not duly authenticated/certified by the School Registrar.
+          </div>
+          <br>
+          <div class="paragraph">
+            Issued upon the request of <strong>Mr./Ms.</strong><span
+              class="f f-long{% if not requestor_name %} blank{% endif %} bold">{{ requestor_name }}</span> for whatever
+            legal purpose it may serve.
+          </div>
+        </div>
+      </div>
+      <div class="signature">
+        {% if signature_path %}
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto 6px;" />
+        {% endif %}
+        <div class="signature-line"></div>
+        <strong>{{ name_official }}</strong><br />
+        {{ official_title }}
+      </div>
+      <div class="footer-note">NOT VALID WITHOUT UNIVERSITY DRY SEAL<br />OR WITH ERASURE OR ALTERATION</div>
+      <table class="footer-block">
+        <tr>
+          <td class="footer-label">Processed by</td>
+          <td class="footer-colon">:</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="footer-label">Reviewed by</td>
+          <td class="footer-colon">:</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td class="footer-label">OR No.</td>
+          <td class="footer-colon">:</td>
+          <td>{{ or_number }}</td>
+        </tr>
+        <tr>
+          <td class="footer-label">Date Issued</td>
+          <td class="footer-colon">:</td>
+          <td>{{ date_issued }}</td>
+        </tr>
+        <tr>
+          <td class="footer-label">Amount</td>
+          <td class="footer-colon">:</td>
+          <td>{{ request_amount }}</td>
+        </tr>
+      </table>
+    </div>
+</body>
+
+</html>

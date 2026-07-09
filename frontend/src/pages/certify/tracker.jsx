@@ -2,13 +2,18 @@ import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
 import RequestModal from "../../components/common/requestModal";
-import BulkStatusModal from "../../components/common/bulkStatusModal";
+import FeedbackDialog from "../../components/common/feedbackDialog";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import { getTokenPayload } from "../../utils/auth";
+import paymentService from "../../services/paymentService";
 import {
   BsSearch,
   BsCalendar3,
   BsChevronDown,
   BsEye,
   BsArrowRepeat,
+  BsExclamationTriangleFill,
+  BsCheckCircleFill,
 } from "react-icons/bs";
 
 const filterOptions = [
@@ -32,7 +37,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -40,7 +45,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
     },
@@ -55,23 +60,80 @@ const customStyles = {
   },
 };
 
+const LoadingState = () => (
+  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+    Loading requests...
+  </div>
+);
+
+const BulkStatusDialog = ({
+  open,
+  title,
+  message,
+  tone,
+  current,
+  total,
+  done,
+  onClose,
+  children,
+  loading,
+  confirmLabel,
+  confirmDisabled,
+  cancelLabel,
+  onConfirm,
+}) => {
+  const percent =
+    total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
+
+  return (
+    <FeedbackDialog
+      open={open}
+      title={title}
+      message={message}
+      tone={tone}
+      loading={loading}
+      confirmLabel={confirmLabel}
+      confirmDisabled={confirmDisabled}
+      cancelLabel={cancelLabel}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    >
+      {children}
+      {total > 0 && (
+        <div className="mt-4 space-y-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                done ? "bg-green-500" : "bg-[#ee1133]"
+              }`}
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-gray-500">
+            <span>
+              {current} of {total} processed
+            </span>
+            <span className="font-semibold text-gray-700">{percent}%</span>
+          </div>
+        </div>
+      )}
+    </FeedbackDialog>
+  );
+};
+
 const statusColors = {
   APPROVED: "bg-blue-100 text-blue-700",
   PROCESSING: "bg-blue-100 text-blue-700",
   FOR_RELEASING: "bg-purple-100 text-purple-700",
-  REJECTED: "bg-red-100 text-red-600",
+  RELEASED: "bg-gray-100 text-gray-600",
 };
 
 const statusLabels = {
   APPROVED: "Approved",
   PROCESSING: "Processing",
   FOR_RELEASING: "For Releasing",
-  REJECTED: "Rejected",
-};
-
-const bulkStatusTarget = {
-  PROCESSING: "FOR_RELEASING",
-  FOR_RELEASING: "COMPLETED",
+  RELEASED: "Released",
 };
 
 const Tracker = () => {
@@ -86,23 +148,140 @@ const Tracker = () => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [statusLoadingId, setStatusLoadingId] = useState(null);
+  const [bulkDialog, setBulkDialog] = useState({
+    mode: "form",
+    title: "Bulk Generate Certificates",
+    message:
+      "Generate certificates for the requests currently assigned to your tracker.",
+    tone: "default",
+    current: 0,
+    total: 0,
+    done: false,
+  });
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [nowTick, setNowTick] = useState(Date.now());
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+  const [validationMap, setValidationMap] = useState({});
+  const [paymentMap, setPaymentMap] = useState({});
 
-  const fetchRequests = async () => {
+  const lastSnapshotRef = useRef("");
+  const lastAutoQueueAttemptRef = useRef(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const ownerUsername = getTokenPayload()?.sub || "";
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram],
+  );
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
+
+  const resetBulkDialog = () => {
+    setBulkDialog({
+      mode: "form",
+      title: "Tracker",
+      message: "Requests awaiting payment after certificate generation.",
+      tone: "default",
+      current: 0,
+      total: 0,
+      done: false,
+    });
+  };
+
+  const maybeRefreshAutoQueue = async () => {
+    const now = Date.now();
+    if (now - lastAutoQueueAttemptRef.current < 30000) return;
+    lastAutoQueueAttemptRef.current = now;
     try {
-      setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      setRequests(Array.isArray(data) ? data : data.items || []);
+      await requestService.autoQueueApprovedRequests();
+    } catch (error) {
+      console.error("Tracker auto-queue refresh failed:", error);
+    }
+  };
+
+  const fetchRequests = async (opts = { silent: false }) => {
+    try {
+      if (!opts.silent) setLoading(true);
+      await maybeRefreshAutoQueue();
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+        ownerUsername,
+      });
+      const items = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
+      const forReleasingItems = items.filter(
+        (r) => r.status === "FOR_RELEASING",
+      );
+      const refs = forReleasingItems
+        .map((r) => r.reference_number)
+        .filter(Boolean);
+      const paymentInfo =
+        refs.length > 0
+          ? await paymentService.getPaymentsByReferences(refs)
+          : { items: [] };
+      const nextPaymentMap = {};
+      (paymentInfo?.items || []).forEach((item) => {
+        nextPaymentMap[item.reference_number] = item;
+      });
+      const unpaidItems = forReleasingItems.filter(
+        (r) =>
+          String(
+            nextPaymentMap[r.reference_number]?.payment_status || "",
+          ).toUpperCase() !== "PAID",
+      );
+      const nextValidationMap = {};
+      const snapshot = JSON.stringify(
+        unpaidItems.map((r) => [
+          r.id,
+          r.status,
+          r.updated_at,
+          r.created_at,
+          nextPaymentMap[r.reference_number]?.paid_at || null,
+        ]),
+      );
+      if (snapshot !== lastSnapshotRef.current) {
+        lastSnapshotRef.current = snapshot;
+        setRequests(unpaidItems);
+        setValidationMap(nextValidationMap);
+        setPaymentMap(nextPaymentMap);
+      }
+      setLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchRequests();
+  }, [ownerUsername]);
+
+  useEffect(() => {
+    const id = setInterval(() => fetchRequests({ silent: true }), 5000);
+    return () => clearInterval(id);
+  }, [ownerUsername]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -143,83 +322,84 @@ const Tracker = () => {
       matchesDate &&
       matchesType &&
       matchesProgram &&
-      r.status !== "PENDING" &&
-      r.status !== "COMPLETED"
+      r.status === "FOR_RELEASING"
     );
   });
 
-  const affectedCount = filteredRequests.filter(
-    (r) => r.status === bulkStatus,
-  ).length;
+  const lastUpdatedLabel = lastUpdatedAt
+    ? `${Math.max(0, Math.floor((nowTick - lastUpdatedAt) / 1000))}s ago`
+    : "—";
 
   const handleView = (row) => setSelectedRequest(row);
 
-  const handleMarkProcessing = async (row) => {
-    try {
-      const newStatus =
-        row.status === "APPROVED" ? "PROCESSING" : "FOR_RELEASING";
-      await requestService.updateStatus(row.id, newStatus);
-      fetchRequests();
-    } catch (error) {
-      console.error("Failed to update status:", error);
-    }
-  };
-
-  const handleBulkStatusChange = async () => {
-    if (!bulkStatus) return;
-    setBulkLoading(true);
-    try {
-      await Promise.all(
-        filteredRequests
-          .filter((r) => r.status === bulkStatus)
-          .map((r) =>
-            requestService.updateStatus(r.id, bulkStatusTarget[bulkStatus]),
-          ),
-      );
-      setBulkModalOpen(false);
-      setBulkStatus("");
-      fetchRequests();
-    } catch (error) {
-      console.error("Bulk status change failed:", error);
-    } finally {
-      setBulkLoading(false);
-    }
-  };
+  const getValidationFlags = () => [];
 
   const columns = [
     {
-      name: "Reference No.",
+      name: "Validation",
+      selector: (row) => getValidationFlags(row).length,
+      sortable: true,
+      width: "180px",
+      cell: (row) => {
+        const flags = getValidationFlags(row);
+        return (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+            <BsExclamationTriangleFill size={12} />
+            <span>Awaiting Payment</span>
+          </div>
+        );
+      },
+    },
+    {
+      name: "Reference #",
       selector: (row) => row.reference_number,
       sortable: true,
+      width: "150px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
+      width: "250px",
     },
     {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
+      width: "200px",
     },
-    { name: "Program", selector: (row) => row.program, sortable: true },
-    { name: "Purpose", selector: (row) => row.purpose, sortable: true },
+    {
+      name: "Program",
+      selector: (row) => {
+        let program = row.program;
+
+        program = program
+          .replace(/Bachelor of Science/gi, "BS")
+          .replace(/Bachelor of Arts/gi, "BA")
+          .replace(/Bachelor of/gi, ""); // remove completely
+
+        // Clean formatting
+        program = program
+          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return program;
+      },
+      sortable: true,
+      width: "230px",
+    },
+    {
+      name: "Purpose",
+      selector: (row) => row.purpose,
+      sortable: true,
+      width: "220px",
+    },
     {
       name: "Date Requested",
       selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
-    },
-    {
-      name: "Status",
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[row.status] || "bg-gray-100 text-gray-600"}`}
-        >
-          {statusLabels[row.status] || row.status}
-        </span>
-      ),
+      width: "150px",
     },
     {
       name: "Action",
@@ -231,21 +411,8 @@ const Tracker = () => {
             title="View Details"
             className="flex items-center px-3 py-1.5 text-xs font-medium text-[#ee1133] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
           >
-            <BsEye size={13} />
+            <BsEye size={18} />
           </button>
-          {(row.status === "APPROVED" || row.status === "PROCESSING") && (
-            <button
-              onClick={() => handleMarkProcessing(row)}
-              title={
-                row.status === "APPROVED"
-                  ? "Mark as Processing"
-                  : "Mark as For Releasing"
-              }
-              className="flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors duration-150"
-            >
-              <BsArrowRepeat size={13} />
-            </button>
-          )}
         </div>
       ),
     },
@@ -257,13 +424,10 @@ const Tracker = () => {
       <div className="flex items-center justify-between gap-2 mb-2">
         {/* LEFT — Bulk */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setBulkModalOpen(true)}
-            disabled={filteredRequests.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#ee1133] rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            Change Status
-          </button>
+          <span className="text-[11px] text-gray-500">
+            Requests in this tab are ready for release and still awaiting
+            payment.
+          </span>
         </div>
 
         {/* RIGHT — Filters */}
@@ -348,39 +512,91 @@ const Tracker = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No requests found.
+        <div className="overflow-auto">
+          <DataTable
+            columns={columns}
+            data={filteredRequests.slice(
+              (currentPage - 1) * rowsPerPage,
+              currentPage * rowsPerPage,
+            )}
+            progressPending={loading}
+            progressComponent={<LoadingState />}
+            pagination={false}
+            customStyles={customStyles}
+            highlightOnHover
+            responsive
+            noDataComponent={
+              <div className="py-10 text-xs text-gray-400">
+                No requests found.
+              </div>
+            }
+          />
+        </div>
+
+        {/* Pagination */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
+      <span className="text-[11px] text-gray-400">
+        Last updated: {lastUpdatedLabel}
+      </span>
 
       <RequestModal
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
-        readOnly={true}
+        validationFlags={
+          selectedRequest ? getValidationFlags(selectedRequest) : []
+        }
       />
 
-      <BulkStatusModal
-        open={bulkModalOpen}
-        onClose={() => {
-          setBulkModalOpen(false);
-          setBulkStatus("");
-        }}
-        bulkStatus={bulkStatus}
-        setBulkStatus={setBulkStatus}
-        onApply={handleBulkStatusChange}
-        loading={bulkLoading}
-        affectedCount={affectedCount}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
       />
     </div>
   );

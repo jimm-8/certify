@@ -1,0 +1,68 @@
+[
+  {
+    "program_code": "BSEE",
+    "name": "BSEE Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSME",
+    "name": "BSME Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSCpE",
+    "name": "BSCpE Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSIE",
+    "name": "BSIE Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSAeE",
+    "name": "BSAeE Curriculum",
+    "academic_year": "2021-2022",
+    "is_active": true
+  },
+  {
+    "program_code": "BSChE",
+    "name": "BSChE Curriculum",
+    "academic_year": "2018-2019",
+    "is_active": true
+  },
+  {
+    "program_code": "BSEE",
+    "name": "BSEE Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  },
+  {
+    "program_code": "BSME",
+    "name": "BSME Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  },
+  {
+    "program_code": "BSIE",
+    "name": "BSIE Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  },
+  {
+    "program_code": "BSCE",
+    "name": "BSCE Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  },
+  {
+    "program_code": "BSChE",
+    "name": "BSChE Curriculum",
+    "academic_year": "2023-2024",
+    "is_active": true
+  }
+]

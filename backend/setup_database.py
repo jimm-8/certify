@@ -92,6 +92,8 @@ def setup_schema():
             import app.models.student
             import app.models.audit_log
             import app.models.signature
+            import app.models.certificate_dependency_data
+            import app.models.registrar_simulation
             Base.metadata.create_all(bind=engine)
             print("✅ Tables created via SQLAlchemy!")
         except Exception as e:

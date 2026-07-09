@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaRegFile,
   FaSearch,
@@ -10,7 +10,7 @@ import {
   FaTimesCircle,
   FaSpinner,
 } from "react-icons/fa";
-import CARDBG from "../../assets/card_bg.png";
+import CARDBG from "../../assets/card_bg.webp";
 import requestService from "../../services/requestService";
 
 const OdrRequestTracker = () => {
@@ -20,10 +20,45 @@ const OdrRequestTracker = () => {
   const [error, setError] = useState(null);
   const [requestData, setRequestData] = useState(null);
 
+  const trackRequest = async ({ silent = false } = {}) => {
+    try {
+      if (!silent) {
+        setError(null);
+        setRequestData(null);
+        setLoading(true);
+      }
+      const data = await requestService.trackRequest(referenceNumber, pin);
+      setRequestData(data);
+    } catch (err) {
+      if (silent) return;
+      if (err.response) {
+        const status = err.response.status;
+        const detail = err.response.data?.detail;
+
+        if (status === 404) {
+          setError(
+            "Request not found. Please check your reference number and PIN.",
+          );
+        } else if (status === 400) {
+          setError(detail || "Invalid request. Please try again.");
+        } else {
+          setError("An error occurred. Please try again later.");
+        }
+      } else if (err.request) {
+        setError(
+          "Cannot connect to server. Please check your internet connection.",
+        );
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   const handleTrack = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!referenceNumber.trim()) {
       setError("Please enter a reference number");
       return;
@@ -39,52 +74,34 @@ const OdrRequestTracker = () => {
       return;
     }
 
-    // Clear previous error and data
-    setError(null);
-    setRequestData(null);
-    setLoading(true);
-
-    try {
-      // Call API
-      const data = await requestService.trackRequest(referenceNumber, pin);
-      setRequestData(data);
-    } catch (err) {
-      // Handle errors
-      if (err.response) {
-        // Server responded with error
-        const status = err.response.status;
-        const detail = err.response.data?.detail;
-
-        if (status === 404) {
-          setError(
-            "Request not found. Please check your reference number and PIN."
-          );
-        } else if (status === 400) {
-          setError(detail || "Invalid request. Please try again.");
-        } else {
-          setError("An error occurred. Please try again later.");
-        }
-      } else if (err.request) {
-        // Network error
-        setError(
-          "Cannot connect to server. Please check your internet connection."
-        );
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    await trackRequest();
   };
+
+  useEffect(() => {
+    if (
+      !requestData ||
+      !referenceNumber.trim() ||
+      !pin.trim() ||
+      !["APPROVED", "PROCESSING"].includes(requestData.status)
+    ) {
+      return undefined;
+    }
+
+    const id = setInterval(() => {
+      trackRequest({ silent: true });
+    }, 5000);
+
+    return () => clearInterval(id);
+  }, [requestData, referenceNumber, pin]);
 
   const getStatusColor = (status) => {
     const colors = {
+      SUBMITTED: "text-yellow-700 bg-yellow-100",
       PENDING: "text-yellow-600 bg-yellow-100",
       APPROVED: "text-blue-600 bg-blue-100",
       PROCESSING: "text-purple-600 bg-purple-100",
-      FOR_REVIEW: "text-orange-600 bg-orange-100",
       FOR_RELEASING: "text-indigo-600 bg-indigo-100",
-      COMPLETED: "text-green-600 bg-green-100",
+      RELEASED: "text-green-600 bg-green-100",
       REJECTED: "text-red-600 bg-red-100",
     };
     return colors[status] || "text-gray-600 bg-gray-100";
@@ -101,29 +118,34 @@ const OdrRequestTracker = () => {
     });
   };
 
+  const getQueueSummary = () => {
+    if (!requestData?.queue_position || !requestData?.queue_total) return null;
+    return `Overall queue position: #${requestData.queue_position} of ${requestData.queue_total}.`;
+  };
+
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 p-1">
+      <div className="grid grid-cols-1 gap-3 p-1 md:grid-cols-2 xl:grid-cols-3">
         {/* office hours */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3 h-[260px] bg-contain bg-bottom bg-no-repeat"
+          className="min-h-[220px] rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3 md:min-h-[240px] xl:h-[260px]"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaRegClock className="text-gray-500" />
             Office Hours
           </p>
           <hr />
-          <p className="text-lg mt-3 ml-5">Monday to Friday</p>
-          <p className="text-lg ml-5">8:00 AM to 5:00 PM</p>
+          <p className="ml-5 mt-3 text-base sm:text-lg">Monday to Friday</p>
+          <p className="ml-5 text-base sm:text-lg">8:00 AM to 5:00 PM</p>
         </div>
 
         {/* contact us */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3  bg-contain bg-bottom bg-no-repeat"
+          className="rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaRegEnvelope className="text-gray-500" />
             Contact Us
           </p>
@@ -177,9 +199,9 @@ const OdrRequestTracker = () => {
         {/* advisory */}
         <div
           style={{ backgroundImage: `url(${CARDBG})` }}
-          className="border border-gray-400 rounded-md p-3  bg-contain bg-bottom bg-no-repeat"
+          className="rounded-md border border-gray-400 bg-contain bg-bottom bg-no-repeat p-3"
         >
-          <p className="flex items-center gap-2 text-xl p-2 text-gray-500 font-medium">
+          <p className="flex items-center gap-2 p-2 text-lg font-medium text-gray-500 sm:text-xl">
             <FaBullhorn className="text-gray-500" />
             Advisory
           </p>
@@ -203,11 +225,11 @@ const OdrRequestTracker = () => {
         </p>
       </div>
 
-      <div className="flex  w-full max-w-full translate-y-4 p-1">
-        <div className="flex items-center flex-1 border border-gray-900 rounded-md mb-10 bg-white">
+      <div className="w-full max-w-full translate-y-4 p-1">
+        <div className="mb-10 flex flex-col overflow-hidden rounded-md border border-gray-900 bg-white lg:flex-row lg:items-stretch">
           {/* Reference Number Section */}
-          <div className="flex border-r border-gray-300">
-            <label className="px-3 py-2 font-medium text-sm text-gray-600 bg-gray-100 border-r border-gray-300 whitespace-nowrap">
+          <div className="flex flex-col border-b border-gray-300 sm:flex-row lg:flex-1 lg:border-b-0 lg:border-r">
+            <label className="whitespace-nowrap border-b border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:border-b-0 sm:border-r">
               Reference Number
             </label>
             <input
@@ -216,13 +238,13 @@ const OdrRequestTracker = () => {
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
               disabled={loading}
-              className="px-3 py-2 text-sm outline-none w-[21.5rem]"
+              className="w-full min-w-0 px-3 py-2 text-sm outline-none"
             />
           </div>
 
           {/* PIN Section */}
-          <div className="flex items-center border-r border-gray-300">
-            <label className="px-3 py-2 font-medium text-sm text-gray-600 bg-gray-100 border-r border-gray-300">
+          <div className="flex flex-col border-b border-gray-300 sm:flex-row lg:flex-1 lg:border-b-0 lg:border-r">
+            <label className="border-b border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:border-b-0 sm:border-r">
               PIN
             </label>
             <input
@@ -233,7 +255,7 @@ const OdrRequestTracker = () => {
               disabled={loading}
               maxLength={4}
               inputMode="numeric"
-              className="px-3 py-2 text-sm outline-none w-[21.3rem]"
+              className="w-full min-w-0 px-3 py-2 text-sm outline-none"
             />
           </div>
 
@@ -241,7 +263,7 @@ const OdrRequestTracker = () => {
           <button
             onClick={handleTrack} // Add this!
             disabled={loading}
-            className="flex items-center font-medium gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="flex items-center justify-center gap-2 bg-gray-100 px-3 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 lg:px-4"
           >
             {loading ? (
               <>
@@ -269,76 +291,213 @@ const OdrRequestTracker = () => {
 
       {/* Success - Display Request Data */}
       {requestData && (
-        <div className="max-w-full border-green-400 border-2 rounded-md bg-green-50 p-4 m-1 mb-4">
+        <div className="max-w-full border-green-400 border-2 rounded-md bg-green-50 p-3 m-1 mb-4">
           <div className="flex items-center gap-2 text-green-700 mb-3">
             <FaCheckCircle className="text-2xl" />
             <h3 className="text-xl font-semibold">Request Found!</h3>
           </div>
 
-          <div className="bg-white rounded-md p-4 border border-gray-200">
-            {/* Status Badge */}
-            <div className="mb-4">
+          <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+            {/* Status Bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <FaRegFile className="text-gray-400 text-2xl" />
+                <div>
+                  <p className="text-sm text-gray-500 mb-0.5">
+                    Document Request
+                  </p>
+                  <span className="text-xs font-mono text-gray-500 bg-gray-100 border border-gray-200 rounded px-2 py-0.5">
+                    {requestData.reference_number}
+                  </span>
+                </div>
+              </div>
               <span
-                className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(
-                  requestData.status
-                )}`}
+                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(requestData.status)}`}
               >
+                {["APPROVED", "PROCESSING"].includes(requestData.status) && (
+                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                )}
                 {requestData.status.replace(/_/g, " ")}
               </span>
             </div>
 
-            {/* Request Details */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Reference Number</p>
-                <p className="font-semibold">{requestData.reference_number}</p>
-              </div>
+            {/* Step Progress Track */}
+            <div className="flex items-center px-5 pt-5 pb-1">
+              {[
+                { key: "SUBMITTED", label: "Submitted" },
+                { key: "APPROVED", label: "Approved" },
+                { key: "PROCESSING", label: "Processing" },
+                { key: "FOR_RELEASING", label: "For releasing" },
+                { key: "RELEASED", label: "Released" },
+              ].map((step, i, arr) => {
+                const order = [
+                  "SUBMITTED",
+                  "APPROVED",
+                  "PROCESSING",
+                  "FOR_RELEASING",
+                  "RELEASED",
+                ];
+                const currentIdx = order.indexOf(requestData.status);
+                const stepIdx = order.indexOf(step.key);
+                const isDone = stepIdx < currentIdx;
+                const isActive = stepIdx === currentIdx;
+                const isRejected = requestData.status === "REJECTED";
 
-              <div>
-                <p className="text-sm text-gray-500">Certificate Type</p>
-                <p className="font-semibold">{requestData.certificate_type}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Student Name</p>
-                <p className="font-semibold">{requestData.student_name}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">Submitted Date</p>
-                <p className="font-semibold">
-                  {formatDate(requestData.submitted_date)}
-                </p>
-              </div>
-
-              {requestData.updated_date && (
-                <div>
-                  <p className="text-sm text-gray-500">Last Updated</p>
-                  <p className="font-semibold">
-                    {formatDate(requestData.updated_date)}
-                  </p>
-                </div>
-              )}
+                return (
+                  <React.Fragment key={step.key}>
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs z-10 flex-shrink-0
+                  ${
+                    isDone
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : isActive && !isRejected
+                        ? "bg-blue-100 border-blue-500"
+                        : isRejected && isActive
+                          ? "bg-red-100 border-red-400"
+                          : "bg-white border-gray-300"
+                  }`}
+                      >
+                        {isDone && (
+                          // <FaCheckCircle className="text-white text-[8px]" />
+                          <></>
+                        )}
+                      </div>
+                      <p
+                        className={`text-[10px] mt-1 text-center leading-tight
+                  ${
+                    isDone
+                      ? "text-gray-500"
+                      : isActive && !isRejected
+                        ? "text-blue-600 font-medium"
+                        : isRejected && isActive
+                          ? "text-red-500"
+                          : "text-gray-400"
+                  }`}
+                      >
+                        {step.label}
+                      </p>
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div
+                        className={`flex-1 h-0.5 -mt-5 ${stepIdx < currentIdx ? "bg-blue-500" : "bg-gray-200"}`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
 
-            {/* Status Timeline (Optional - you can expand this) */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            {/* Single-Row Details */}
+            <div className="grid grid-cols-4 border-t border-gray-200 mt-3">
+              {[
+                { label: "Student name", value: requestData.student_name },
+                {
+                  label: "Document type",
+                  value:
+                    requestData.request_label || requestData.certificate_type,
+                },
+                {
+                  label: "Submitted",
+                  value: new Date(
+                    requestData.submitted_date,
+                  ).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  }),
+                },
+                {
+                  label: "Last updated",
+                  value: requestData.updated_date
+                    ? new Date(requestData.updated_date).toLocaleDateString(
+                        "en-US",
+                        { year: "numeric", month: "short", day: "numeric" },
+                      )
+                    : "—",
+                },
+              ].map((item, i, arr) => (
+                <div
+                  key={item.label}
+                  className={`px-4 py-3 ${i < arr.length - 1 ? "border-r border-gray-200" : ""}`}
+                >
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+                    {item.label}
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 truncate">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Queue Section */}
+            {requestData.queue_position && requestData.queue_total && (
+              <div className="flex items-center gap-6 px-5 py-4 border-t border-gray-200">
+                {/* Big Queue Number */}
+                <div className="flex-shrink-0 w-24 text-center bg-gray-50 border border-gray-200 rounded-lg py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+                    Queue no.
+                  </p>
+                  <p className="text-4xl font-medium text-blue-600 leading-none">
+                    #{requestData.queue_position}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    of {requestData.queue_total}
+                  </p>
+                </div>
+
+                {/* Bar + Meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline mb-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      {requestData.queue_scope === "waiting" &&
+                        "Waiting for an available processor"}
+                      {requestData.queue_scope === "processor" &&
+                        "Your position in the processor queue"}
+                      {requestData.queue_scope === "processing" &&
+                        "Your position in processing"}
+                      {!requestData.queue_scope && "Your queue position"}
+                    </p>
+                    <p className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                      {requestData.queue_position - 1} ahead of you
+                    </p>
+                  </div>
+                  <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                      style={{
+                        width: `${(requestData.queue_position / requestData.queue_total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
+                    <FaSpinner className="animate-spin text-[10px]" />
+                    Auto-refreshes every 5 seconds
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Status Message */}
+            <div className="flex items-start gap-2 px-4 py-3 border-t border-gray-200 text-sm text-gray-500">
+              <FaInfoCircle className="mt-0.5 flex-shrink-0" />
+              <span>
+                {requestData.status === "SUBMITTED" &&
+                  "Your request has been received and is waiting for handling."}
                 {requestData.status === "PENDING" &&
                   "Your request is waiting for registrar review."}
                 {requestData.status === "APPROVED" &&
                   "Your request has been approved and will be processed soon."}
                 {requestData.status === "PROCESSING" &&
                   "Your certificate is being generated."}
-                {requestData.status === "FOR_REVIEW" &&
-                  "Your certificate is ready for final review."}
                 {requestData.status === "FOR_RELEASING" &&
-                  "Your certificate is ready for pickup!"}
-                {requestData.status === "COMPLETED" &&
+                  "Your certificate is ready for release!"}
+                {requestData.status === "RELEASED" &&
                   "Your certificate has been released."}
                 {requestData.status === "REJECTED" &&
                   "Your request was rejected. Please contact the registrar's office."}
-              </p>
+              </span>
             </div>
           </div>
         </div>

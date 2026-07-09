@@ -1,0 +1,514 @@
+[
+  {
+    "sr_code": "25-05148",
+    "address_line": "San Agustin 1",
+    "city": "Naujan",
+    "province": "Oriental Mindoro",
+    "zip_code": "5204",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-07058",
+    "address_line": "Maraykit",
+    "city": "San Juan",
+    "province": "Batangas",
+    "zip_code": "4266",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-00472",
+    "address_line": "123, Bulihan",
+    "city": "Malvar",
+    "province": "Batangas",
+    "zip_code": "4233",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-08452",
+    "address_line": "456, Poblacion",
+    "city": "Lobo",
+    "province": "Batangas",
+    "zip_code": "4234",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-08011",
+    "address_line": "San Jose",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-07031",
+    "address_line": "Balagtas",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-07051",
+    "address_line": "San Roque",
+    "city": "Lobo",
+    "province": "Batangas",
+    "zip_code": "4234",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-01234",
+    "address_line": "Putol",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-02871",
+    "address_line": "Calicanto",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-03456",
+    "address_line": "Kumintang Ibaba",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-01192",
+    "address_line": "Poblacion",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-02385",
+    "address_line": "Mataas na Lupa",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-03741",
+    "address_line": "Marawoy",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-04582",
+    "address_line": "Sampaguita",
+    "city": "Tanauan City",
+    "province": "Batangas",
+    "zip_code": "4232",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-05318",
+    "address_line": "Bagbag",
+    "city": "Tanauan City",
+    "province": "Batangas",
+    "zip_code": "4232",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-06094",
+    "address_line": "Landayan",
+    "city": "San Pablo City",
+    "province": "Laguna",
+    "zip_code": "4000",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-01047",
+    "address_line": "Sto. Niño",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-02583",
+    "address_line": "Pallocan West",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-03912",
+    "address_line": "Ilihan",
+    "city": "Tanauan City",
+    "province": "Batangas",
+    "zip_code": "4232",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-04770",
+    "address_line": "Sulok",
+    "city": "Tanauan City",
+    "province": "Batangas",
+    "zip_code": "4232",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-05601",
+    "address_line": "Gonzales",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-01388",
+    "address_line": "Haligue Kanluran",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-02914",
+    "address_line": "Wawa",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-03725",
+    "address_line": "Bolbok",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-04866",
+    "address_line": "Alangilan",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-05934",
+    "address_line": "Cuta",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-06741",
+    "address_line": "Libjo",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-01093",
+    "address_line": "San Isidro",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-02274",
+    "address_line": "Dela Paz",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-03385",
+    "address_line": "Tabangao Aplaya",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-04496",
+    "address_line": "Dumuclay",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-06182",
+    "address_line": "Pagkilatan",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-07359",
+    "address_line": "Sta. Clara",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-04517",
+    "address_line": "Talumpok Kanluran",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-05882",
+    "address_line": "Poblacion",
+    "city": "Ibaan",
+    "province": "Batangas",
+    "zip_code": "4230",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-04813",
+    "address_line": "Sta. Rita Aplaya",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-05970",
+    "address_line": "San Pedro",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-08214",
+    "address_line": "Balagbag",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-09037",
+    "address_line": "Banaba South",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-06422",
+    "address_line": "Soro-soro Ilaya",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-07849",
+    "address_line": "Poblacion",
+    "city": "Sto. Tomas",
+    "province": "Batangas",
+    "zip_code": "4234",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-07388",
+    "address_line": "Gulod Labak",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-09112",
+    "address_line": "Malitam",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-06341",
+    "address_line": "Muzon",
+    "city": "Sto. Tomas",
+    "province": "Batangas",
+    "zip_code": "4234",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-06284",
+    "address_line": "Sta. Cruz",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-10185",
+    "address_line": "Antipolo del Norte",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-08603",
+    "address_line": "Talisay",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-10047",
+    "address_line": "Tambo",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-09204",
+    "address_line": "Lodlod",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-07198",
+    "address_line": "Inosloban",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-07326",
+    "address_line": "Pinagkawitan",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-11024",
+    "address_line": "Haligue Silangan",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-09741",
+    "address_line": "Poblacion",
+    "city": "Alitagtag",
+    "province": "Batangas",
+    "zip_code": "4205",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-11385",
+    "address_line": "Bagong Pook",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-10316",
+    "address_line": "Balintawak",
+    "city": "Lipa City",
+    "province": "Batangas",
+    "zip_code": "4217",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-08452",
+    "address_line": "Cumba",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-08519",
+    "address_line": "Poblacion",
+    "city": "Bauan",
+    "province": "Batangas",
+    "zip_code": "4201",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-12093",
+    "address_line": "Mapulo",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "23-10854",
+    "address_line": "Poblacion",
+    "city": "Padre Garcia",
+    "province": "Batangas",
+    "zip_code": "4224",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "24-12476",
+    "address_line": "San Felipe",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "25-11437",
+    "address_line": "Pinamucan Ibaba",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "20-09503",
+    "address_line": "Calzada",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "21-09681",
+    "address_line": "Poblacion",
+    "city": "San Pascual",
+    "province": "Batangas",
+    "zip_code": "4204",
+    "country": "Philippines"
+  },
+  {
+    "sr_code": "22-13107",
+    "address_line": "Gulod Itaas",
+    "city": "Batangas City",
+    "province": "Batangas",
+    "zip_code": "4200",
+    "country": "Philippines"
+  }
+]

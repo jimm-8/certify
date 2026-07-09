@@ -1,13 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 from app.database import get_db
-from app.models.signature import Signature
+from app.models.authorized_official import AuthorizedOfficial
+from app.repositories import AuthorizedOfficialRepository
 from app.schemas.signature import SignatureCreate, SignatureResponse, SignatureUpdate
+from app.api.v1.auth import require_permissions
 
 router = APIRouter(prefix="/signatures", tags=["Signatures"])
 
@@ -19,17 +23,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def upload_signature(
     name: str = Form(...),
     title: str = Form(...),
-    position: str = Form(...),
-    notes: Optional[str] = Form(None),
-    uploaded_by: Optional[str] = Form("Admin"),
+    campus_id: Optional[int] = Form(None),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Upload a signature image
     
     Accepts PNG, JPG, or JPEG files
-    Position can be: left, center, right
     """
     
     # Validate file type
@@ -40,13 +42,6 @@ async def upload_signature(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only PNG, JPG, and JPEG files are allowed"
-        )
-    
-    # Validate position
-    if position not in ["left", "center", "right"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Position must be 'left', 'center', or 'right'"
         )
     
     # Generate unique filename
@@ -65,7 +60,7 @@ async def upload_signature(
             detail=f"Failed to save file: {str(e)}"
         )
     
-    # PROCESS IMAGE: Remove background using AI
+    # PROCESS IMAGE: Normalize and optimize (non-AI)
     from app.utils.image_processor import ImageProcessor
     
     try:
@@ -75,8 +70,8 @@ async def upload_signature(
         processed_filename = f"processed_{new_filename}"
         processed_path = os.path.join(UPLOAD_DIR, processed_filename)
         
-        # Remove background and optimize
-        print(f"🤖 Processing signature with AI...")
+        # Normalize and optimize
+        print(f"🤖 Processing signature image...")
         processed_path = processor.optimize_signature(
             input_path=file_path,
             output_path=processed_path,
@@ -91,38 +86,36 @@ async def upload_signature(
         file_path = processed_path
         new_filename = os.path.basename(processed_path)
         
-        print(f"✅ AI processing complete!")
+        print(f"✅ Signature processing complete.")
         
     except Exception as e:
-        print(f"⚠️ AI processing failed, using original: {e}")
-        # If AI fails, continue with original image
-        # Don't raise error - system still works without background removal
+        print(f"Warning: Image processing failed, using original: {e}")
+        # If processing fails, continue with original image
+        # Don't raise error - system still works without optional processing
 
     # Create signature record
-    signature = Signature(
+    signature = AuthorizedOfficial(
         name=name,
         title=title,
-        position=position,
-        file_path=file_path,
-        file_name=new_filename,
-        notes=notes,
-        uploaded_by=uploaded_by,
-        is_active=True,
-        is_default=False
+        campus_id=campus_id,
+        signature_path=file_path,
+        is_active=True
     )
     
-    db.add(signature)
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature_repo.add(signature)
     db.commit()
     db.refresh(signature)
 
-    print(f"✅ Signature uploaded and processed with AI: {signature.name}")
+    print(f"✅ Signature uploaded: {signature.name}")
     
     return signature
 
 @router.get("/", response_model=List[SignatureResponse])
 def get_all_signatures(
     active_only: bool = True,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get all signatures
@@ -130,25 +123,28 @@ def get_all_signatures(
     By default returns only active signatures
     """
     
-    query = db.query(Signature)
+    signature_repo = AuthorizedOfficialRepository(db)
+    query = signature_repo.query()
     
     if active_only:
-        query = query.filter(Signature.is_active == True)
+        query = signature_repo.active()
     
-    signatures = query.order_by(Signature.created_at.desc()).all()
+    signatures = query.order_by(AuthorizedOfficial.created_at.desc()).all()
     
     return signatures
 
 @router.get("/{signature_id}", response_model=SignatureResponse)
 def get_signature(
     signature_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Get a specific signature by ID
     """
     
-    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -158,11 +154,41 @@ def get_signature(
     
     return signature
 
+
+@router.get("/{signature_id}/file")
+def get_signature_file(
+    signature_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
+):
+    """
+    Download a signature image file
+    """
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
+
+    if not signature or not signature.signature_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    upload_root = Path(UPLOAD_DIR).resolve()
+    file_path = Path(signature.signature_path).resolve()
+    if upload_root not in file_path.parents or not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signature file not found"
+        )
+
+    return FileResponse(path=str(file_path), filename=file_path.name)
+
 @router.patch("/{signature_id}", response_model=SignatureResponse)
 def update_signature(
     signature_id: int,
     update_data: SignatureUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
     Update signature details
@@ -170,7 +196,8 @@ def update_signature(
     Can update name, title, position, status, etc.
     """
     
-    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -183,22 +210,12 @@ def update_signature(
         signature.name = update_data.name
     if update_data.title is not None:
         signature.title = update_data.title
-    if update_data.position is not None:
-        if update_data.position not in ["left", "center", "right"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Position must be 'left', 'center', or 'right'"
-            )
-        signature.position = update_data.position
+    if update_data.campus_id is not None:
+        signature.campus_id = update_data.campus_id
+    if update_data.signature_path is not None:
+        signature.signature_path = update_data.signature_path
     if update_data.is_active is not None:
         signature.is_active = update_data.is_active
-    if update_data.is_default is not None:
-        # If setting as default, unset other defaults first
-        if update_data.is_default:
-            db.query(Signature).update({Signature.is_default: False})
-        signature.is_default = update_data.is_default
-    if update_data.notes is not None:
-        signature.notes = update_data.notes
     
     db.commit()
     db.refresh(signature)
@@ -208,17 +225,17 @@ def update_signature(
 @router.delete("/{signature_id}")
 def delete_signature(
     signature_id: int,
-    hard_delete: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permissions("signatures.manage")),
 ):
     """
-    Delete a signature
+    Soft delete a signature
     
-    By default, soft delete (mark as inactive)
-    Set hard_delete=true to permanently delete
+    Marks the record as deleted without removing it or the file.
     """
     
-    signature = db.query(Signature).filter(Signature.id == signature_id).first()
+    signature_repo = AuthorizedOfficialRepository(db)
+    signature = signature_repo.query().filter(AuthorizedOfficial.id == signature_id).first()
     
     if not signature:
         raise HTTPException(
@@ -226,48 +243,10 @@ def delete_signature(
             detail="Signature not found"
         )
     
-    if hard_delete:
-        # Delete file
-        if os.path.exists(signature.file_path):
-            os.remove(signature.file_path)
-        
-        # Delete from database
-        db.delete(signature)
-        db.commit()
-        
-        return {"message": "Signature permanently deleted"}
-    else:
-        # Soft delete - just mark as inactive
-        signature.is_active = False
-        db.commit()
-        
-        return {"message": "Signature deactivated"}
-
-@router.post("/{signature_id}/set-default", response_model=SignatureResponse)
-def set_default_signature(
-    signature_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Set a signature as the default
-    
-    Only one signature can be default at a time
-    """
-    
-    signature = db.query(Signature).filter(Signature.id == signature_id).first()
-    
-    if not signature:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Signature not found"
-        )
-    
-    # Unset all other defaults
-    db.query(Signature).update({Signature.is_default: False})
-    
-    # Set this as default
-    signature.is_default = True
+    # Soft delete - mark as deleted and inactive
+    signature.is_active = False
+    signature.deleted_at = datetime.utcnow()
     db.commit()
-    db.refresh(signature)
     
-    return signature
+    return {"message": "Signature deleted"}
+

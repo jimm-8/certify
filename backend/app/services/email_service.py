@@ -1,14 +1,16 @@
 import os
+import html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import aiosmtplib
 from datetime import datetime
 
+
 class EmailService:
     """
     Email service for sending notifications
     """
-    
+
     def __init__(self):
         self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
@@ -16,7 +18,7 @@ class EmailService:
         self.smtp_password = os.getenv("SMTP_PASSWORD")
         self.from_email = os.getenv("FROM_EMAIL", self.smtp_user)
         self.from_name = os.getenv("FROM_NAME", "Certify System")
-    
+
     async def send_request_confirmation(
         self,
         to_email: str,
@@ -25,94 +27,214 @@ class EmailService:
         requestor_name: str,
         student_name: str,
         certificate_type: str,
-        submitted_date: datetime
+        submitted_date: datetime,
+        request_cost: str | float | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+        track_url: str | None = None,
     ):
-        subject = f"Certificate Request Confirmation - {reference_number}"
-        
+        subject = f"Certificate Request Update - {reference_number}"
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        tracking_url = track_url or os.getenv(
+            "TRACK_URL", "http://localhost:5173/track"
+        )
+        payment_amount = (
+            request_cost
+            if request_cost not in {None, ""}
+            else os.getenv("DEFAULT_REQUEST_COST", "0")
+        )
+
         html_body = f"""
         <!DOCTYPE html>
         <html>
+
         <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #17a2b8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
-                .content {{ background-color: #f8f9fa; padding: 30px; border: 1px solid #dee2e6; }}
-                .info-box {{ background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #17a2b8; border-radius: 4px; }}
-                .credentials {{ background-color: #fff3cd; border: 2px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: center; }}
-                .credentials h3 {{ color: #856404; margin-top: 0; }}
-                .pin-ref {{ font-size: 24px; font-weight: bold; color: #17a2b8; margin: 10px 0; }}
-                .footer {{ text-align: center; padding: 20px; font-size: 12px; color: #6c757d; }}
-                .button {{ display: inline-block; padding: 12px 24px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }}
-            </style>
+        <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
         </head>
+
         <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🎓 Certify System</h1>
-                    <p>Certificate Request Confirmation</p>
-                </div>
-                <div class="content">
-                    <h2>Thank you for your request!</h2>
-                    <p>Dear {requestor_name},</p>
-                    <p>Your certificate request for <strong>{student_name}</strong> has been successfully submitted and is now being processed.</p>
-                    <div class="credentials">
-                        <h3>⚠️ IMPORTANT: Save These Details</h3>
-                        <p><strong>Reference Number:</strong></p>
-                        <div class="pin-ref">{reference_number}</div>
-                        <p><strong>PIN:</strong></p>
-                        <div class="pin-ref">{pin}</div>
-                        <p style="font-size: 14px; color: #856404; margin-top: 10px;">
-                            You will need both the reference number and PIN to track your request.
-                        </p>
-                    </div>
-                    <div class="info-box">
-                        <h3>Request Details</h3>
-                        <p><strong>Student Name:</strong> {student_name}</p>
-                        <p><strong>Certificate Type:</strong> {certificate_type}</p>
-                        <p><strong>Submitted Date:</strong> {submitted_date.strftime("%B %d, %Y at %I:%M %p")}</p>
-                        <p><strong>Status:</strong> Pending Review</p>
-                    </div>
-                    <div style="text-align: center;">
-                        <a href="http://localhost:5173/track" class="button">Track Your Request</a>
-                    </div>
-                    <div class="info-box">
-                        <h3>📌 Next Steps</h3>
-                        <ul>
-                            <li>Your request will be reviewed by the registrar's office</li>
-                            <li>You will receive updates via email</li>
-                            <li>Use your reference number and PIN to track your request status</li>
-                            <li>Processing typically takes 2-5 business days</li>
-                        </ul>
-                    </div>
-                    <div class="info-box">
-                        <h3>📞 Need Help?</h3>
-                        <p><strong>Email:</strong> registrar@school.edu</p>
-                        <p><strong>Phone:</strong> (043) 425-0139</p>
-                        <p><strong>Office Hours:</strong> Monday to Friday, 8:00 AM - 5:00 PM</p>
-                    </div>
-                </div>
-                <div class="footer">
-                    <p>This is an automated email. Please do not reply to this message.</p>
-                    <p>© 2024 Certify System. All rights reserved.</p>
+
+        <div class="container">
+            <div class="header">
+            <strong>Certificate Request Update</strong>
+            </div>
+
+            <div class="content">
+            <p>Dear {requestor_name},</p>
+            <p>Your certificate request for {student_name} is now in the processing queue. We will notify you again once your certificate is ready for release.</p>
+
+            <div class="request-card">
+                <div class="card-header">Request Details</div>
+                <div class="card-content">
+                <p><strong>Student Name:</strong> <span class="variable">{student_name}</span></p>
+                <p><strong>Certificate Type:</strong> {certificate_type}</p>
+                <p><strong>Submitted Date:</strong> {submitted_date.strftime("%B %d, %Y at %I:%M %p")}</p>
+                <p><strong>Status:</strong> <span style="color: #d39e00; font-weight: bold;">Queued for Processing</span></p>
                 </div>
             </div>
+
+            <div class="request-card">
+                <div class="card-header">Payment Instructions</div>
+                <div class="card-content">
+                    <p style="text-align: center;">
+                        The total amount is computed as follows:
+                        <br>
+                        <strong>Based on the certificate type, number of page(s), and Documentary Stamp Tax (DST)</strong>
+                    </p>
+
+                    <p style="text-align: center;">
+                        You will pay a total of <strong>Php {payment_amount}</strong>.
+                    </p>
+
+                    <p>Step 1: Proceed to the Cashier's Office and inform the cashier that your payment is for <strong>“Certify Request”</strong>.</p>
+                    <p>Step 2: Provide your <strong>Reference Number</strong> so the cashier can locate your request in the Certify system.</p>
+                    <p>Step 3: Once payment is confirmed, your request will be automatically processed and queued for printing.</p>
+                    <p>Step 4: Wait for an email confirmation notifying you that your certificate is ready for pickup.<p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Important Reminder</div>
+                <div class="card-content">
+                <p><strong>Reference No.:</strong> <span class="variable">{reference_number}</span></p>
+                <p><strong>PIN:</strong> {pin}</p>
+                </div>
+                <p class="note">
+                <i>Note:</i> You will need both the reference number and PIN to track your request.
+                </p>
+            </div>
+
+            <a href="{tracking_url}" class="button">Track Your Request</a>
+
+            <div class="request-card">
+                <div class="card-header">Need Help?</div>
+                <div class="card-content">
+                <p><strong>Email:</strong> <span class="variable">{contact_email}</span></p>
+                <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                </div>
+            </div>
+            </div>
+
+            <div class="footer">
+            <p>This is an automated email. Please do not reply.<br>
+                © 2026 Certify System. All rights reserved.</p>
+            </div>
+        </div>
+
         </body>
+
         </html>
         """
-        
+
         text_body = f"""
-        Certificate Request Confirmation
+        Certificate Request Update
+
         Dear {requestor_name},
-        Your certificate request for {student_name} has been successfully submitted.
-        Reference Number: {reference_number}
+        Your certificate request for {student_name} is now in the processing queue.
+
+        Request Details:
+        - Student Name: {student_name}
+        - Certificate Type: {certificate_type}
+        - Submitted: {submitted_date.strftime("%B %d, %Y at %I:%M %p")}
+        - Status: Queued for Processing
+        - Estimated Amount: Php {payment_amount}
+
+        Tracking Details:
+        Reference No.: {reference_number}
         PIN: {pin}
-        Student Name: {student_name}
-        Certificate Type: {certificate_type}
-        Submitted: {submitted_date.strftime("%B %d, %Y at %I:%M %p")}
-        Track your request at: http://localhost:5173/track
+
+        Track your request at: {tracking_url}
         """
-        
+
         try:
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
@@ -120,7 +242,7 @@ class EmailService:
             message["To"] = to_email
             message.attach(MIMEText(text_body, "plain"))
             message.attach(MIMEText(html_body, "html"))
-            
+
             await aiosmtplib.send(
                 message,
                 hostname=self.smtp_host,
@@ -143,21 +265,22 @@ class EmailService:
         student_name: str,
         old_status: str,
         new_status: str,
-        notes: str = None
+        notes: str = None,
     ):
         subject = f"Status Update: {reference_number} - {new_status}"
-        
+
         status_messages = {
             "APPROVED": "✅ Good news! Your request has been approved.",
             "PROCESSING": "⚙️ Your certificate is now being generated.",
             "FOR_REVIEW": "👀 Your certificate is ready for final review.",
             "FOR_RELEASING": "🎉 Your certificate is ready for pickup!",
-            "COMPLETED": "✨ Your certificate has been released.",
-            "REJECTED": "❌ Unfortunately, your request was not approved.",
+            "RELEASED": "? Your certificate has been released.",
         }
-        
-        status_message = status_messages.get(new_status, "Your request status has been updated.")
-        
+
+        status_message = status_messages.get(
+            new_status, "Your request status has been updated."
+        )
+
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -191,14 +314,14 @@ class EmailService:
         </body>
         </html>
         """
-        
+
         try:
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
             message["From"] = f"{self.from_name} <{self.from_email}>"
             message["To"] = to_email
             message.attach(MIMEText(html_body, "html"))
-            
+
             await aiosmtplib.send(
                 message,
                 hostname=self.smtp_host,
@@ -213,6 +336,295 @@ class EmailService:
             print(f"❌ Failed to send email: {e}")
             return False
 
+    async def send_checking_update(
+        self,
+        to_email: str,
+        subject: str,
+        message_body: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+    ):
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        safe_student_name = (student_name or "").strip() or "-"
+        safe_certificate_type = (
+            certificate_type or ""
+        ).strip() or "Certificate Request"
+        safe_subject = (
+            subject or ""
+        ).strip() or f"Certificate Request Update - {reference_number}"
+        safe_message_html = html.escape((message_body or "").strip()).replace(
+            "\n", "<br />"
+        )
+        safe_message_text = (message_body or "").strip()
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
+        </head>
+        <body>
+
+        <div class="container">
+            <div class="header">
+            <strong>Certificate Request Update</strong>
+            </div>
+
+            <div class="content">
+                <p>{safe_message_html}</p>
+                <div class="request-card">
+                    <div class="card-header">Request Details</div>
+                    <div class="card-content">
+                        <p><strong>Reference Number:</strong> {reference_number}</p>
+                        <p><strong>Student Name:</strong> {safe_student_name}</p>
+                        <p><strong>Requested Document:</strong> {safe_certificate_type}</p>
+                        <p><strong>Current Status:</strong> APPROVED / Checking</p>
+                    </div>
+                </div>
+                <p>Please keep your reference number for tracking and future follow-ups.</p>
+            </div>
+        </div>
+
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+Certificate Request Update
+
+Dear {safe_requestor_name},
+
+{safe_message_text}
+
+Reference Number: {reference_number}
+Student Name: {safe_student_name}
+Requested Document: {safe_certificate_type}
+Current Status: APPROVED / Checking
+
+Please keep your reference number for tracking and future follow-ups.
+        """.strip()
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = safe_subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"Checking update email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"Failed to send checking update email: {e}")
+            return False
+
+    async def send_rejection_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        notes: str | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+    ):
+        subject = f"Certificate Request Rejected - {reference_number}"
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        note_block = notes or "No additional details provided."
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7f9; margin: 0; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #DE1B1B; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }}
+                .header {{ background-color: #DE1B1B; color: white; padding: 10px; text-align: center; font-size: 14pt; }}
+                .content {{ padding: 10px 30px; font-size: 10pt; text-align: justify; }}
+                .request-card {{ width: 100%; border: 1px solid #373737; border-radius: 8px; overflow: hidden; margin: 20px 0; }}
+                .card-header {{ background-color: #373737; padding: 5px 16px; font-weight: bold; border-bottom: 1px solid #373737; color: #fff; }}
+                .card-content {{ padding: 5px 16px; background-color: #ffffff; }}
+                .card-content p {{ margin: 5px 0; font-size: 10pt; }}
+                .footer {{ text-align: center; font-size: 0.8rem; color: #777; padding: 10px; border-top: 1px solid #eee; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header"><strong>Request Rejected</strong></div>
+                <div class="content">
+                    <p>Dear {safe_requestor_name},</p>
+                    <p>Your request has been transferred to Certify and is reviewed. We are temporarily rejecting your certificate request due to inconsistencies detected by the system and the registrar. The reason for temporary rejection is provided below. We recommend that you submit a new request with the corrected information.</p>
+
+                    <div class="request-card">
+                        <div class="card-header">Request Details</div>
+                        <div class="card-content">
+                            <p><strong>Student Name:</strong> {student_name}</p>
+                            <p><strong>Certificate Type:</strong> {certificate_type}</p>
+                            <p><strong>Reference Number:</strong> {reference_number}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">Reason</div>
+                        <div class="card-content">
+                            <p>{note_block}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">Need Help?</div>
+                        <div class="card-content">
+                            <p><strong>Email:</strong> {contact_email}</p>
+                            <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>This is an automated email. Please do not reply.<br>
+                © 2026 Certify System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        Request Rejected
+
+        Dear {safe_requestor_name},
+        Your certificate request was rejected by the registrar.
+
+        Student: {student_name}
+        Certificate Type: {certificate_type}
+        Reference Number: {reference_number}
+        Reason: {note_block}
+
+        For assistance, contact {contact_email} or {contact_phone}.
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"? Rejection email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"? Failed to send rejection email: {e}")
+            return False
+
     # ✅ Properly defined as its own method — not nested inside send_status_update
     async def send_ready_for_release(
         self,
@@ -221,77 +633,212 @@ class EmailService:
         requestor_name: str,
         student_name: str,
         certificate_type: str,
+        submitted_date: datetime,
+        payment_amount: float | int | str | None,
+        pin: str,
+        tracking_url: str | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
     ):
-        subject = f"Your Certificate is Ready for Pickup – {reference_number}"
+        subject = f"Your Certificate is Ready for Release - {reference_number}"
+        tracking_url = tracking_url or os.getenv(
+            "TRACK_URL", "http://localhost:5173/track"
+        )
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        payment_amount = (
+            f"{float(payment_amount):.2f}"
+            if payment_amount is not None and str(payment_amount).strip() != ""
+            else "0.00"
+        )
 
         html_body = f"""
         <!DOCTYPE html>
         <html>
+
         <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #ee1133; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
-                .content {{ background-color: #f8f9fa; padding: 30px; border: 1px solid #dee2e6; }}
-                .info-box {{ background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #ee1133; border-radius: 4px; }}
-                .highlight {{ font-size: 20px; font-weight: bold; color: #ee1133; }}
-                .footer {{ text-align: center; padding: 20px; font-size: 12px; color: #6c757d; }}
-                .button {{ display: inline-block; padding: 12px 24px; background-color: #ee1133; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }}
-            </style>
+        <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
         </head>
+
         <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🎉 Your Certificate is Ready!</h1>
-                </div>
-                <div class="content">
-                    <p>Dear {requestor_name},</p>
-                    <p>Great news! Your certificate request is now <strong>ready for pickup</strong> at the Registrar's Office.</p>
 
-                    <div class="info-box">
-                        <p><strong>Reference No:</strong> <span class="highlight">{reference_number}</span></p>
-                        <p><strong>Student Name:</strong> {student_name}</p>
-                        <p><strong>Certificate:</strong> {certificate_type}</p>
-                    </div>
+        <div class="container">
+            <div class="header">
+            <strong>Your Certificate is Ready for Release</strong>
+            </div>
 
-                    <div class="info-box">
-                        <h3>📋 What to bring</h3>
-                        <ul>
-                            <li>Valid ID</li>
-                            <li>Your reference number: <strong>{reference_number}</strong></li>
-                            <li>Authorization letter + representative's valid ID (if claiming via representative)</li>
-                        </ul>
-                    </div>
+            <div class="content">
+            <p>Dear {requestor_name},</p>
+            <p>Great news! Your certificate request for {student_name} is now <strong style="color: #DE1B1B;">READY FOR RELEASE</strong> at the Registrar's Office.  Kindly settle the payment to claim your requested document.</p>
+            <p>
+                <strong>Take Note:</strong> If someone else will claim the document on behalf of the owner, please ensure that a valid authorization letter is presented during claiming.
+            </p>
 
-                    <div class="info-box">
-                        <h3>🕐 Office Hours</h3>
-                        <p>Monday to Friday · 8:00 AM to 5:00 PM</p>
-                        <p><strong>Phone:</strong> (043) 425-0139</p>
-                    </div>
-
-                    <div style="text-align: center;">
-                        <a href="http://localhost:5173/track" class="button">Track Your Request</a>
-                    </div>
-                </div>
-                <div class="footer">
-                    <p>This is an automated email. Please do not reply to this message.</p>
-                    <p>© 2024 Certify System. All rights reserved.</p>
+            <div class="request-card">
+                <div class="card-header">Request Details</div>
+                <div class="card-content">
+                <p><strong>Student Name:</strong> <span class="variable">{student_name}</span></p>
+                <p><strong>Certificate Type:</strong> {certificate_type}</p>
+                <p><strong>Submitted Date:</strong> {submitted_date.strftime("%B %d, %Y at %I:%M %p")}</p>
                 </div>
             </div>
+
+            <div class="request-card">
+                <div class="card-header">Payment Instructions</div>
+                <div class="card-content">
+                    <p style="text-align: center;">
+                        The total amount is computed as follows:
+                        <br>
+                        <strong>Based on the certificate type, number of page(s), and Documentary Stamp Tax (DST)</strong>
+                    </p>
+
+                    <p style="text-align: center;">
+                        You will pay a total of <strong>Php {payment_amount}</strong>.
+                    </p>
+
+                    <p>Step 1: Proceed to the Cashier's Office and inform the cashier that your payment is for <strong>“Certify Request”</strong>.</p>
+                    <p>Step 2: Once payment is confirmed, your request will be automatically processed and queued for printing.</p>
+                    <p>Step 4: After payment, you may proceed directly to the Registrar's Office to claim your certificate.</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Important Reminder</div>
+                <div class="card-content">
+                <p><strong>Reference No.:</strong> <span class="variable">{reference_number}</span></p>
+                <p><strong>PIN:</strong> {pin}</p>
+                </div>
+                <p class="note">
+                <i>Note:</i> You will need both the reference number and PIN to track your request.
+                </p>
+            </div>
+
+            <a href="{tracking_url}" class="button">Track Your Request</a>
+
+            <div class="request-card">
+                <div class="card-header">Need Help?</div>
+                <div class="card-content">
+                <p><strong>Email:</strong> <span class="variable">{contact_email}</span></p>
+                <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                </div>
+            </div>
+            </div>
+
+            <div class="footer">
+            <p>This is an automated email. Please do not reply.<br>
+                © 2026 Certify System. All rights reserved.</p>
+            </div>
+        </div>
+
         </body>
+
         </html>
         """
 
         text_body = f"""
-        Your Certificate is Ready for Pickup!
+        Your Certificate is Ready for Release!
 
-        Dear {requestor_name},
+        Dear {safe_requestor_name},
 
-        Your certificate request is now ready for pickup at the Registrar's Office.
+        Your certificate request is now ready for release at the Registrar's Office.
 
         Reference No: {reference_number}
         Student Name: {student_name}
         Certificate: {certificate_type}
+        Submitted Date: {submitted_date.strftime("%B %d, %Y at %I:%M %p")}
+        Payment Amount: Php {payment_amount}
+        PIN: {pin}
+        Track your request at: {tracking_url}
+        Contact Email: {contact_email}
 
         Please bring a valid ID and your reference number when claiming.
         Office Hours: Monday to Friday, 8:00 AM - 5:00 PM
@@ -317,4 +864,396 @@ class EmailService:
             return True
         except Exception as e:
             print(f"❌ Failed to send ready-for-release email: {e}")
+            return False
+
+    async def send_delay_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+        reason: str | None = None,
+    ):
+        subject = f"Delay Notice for Certificate Release - {reference_number}"
+        contact_email = campus_email or os.getenv("HELP_EMAIL", "registrar@school.edu")
+        contact_phone = campus_telNo or os.getenv("HELP_PHONE", "(043) 425-0139")
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+        reason_clean = (reason or "").strip()
+
+        if reason_clean:
+            if len(reason_clean.split()) <= 3:
+                # Auto-expand very short inputs
+                reason_clean = (
+                    f"Processing is temporarily delayed due to {reason_clean}"
+                )
+            else:
+                # Sentence case
+                reason_clean = reason_clean[0].upper() + reason_clean[1:]
+            reason_clean = reason_clean.rstrip(".") + "."
+            delay_message = (
+                f"We apologize for the delay. {reason_clean} "
+                "Thank you for your understanding."
+            )
+        else:
+            delay_message = (
+                "We apologize for the delay. Your certificate request is awaiting release as the authorized signatory is currently unavailable. "
+                "We will process it promptly once they return. Thank you for your understanding."
+            )
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    background-color: #f4f7f9;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: 1px solid #DE1B1B;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                }}
+                .header {{
+                    background-color: #DE1B1B;
+                    color: white;
+                    padding: 10px;
+                    text-align: center;
+                    font-size: 14pt;
+                }}
+                .content {{
+                    padding: 10px 30px;
+                    font-size: 10pt;
+                    text-align: justify;
+                }}
+                .request-card {{
+                    width: 100%;
+                    border: 1px solid #373737;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin: 25px 0;
+                }}
+                .card-header {{
+                    background-color: #373737;
+                    padding: 5px 16px;
+                    font-weight: bold;
+                    border-bottom: 1px solid #373737;
+                    color: #fff;
+                }}
+                .card-content {{
+                    padding: 5px 16px;
+                    background-color: #ffffff;
+                }}
+                .card-content p {{
+                    margin: 5px 0;
+                    font-size: 10pt;
+                }}
+                .footer {{
+                    text-align: center;
+                    font-size: 0.8rem;
+                    color: #777;
+                    padding: 10px;
+                    border-top: 1px solid #eee;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <strong>Delay Notice</strong>
+                </div>
+                <div class="content">
+                    <p>Dear {safe_requestor_name},</p>
+                    <p>
+                       {delay_message}
+                    </p>
+
+                    <div class="request-card">
+                        <div class="card-header">Request Summary</div>
+                        <div class="card-content">
+                            <p><strong>Reference Number:</strong> {reference_number}</p>
+                            <p><strong>Certificate for:</strong> {student_name}</p>
+                            <p><strong>Submitted Type:</strong> {certificate_type}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-card">
+                        <div class="card-header">What Happens Next</div>
+                        <div class="card-content">
+                            <p>Our team is taking action to complete the release as soon as possible.</p>
+                            <p>If you need assistance, you may contact the Registrar's Office through the details below.</p>
+                            <p><strong>Email:</strong> {contact_email}</p>
+                            <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>This is an automated email. Please do not reply.<br>
+                    © 2026 Certify System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_body = f"""
+        Delay Notice
+
+        Dear {safe_requestor_name},
+
+        {delay_message}
+
+        Reference No: {reference_number}
+        Student Name: {student_name}
+        Certificate: {certificate_type}
+
+        For assistance, please contact:
+        Email: {contact_email}
+        Tel No: {contact_phone}
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"âœ… Delay notice sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"âŒ Failed to send delay notice: {e}")
+            return False
+
+    async def send_payment_missing_notice(
+        self,
+        to_email: str,
+        reference_number: str,
+        requestor_name: str,
+        student_name: str,
+        certificate_type: str,
+        request_cost: str | float | None = None,
+        campus_email: str | None = None,
+        campus_telNo: str | None = None,
+    ):
+        subject = f"Payment Required Before Release - {reference_number}"
+        payment_amount = (
+            request_cost
+            if request_cost not in {None, ""}
+            else os.getenv("DEFAULT_REQUEST_COST", "0")
+        )
+        contact_email = (
+            campus_email.strip()
+            if campus_email and campus_email.strip()
+            else os.getenv("HELP_EMAIL", "registrar@school.edu")
+        )
+        contact_phone = (campus_telNo or "").strip() or os.getenv(
+            "HELP_PHONE", "(043) 425-0139"
+        )
+        safe_requestor_name = (requestor_name or "").strip() or "Requestor"
+
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+        <style>
+            /* Global Styles */
+            body {{
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            }}
+
+            .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DE1B1B;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }}
+
+            /* Header */
+            .header {{
+            background-color: #DE1B1B;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14pt;
+            }}
+
+            .content {{
+            padding: 10px 30px;
+            font-size: 10pt;
+            text-align: justify;
+            }}
+
+            .request-card {{
+            width: 100%;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 25px 0;
+            }}
+
+            .card-header {{
+            background-color: #373737;
+            padding: 5px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #373737;
+            color: #fff;
+            }}
+
+            .card-content {{
+            padding: 5px 16px;
+            background-color: #ffffff;
+            }}
+
+            .card-content p {{
+            margin: 5px 0;
+            font-size: 10pt;
+            }}
+
+            .note {{
+            font-size: 8pt;
+            margin-top: -5px;
+            text-align: center;
+            color: #333;
+            }}
+
+            .button {{
+            display: block;
+            width: 100%;
+            padding: 5px 0;
+            text-align: center;
+            border: 1px solid #DE1B1B;
+            border-radius: 8px;
+            background-color: #DE1B1B;
+            color: #ffffff;
+            text-decoration: none;
+            }}
+
+            .footer {{
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            }}
+        </style>
+        </head>
+
+        <body>
+
+        <div class="container">
+            <div class="header">
+            <strong>Payment Required</strong>
+            </div>
+
+            <div class="content">
+            <p>Dear {safe_requestor_name},</p>
+            <p>We attempted to move your request to <strong>For Releasing</strong>, but the system did not detect a payment
+                for this request. Please settle the payment at the cashier and make sure the <strong>reference number</strong>
+                is used as the <strong>purpose</strong> of payment.</p>
+
+
+
+            <div class="request-card">
+                <div class="card-header">Request Summary</div>
+                <div class="card-content">
+                <p><strong>Reference Number:</strong> <span class="variable"> {reference_number}</span></p>
+                <p><strong>Certificate for:</strong> {student_name}</p>
+                <p><strong>Submitted Type:</strong> {certificate_type}</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Payment Instructions</div>
+                <div class="card-content">
+                <p style="text-align: center;">You will pay a total of <strong>Php {payment_amount}</strong>.</p>
+                <p>Step 1: Proceed to the Cashier's Office and state your purpose.</p>
+                <p>Step 2: Provide your <strong>Reference Number</strong> to the cashier so it can be recorded as the purpose
+                    of payment.</p>
+                <p>Step 3: Wait for an email confirmation notifying you that your certificate is ready for pickup.</p>
+                </div>
+            </div>
+
+            <div class="request-card">
+                <div class="card-header">Need Help?</div>
+                <div class="card-content">
+                <p><strong>Email:</strong> <span class="variable">{contact_email}</span></p>
+                <p><strong>Tel Nos.:</strong> {contact_phone}</p>
+                </div>
+            </div>
+            </div>
+
+            <div class="footer">
+            <p>This is an automated email. Please do not reply.<br>
+                © 2026 Certify System. All rights reserved.</p>
+            </div>
+        </div>
+
+        </body>
+
+        </html>
+        """
+
+        text_body = f"""
+        Payment Required Before Release
+
+        Dear {safe_requestor_name},
+        We cannot move your request to For Releasing because no payment was detected.
+
+        Reference No.: {reference_number}
+        Student Name: {student_name}
+        Certificate Type: {certificate_type}
+        Amount Due: Php {payment_amount}
+
+        Please proceed to the cashier and use your Reference Number as the purpose of payment.
+        """
+
+        try:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.from_name} <{self.from_email}>"
+            message["To"] = to_email
+            message.attach(MIMEText(text_body, "plain"))
+            message.attach(MIMEText(html_body, "html"))
+
+            await aiosmtplib.send(
+                message,
+                hostname=self.smtp_host,
+                port=self.smtp_port,
+                username=self.smtp_user,
+                password=self.smtp_password,
+                start_tls=True,
+            )
+            print(f"✅ Payment-missing email sent to {to_email}")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to send payment-missing email: {e}")
             return False

@@ -10,7 +10,6 @@ import {
 
 import CertifyNavbar from "../../../components/common/certify_navbar";
 
-
 const CertifyDashboard = () => {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -20,15 +19,10 @@ const CertifyDashboard = () => {
       <CertifyNavbar />
 
       <div className="flex flex-1">
-        {/* Sidebar */}
-        =
-
-        {/* Main Content */}
-        <div className="flex-1 p-4">
-
+        {/* Sidebar */}={/* Main Content */}
+        <div className="flex-1 py-4">
           {/* ===== Equal Tabs + Auto 3 Dots Column ===== */}
           <div className="bg-white border border-gray-400 grid grid-cols-[repeat(5,1fr)_auto]">
-
             <Tab icon={<LayoutGrid size={18} />} label="Dashboard" />
             <Tab icon={<SearchCheck size={18} />} label="Checking of Request" />
             <Tab icon={<CheckCircle size={18} />} label="Request Tracker" />
@@ -52,14 +46,10 @@ const CertifyDashboard = () => {
                 </div>
               )}
             </div>
-
           </div>
-
-
 
           {/* ===== Single Container (Search + Dashboard Together) ===== */}
           <div className="mt-4 bg-white border border-gray-300 p-6">
-
             {/* Search Row */}
             <div className="flex justify-between items-center mb-6">
               <input
@@ -75,16 +65,12 @@ const CertifyDashboard = () => {
 
             {/* Dashboard Content */}
             <div>
-              <h2 className="text-2xl font-thin text-gray-800">
-                Dashboard
-              </h2>
+              <h2 className="text-2xl font-thin text-gray-800">Dashboard</h2>
               <p className="text-gray-600 mt-2">
                 Select an option from the sidebar or tabs above to get started.
               </p>
             </div>
-
           </div>
-
         </div>
       </div>
     </div>

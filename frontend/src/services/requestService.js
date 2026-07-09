@@ -1,4 +1,5 @@
 import api from "./api";
+import { getTokenPayload } from "../utils/auth";
 
 const requestService = {
   // track
@@ -42,7 +43,12 @@ const requestService = {
     }
   },
   // get all requests
-  getAllRequests: async ({ page = 1, limit = 10, status = null } = {}) => {
+  getAllRequests: async ({
+    page = 1,
+    limit = 10,
+    status = null,
+    ownerUsername = null,
+  } = {}) => {
     try {
       const skip = (page - 1) * limit;
 
@@ -51,6 +57,7 @@ const requestService = {
           skip,
           limit,
           status_filter: status,
+          owner_username: ownerUsername,
         },
       });
 
@@ -67,10 +74,12 @@ const requestService = {
   // update request status
   updateStatus: async (id, newStatus, notes = "", userName = "") => {
     try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
       const response = await api.patch(`/requests/${id}/status`, {
         new_status: newStatus,
         notes,
-        user_name: userName,
+        user_name: resolvedUser,
       });
       return response.data;
     } catch (error) {
@@ -92,6 +101,80 @@ const requestService = {
       throw error;
     }
   },
+  // get student courses (taken with grades) for a request
+  getRequestTakenCourses: async (requestId) => {
+    try {
+      const response = await api.get(`/requests/${requestId}/taken-courses`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching taken courses:", error);
+      throw error;
+    }
+  },
+  // update course description selection
+  updateCourseDescriptionSelection: async (
+    requestId,
+    courseCodes = [],
+    notes = "",
+    userName = "",
+  ) => {
+    try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
+      const response = await api.patch(
+        `/requests/${requestId}/course-description-selection`,
+        {
+          course_codes: courseCodes,
+          notes,
+          user_name: resolvedUser,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course description selection:", error);
+      throw error;
+    }
+  },
+  // update certification of grades selection
+  updateGradeSelection: async (
+    requestId,
+    selectionKeys = [],
+    notes = "",
+    userName = "",
+  ) => {
+    try {
+      const resolvedUser =
+        userName || getTokenPayload()?.sub || "System";
+      const response = await api.patch(
+        `/requests/${requestId}/grade-selection`,
+        {
+          selection_keys: selectionKeys,
+          notes,
+          user_name: resolvedUser,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating grade selection:", error);
+      throw error;
+    }
+  },
+  // get all audit logs
+  getAllAuditLogs: async ({ page = 1, limit = 50 } = {}) => {
+    try {
+      const skip = (page - 1) * limit;
+      const response = await api.get("/requests/audit-logs/all", {
+        params: {
+          skip,
+          limit,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      throw error;
+    }
+  },
   // download certificate
   downloadCertificate: async (requestId) => {
     try {
@@ -107,13 +190,136 @@ const requestService = {
       throw error;
     }
   },
+  generateCertificate: async (requestId) => {
+    try {
+      const response = await api.post(`/requests/${requestId}/generate-certificate`);
+      return response.data;
+    } catch (error) {
+      console.error("Error generating certificate:", error);
+      throw error;
+    }
+  },
   // send ready email
   sendReadyEmail: async (requestId) => {
     try {
-      const response = await api.post(`/requests/${requestId}/notify`);
+      const response = await api.post(
+        `/requests/${requestId}/send-ready-email`,
+      );
       return response.data;
     } catch (error) {
       console.error("Error sending email:", error);
+      throw error;
+    }
+  },
+  autoQueueApprovedRequests: async () => {
+    try {
+      const response = await api.post("/requests/auto-queue");
+      return response.data;
+    } catch (error) {
+      console.error("Error auto-queueing approved requests:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
+  },
+  sendCheckingEmail: async (requestId, payload) => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-checking-email`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending checking email:", error);
+      throw error;
+    }
+  },
+  sendDelayNotice: async (requestId, reason = "") => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-delay-notice`,
+        { reason },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending delay notice:", error);
+      throw error;
+    }
+  },
+  holdRequestorNoPickup: async (requestId) => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/hold-requestor-no-pickup`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error holding request for no pickup:", error);
+      throw error;
+    }
+  },
+  // mark as printed (auto print)
+  markPrinted: async (requestId) => {
+    try {
+      const response = await api.post(`/requests/${requestId}/mark-printed`);
+      return response.data;
+    } catch (error) {
+      console.error("Error marking printed:", error);
+      throw error;
+    }
+  },
+  // send rejection email
+  sendRejectionEmail: async (requestId, notes = "") => {
+    try {
+      const response = await api.post(
+        `/requests/${requestId}/send-rejection-email`,
+        { notes },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error sending rejection email:", error);
+      throw error;
+    }
+  },
+
+  // validate requests against registry
+  validateRequests: async (requestIds = []) => {
+    try {
+      const response = await api.post(`/requests/validate`, {
+        request_ids: requestIds,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error validating requests:", error);
+      throw error;
+    }
+  },
+
+  getPrograms: async (campus = null) => {
+    try {
+      if (!campus) return [];
+      const response = await api.get(
+        `/programs/by-campus/${encodeURIComponent(campus)}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching programs:", error);
+      throw error;
+    }
+  },
+
+  getCourseOptionsForOdr: async ({ srCode = "", studentName = "" } = {}) => {
+    try {
+      const response = await api.get("/requests/course-options", {
+        params: {
+          sr_code: srCode || undefined,
+          student_name: studentName || undefined,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching ODR course options:", error);
       throw error;
     }
   },

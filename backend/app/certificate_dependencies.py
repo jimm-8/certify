@@ -1,0 +1,499 @@
+from __future__ import annotations
+
+import re
+from typing import Any
+
+# Canonical dependency field labels used by API consumers and template mapping.
+DEPENDENCY_FIELD_LABELS: dict[str, str] = {
+    "cav_number": "CAV no.",
+    "series": "Series",
+    "date_of_issuance": "Date of Issuance",
+    "student_name": "Name of Student",
+    "degree": "Degree",
+    "date_of_graduation": "Date of Graduation",
+    "institution_name": "Name of Institution",
+    "address": "Address",
+    "requestor_name": "Requestor's Name",
+    "authorized_official_name": "Name of Authorized Official (Registrar Head)",
+    "processed_and_reviewed_by": "Processed and Reviwed by:",
+    "or_number": "OR no.",
+    "control_num": "Control No.",
+    "date_issued": "Date Issued",
+    "amount": "Amount",
+    "program": "Program",
+    "board_resolution_number": "Board Resolution Number",
+    "semester": "Semester",
+    "academic_year": "Academic Year",
+    "year_level": "Year level",
+    "college_name": "Name of College",
+    "purpose_of_request": "Purpose of Request",
+    "credits": "No. of Credits",
+    "campus_address": "Campus Address",
+    "regulation": "Regulation",
+    "latin_honor": "Latin Honor",
+    "course_code_all": "Course Code (All enrolled course)",
+    "credits_all": "No. of Credits (All enrolled course)",
+    "course_description_all": "Course Description (All enrolled course)",
+    "course_code_all_2": "Course Code (All enrolled course) - 2",
+    "credits_all_2": "No. of Credits (All enrolled course) - 2",
+    "course_description_all_2": "Course Description (All enrolled course) - 2",
+    "attendance_period": "Years of Attendance",
+    "year_attended_start": "Year attended school (Start)",
+    "year_attended_end": "Year attended school (End)",
+    "id_number": "ID no.",
+    "nstp_component": "NSTP Component",
+    "nstp_serial_number": "NSTP Serial Number",
+    "major": "Major",
+    "gwa": "GWA",
+    "program_and_college": "Program and College",
+    "semester_and_academic_year": "Semester and Academic Year",
+    "grades_detail_all": "Course Code, Title, Units, Grades (All grades)",
+}
+
+
+# User-provided dependency map (17 variants).
+CERTIFICATE_DEPENDENCY_VARIANTS: dict[str, list[str]] = {
+    "certification_authentication_and_verification_cav": [
+        "cav_number",
+        "series",
+        "date_of_issuance",
+        "student_name",
+        "degree",
+        "date_of_graduation",
+        "institution_name",
+        "address",
+        "requestor_name",
+        "authorized_official_name",
+        "processed_and_reviewed_by",
+        "or_number",
+        "control_num",
+        "date_issued",
+        "amount",
+    ],
+    "certificate_of_graduation_graduated": [
+        "student_name",
+        "program",
+        "date_of_graduation",
+        "board_resolution_number",
+        "requestor_name",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certificate_of_graduation_candidate": [
+        "student_name",
+        "program",
+        "semester",
+        "academic_year",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certificate_of_enrolment_current": [
+        "student_name",
+        "year_level",
+        "college_name",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "date_of_issuance",
+        "purpose_of_request",
+        "authorized_official_name",
+    ],
+    "certificate_of_enrolment_previous": [
+        "student_name",
+        "year_level",
+        "college_name",
+        "semester",
+        "year_level",
+        "date_of_issuance",
+        "purpose_of_request",
+        "authorized_official_name",
+    ],
+    "certification_of_earned_units": [
+        "student_name",
+        "credits",
+        "program",
+        "college_name",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certification_of_english_medium_graduated": [
+        "campus_address",
+        "student_name",
+        "program",
+        "date_of_graduation",
+        "regulation",
+        "requestor_name",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certification_of_english_medium_earned_units": [
+        "campus_address",
+        "student_name",
+        "program",
+        "requestor_name",
+        "date_of_issuance",
+        "credits",
+        "authorized_official_name",
+    ],
+    "certification_of_completed_academic_requirements": [
+        "student_name",
+        "credits",
+        "program",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certification_of_honor_graduate": [
+        "student_name",
+        "address",
+        "latin_honor",
+        "program",
+        "college_name",
+        "date_of_graduation",
+        "board_resolution_number",
+        "program",
+        "academic_year",
+        "requestor_name",
+        "date_of_issuance",
+        "purpose_of_request",
+        "authorized_official_name",
+    ],
+    "certificate_of_course_description": [
+        "student_name",
+        "program",
+        "semester",
+        "academic_year",
+        "course_code_all",
+        "credits_all",
+        "course_description_all",
+        "requestor_name",
+        "date_of_issuance",
+        "authorized_official_name",
+    ],
+    "certificate_of_id_issuance_previously_enrolled": [
+        "student_name",
+        "year_attended_start",
+        "year_attended_end",
+        "id_number",
+        "date_of_issuance",
+        "requestor_name",
+        "authorized_official_name",
+    ],
+    "certificate_of_id_issuance_currently_enrolled": [
+        "student_name",
+        "semester",
+        "academic_year",
+        "id_number",
+        "date_of_issuance",
+        "requestor_name",
+        "authorized_official_name",
+    ],
+    "certificate_of_nstp_serial_number": [
+        "student_name",
+        "nstp_component",
+        "nstp_serial_number",
+        "date_of_issuance",
+        "requestor_name",
+        "authorized_official_name",
+    ],
+    "certification_of_gwa": [
+        "student_name",
+        "program",
+        "major",
+        "board_resolution_number",
+        "gwa",
+        "date_of_issuance",
+        "requestor_name",
+        "authorized_official_name",
+    ],
+    "certificate_of_transfer_credentials": [
+        "date_of_issuance",
+        "student_name",
+        "authorized_official_name",
+        "program",
+    ],
+    "certification_of_grades": [
+        "student_name",
+        "program_and_college",
+        "semester_and_academic_year",
+        "grades_detail_all",
+        "date_of_issuance",
+        "requestor_name",
+        "authorized_official_name",
+    ],
+}
+
+
+# Certificate-type to dependency variant mapping.
+CERTIFICATE_TYPE_VARIANTS: dict[str, list[str]] = {
+    "certificationauthenticationandverification": [
+        "certification_authentication_and_verification_cav",
+    ],
+    "certificationauthenticationandverificationcav": [
+        "certification_authentication_and_verification_cav",
+    ],
+    "certificateofgraduation": [
+        "certificate_of_graduation_graduated",
+        "certificate_of_graduation_candidate",
+    ],
+    "certificateofenrolment": [
+        "certificate_of_enrolment_current",
+        "certificate_of_enrolment_previous",
+    ],
+    "certificateofearnedunits": [
+        "certification_of_earned_units",
+    ],
+    "certificationofearnedunits": [
+        "certification_of_earned_units",
+    ],
+    "certificationofenglishmedium": [
+        "certification_of_english_medium_graduated",
+        "certification_of_english_medium_earned_units",
+    ],
+    "certificationofcompletedacademicrequirements": [
+        "certification_of_completed_academic_requirements",
+    ],
+    "certificationofhonorgraduate": [
+        "certification_of_honor_graduate",
+    ],
+    "certificateofcoursedescription": [
+        "certificate_of_course_description",
+    ],
+    "certificateofidissuance": [
+        "certificate_of_id_issuance_previously_enrolled",
+        "certificate_of_id_issuance_currently_enrolled",
+    ],
+    "certificateofnstpserialnumber": [
+        "certificate_of_nstp_serial_number",
+    ],
+    "certificationofgwa": [
+        "certification_of_gwa",
+    ],
+    "certificateoftransfercredentials": [
+        "certificate_of_transfer_credentials",
+    ],
+    "certificationofgrades": [
+        "certification_of_grades",
+    ],
+    # Keep legacy type aligned with grades dependencies.
+    "certificateofgradingsystem": [
+        "certification_of_grades",
+    ],
+}
+
+
+# Fill slot order for templates still using legacy <span class="fill ..."></span> placeholders.
+TEMPLATE_FILL_DEPENDENCIES: dict[str, list[str]] = {
+    "Cert-of-Enrollment-Current.html": [
+        "student_name",
+        "year_level",
+        "program",
+        "college_name",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+        "purpose_of_request",
+    ],
+    "Cert-of-Enrollment-Previous.html": [
+        "student_name",
+        "program",
+        "college_name",
+        "semester",
+        "academic_year",
+        "semester",
+        "academic_year",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+        "purpose_of_request",
+    ],
+    "Cert-of-Grad-Has-Graduated.html": [
+        "program",
+        "date_of_graduation",
+        "board_resolution_number",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Grad-CandidateforGrad.html": [
+        "program",
+        "semester",
+        "academic_year",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Grades.html": [
+        "program",
+        "college_name",
+        "semester",
+        "academic_year",
+        "semester",
+        "academic_year",
+        "semester",
+        "academic_year",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-ID-Issuance-Current.html": [
+        "student_name",
+        "semester",
+        "academic_year",
+        "id_number",
+        "issuance_day",
+        "issuance_month",
+        "requestor_name",
+    ],
+    "Cert-of-ID-Issuance-Previous.html": [
+        "year_attended_start",
+        "year_attended_end",
+        "id_number",
+        "issuance_day",
+        "issuance_month",
+        "requestor_name",
+    ],
+    "Cert-of-NSTP-Serial-Num.html": [
+        "nstp_component",
+        "nstp_serial_number",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Earned-Units.html": [
+        "credits",
+        "program",
+        "college_name" "semester",
+        "academic_year_start",
+        "academic_year_end",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Completed-Acad-Req.html": [
+        "credits",
+        "program",
+        "semester",
+        "academic_year_start",
+        "academic_year_end",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-English-Medium-Earned.html": [
+        "credits",
+        "campus_address",
+        "program",
+        "attendance_period",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-English-Medium-Graduated.html": [
+        "campus_address",
+        "program",
+        "date_of_graduation",
+        "regulation",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-GWA.html": [
+        "program",
+        "date_of_graduation",
+        "board_resolution_number",
+        "gwa",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Honor-Grad.html": [
+        "address",
+        "latin_honor",
+        "program",
+        "date_of_graduation",
+        "board_resolution_number",
+        "board_resolution_number",
+        "program",
+        "academic_year",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+    ],
+    "Cert-of-Course-Desc.html": [
+        "student_name",
+        "program",
+        "semester",
+        "academic_year_start",
+        "academic_year_end",
+        "semester",
+        "academic_year_start",
+        "academic_year_end",
+        "program",
+        "academic_year_start",
+        "academic_year_end",
+        "course_code_all",
+        "credits_all",
+        "course_description_all",
+        "course_code_all_2",
+        "credits_all_2",
+        "course_description_all_2",
+        "requestor_name",
+        "issuance_day",
+        "issuance_month",
+        "purpose_of_request",
+    ],
+}
+
+
+DEFAULT_FILL_DEPENDENCIES = [
+    "student_name",
+    "program",
+    "major",
+    "id_number",
+    "date_of_graduation",
+    "requestor_name",
+    "issuance_day",
+    "issuance_month",
+    "purpose_of_request",
+    "academic_year",
+    "board_resolution_number",
+]
+
+
+def normalize_certificate_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
+
+
+def resolve_certificate_variants(certificate_type_name: str) -> list[str]:
+    return CERTIFICATE_TYPE_VARIANTS.get(
+        normalize_certificate_name(certificate_type_name), []
+    )
+
+
+def dependency_variants_payload(certificate_type_name: str) -> list[dict[str, Any]]:
+    variants = []
+    for variant_key in resolve_certificate_variants(certificate_type_name):
+        field_keys = CERTIFICATE_DEPENDENCY_VARIANTS.get(variant_key, [])
+        variants.append(
+            {
+                "key": variant_key,
+                "label": variant_key.replace("_", " ").title(),
+                "fields": [
+                    {
+                        "key": field_key,
+                        "label": DEPENDENCY_FIELD_LABELS.get(field_key, field_key),
+                    }
+                    for field_key in field_keys
+                ],
+            }
+        )
+    return variants

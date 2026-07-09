@@ -1,0 +1,1176 @@
+[
+  {
+    "new": [
+      {
+        "program_code": "BSAEE",
+        "curriculum_name": "Bachelor of Science in Aerospace Engineering",
+        "academic_year": "2023-2024",
+        "total_courses": 58,
+        "courses": [
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "A course dealing with the nature of identity, as well as the factors and forces that affect the development and maintenance of personal identity.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics for the Modern World",
+            "course_description": "A course that explores the nature of mathematics as a set of tools for understanding and managing our modern world.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "A study of Philippine history from several viewpoints through the lens of selected primary sources coming from various disciplines and of different genres.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Basic concepts of calculus including limits, continuity, and derivatives with applications to engineering problems.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Fundamental principles of chemistry with emphasis on atomic structure, chemical bonding, and stoichiometry.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Introduction to the various fields of engineering and the ethics and responsibilities of the engineering profession.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "PE 101",
+            "course_title": "Physical Fitness, Gymnastics and Aerobics",
+            "course_description": "Fundamental principles of physical fitness and health-related activities.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Civic consciousness and defense preparedness through community-based activities.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Development of communication skills for academic and professional purposes in a global context.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "Study of the interaction between science, technology, and social contexts throughout history.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Techniques and applications of integration, including areas, volumes, and transcendental functions.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1 (Mechanics)",
+            "course_description": "Basic principles of mechanics including kinematics, dynamics, work, and energy.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Standard practices in technical drawing and visualization using manual and computer-aided tools.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Fundamentals and Programming",
+            "course_description": "Introduction to computer hardware/software and fundamental programming concepts.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "PE 102",
+            "course_title": "Rhythmic Activities",
+            "course_description": "Focuses on rhythmic movements and cultural dances for fitness.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Continuation of NSTP 1 with focus on community project implementation.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Examination of the phenomenon of globalization and its impact on economies, politics, and culture.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "Statistical methods and probability distributions relevant to engineering applications.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Solutions of first-order and higher-order differential equations used in engineering models.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "SCI 404",
+            "course_title": "Physics 2 (Electromagnetism and Optics)",
+            "course_description": "Study of electric and magnetic fields, circuits, and wave optics.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 401",
+            "course_title": "Aircraft Materials, Construction and Processes",
+            "course_description": "Study of materials used in aircraft construction and the manufacturing processes involved.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Drafting",
+            "course_description": "Use of specialized software to create technical 2D and 3D engineering drawings.",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "PE 103",
+            "course_title": "Individual and Dual Sports",
+            "course_description": "Instruction and practice in sports that can be played individually or in pairs.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Study of moral principles and ethical frameworks in various professional and social contexts.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "MATH 405",
+            "course_title": "Numerical Methods",
+            "course_description": "Computational algorithms for solving mathematical problems that cannot be solved analytically.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 402",
+            "course_title": "Thermodynamics",
+            "course_description": "Analysis of energy, heat, work, and the properties of systems relevant to aerospace engines.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics (Statics and Dynamics)",
+            "course_description": "Study of force systems on rigid bodies at rest and in motion.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 403",
+            "course_title": "Basic Electrical and Electronics Engineering",
+            "course_description": "Fundamentals of DC/AC circuits and basic electronic devices used in aircraft systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 404",
+            "course_title": "Fundamentals of Aerospace Engineering",
+            "course_description": "Overview of the aerospace environment, history, and basic principles of flight.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "PE 104",
+            "course_title": "Team Sports",
+            "course_description": "Development of skills and teamwork through competitive group sports.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Development of the student's ability to appreciate, analyze, and critique works of art.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 410",
+            "course_title": "Mechanics of Deformable Bodies",
+            "course_description": "Study of stress and strain in materials under various loading conditions.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 405",
+            "course_title": "Aerodynamics 1 (Fundamentals)",
+            "course_description": "Study of fluid flow properties and the generation of lift and drag.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 406",
+            "course_title": "Aerospace Structures 1",
+            "course_description": "Analysis of aircraft structural components like wings, fuselages, and tails.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 407",
+            "course_title": "Control Systems Engineering",
+            "course_description": "Modeling and analysis of feedback control systems for aircraft stability.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 408",
+            "course_title": "Aerospace Engineering Laboratory 1",
+            "course_description": "Experimental verification of principles in aerodynamics and structural analysis.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "Study of the life, works, and writings of the Filipino national hero, Dr. Jose Rizal.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Principles of financial management and evaluation of engineering projects.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 409",
+            "course_title": "Aerodynamics 2 (Supersonic/Compressible Flow)",
+            "course_description": "Study of high-speed airflows, shock waves, and expansion waves.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 410",
+            "course_title": "Aerospace Structures 2",
+            "course_description": "Advanced structural analysis focusing on fatigue and aeroelasticity.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 411",
+            "course_title": "Space Mechanics",
+            "course_description": "Analysis of orbital motion, satellite trajectories, and interplanetary travel.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 412",
+            "course_title": "Propulsion Systems 1 (Piston/Turbine)",
+            "course_description": "Study of internal combustion and gas turbine engines for aircraft.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 413",
+            "course_title": "Aerospace Engineering Laboratory 2",
+            "course_description": "Experimental testing of propulsion systems and space mechanics simulations.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 418",
+            "course_title": "On-the-Job Training",
+            "course_description": "Supervised industry internship providing practical aerospace engineering experience.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Summer",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 406",
+            "course_title": "Engineering Management",
+            "course_description": "Principles of planning, organizing, and leading engineering teams and projects.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Development of entrepreneurial skills tailored for the technology and engineering sectors.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 414",
+            "course_title": "Aircraft Design 1",
+            "course_description": "Preliminary design phase of an aircraft including configuration and performance estimation.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 415",
+            "course_title": "Aerospace Engineering Project 1",
+            "course_description": "First phase of the capstone research project involving methodology and proposal.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 416",
+            "course_title": "Propulsion Systems 2 (Rocket/Advanced)",
+            "course_description": "Principles of rocket propulsion and advanced space propulsion technologies.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 417",
+            "course_title": "Avionics and Flight Instrumentation",
+            "course_description": "Study of electronic systems used on aircraft for navigation and communication.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 418",
+            "course_title": "Flight Dynamics and Stability",
+            "course_description": "Analysis of aircraft motion and the criteria for static and dynamic stability.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 419",
+            "course_title": "Aircraft Design 2",
+            "course_description": "Detailed design phase focusing on systems integration and structural detailing.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 420",
+            "course_title": "Aerospace Engineering Project 2",
+            "course_description": "Final phase of capstone research involving testing, analysis, and defense.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 421",
+            "course_title": "Air Transport and Maintenance Management",
+            "course_description": "Regulatory and operational aspects of aircraft maintenance and airline management.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 422",
+            "course_title": "Laws, Ethics and Process Safety",
+            "course_description": "Study of aviation laws, professional ethics, and safety management systems.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 423",
+            "course_title": "Professional Elective 1",
+            "course_description": "Specialized course in a specific area of aerospace interest.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 424",
+            "course_title": "Professional Elective 2",
+            "course_description": "Advanced specialized technical course for aerospace students.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          },
+          {
+            "course_code": "AeE 425",
+            "course_title": "Seminars and Field Trips",
+            "course_description": "Series of technical lectures and visits to aerospace facilities.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSAEE"
+          }
+        ]
+      }
+    ],
+    "old": [
+      {
+        "program_code": "BSACE",
+        "curriculum_name": "Bachelor of Science in Aerospace Engineering",
+        "academic_year": "2021-2022",
+        "total_courses": 68,
+        "courses": [
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "A course dealing with the nature of identity, as well as the factors and forces that affect the development and maintenance of personal identity. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics in the Modern World",
+            "course_description": "A course that explores the nature of mathematics as a set of tools for understanding and managing our modern world. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "A study of Philippine history through the lens of selected primary sources from various disciplines and genres. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Development of communication skills for academic and professional purposes in a global context. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Fundamental principles of chemistry including atomic structure, chemical bonding, and stoichiometry. [cite: 86]",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Basic concepts of calculus including limits, continuity, and derivatives with engineering applications. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Foundational course introducing the engineering profession, ethics, and basic technical skills. [cite: 86]",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "PE 101",
+            "course_title": "Physical Fitness, Gymnastics and Aerobics",
+            "course_description": "Foundational training in gymnastics, aerobics, and physical wellness. [cite: 86]",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Civic consciousness and defense preparedness training for community service. [cite: 86]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Study of globalization and its global economic, political, and cultural impacts. [cite: 89]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Analysis and valuation of various art forms and their cultural significance. [cite: 89]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "The relationship between scientific progress, technological development, and social forces. [cite: 89]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Introduction to computer logic formulation and high-level programming. [cite: 89]",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Techniques and applications of integration for calculating areas, volumes, and work. [cite: 89]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Standard practices of technical sketching and orthographic projections. [cite: 89]",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Investigation of the laws of mechanics, heat, and sound. [cite: 89]",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "PE 102",
+            "course_title": "Rhythmic Activities",
+            "course_description": "Movement and coordination through rhythmic exercises and dance forms. [cite: 89]",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Practical application of civic service through community-based projects. [cite: 89]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "History and literary contributions of the national hero, Jose Rizal. [cite: 91]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Moral frameworks and ethical theories in professional and personal responsibility. [cite: 91]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Biological principles focusing on genetics, health, and ecological systems. [cite: 91]",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 401",
+            "course_title": "Aerospace Vehicle Performance",
+            "course_description": "Analysis of aircraft performance parameters in various flight conditions. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ECE 422",
+            "course_title": "Basic Electronics",
+            "course_description": "Fundamentals of electronic devices and circuits used in aerospace systems. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "EE 419",
+            "course_title": "Basic Electrical Engineering",
+            "course_description": "Principles of DC/AC circuits and electrical machinery. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "Statistical and probability techniques for engineering research and analysis. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Methods for solving equations used to model dynamic engineering systems. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 421",
+            "course_title": "Computer-Aided Drafting and Design 1",
+            "course_description": "Introductory course on using CAD software for technical engineering design. [cite: 95]",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 407",
+            "course_title": "Statics of Rigid Bodies",
+            "course_description": "Study of force systems and equilibrium on rigid bodies at rest. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ME 406",
+            "course_title": "Fluid Mechanics",
+            "course_description": "Principles of fluid behavior, kinematics, and dynamics in engineering. [cite: 95]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "PE 103",
+            "course_title": "Individual and Dual Sports",
+            "course_description": "Skills and strategies for individual and partner-based sports activities. [cite: 95]",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 402",
+            "course_title": "System Dynamics and Vibration",
+            "course_description": "Analysis of dynamic systems and mechanical vibrations in aerospace structures. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 403",
+            "course_title": "Aerospace Flight Mechanics",
+            "course_description": "Study of the trajectories and mechanics of aerospace vehicles in flight. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 414",
+            "course_title": "Numerical Methods",
+            "course_description": "Computational algorithms for solving complex mathematical engineering problems. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 408",
+            "course_title": "Dynamics of Rigid Bodies",
+            "course_description": "Analysis of force systems and motion of rigid bodies in acceleration. [cite: 97]",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 418",
+            "course_title": "Mechanics of Deformable Bodies",
+            "course_description": "Study of stress, strain, and material deformation under loading. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 422",
+            "course_title": "Computer-Aided Drafting and Design 2",
+            "course_description": "Advanced technical design and 3D modeling using CAD software. [cite: 97]",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ME 431",
+            "course_title": "Thermodynamics",
+            "course_description": "Laws of thermodynamics applied to heat, work, and energy systems. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Refining communication skills in the Filipino language for various contexts. [cite: 97]",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "PE 104",
+            "course_title": "Team Sports",
+            "course_description": "Development of teamwork and athletic skills through group sports. [cite: 97]",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 404",
+            "course_title": "Introduction to Avionics Integration",
+            "course_description": "Overview of integrating electronic systems into aircraft for communication and navigation. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 405",
+            "course_title": "Jet and Rocket Propulsion",
+            "course_description": "Principles and design of jet engines and rocket propulsion systems. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 406",
+            "course_title": "Finite Element Analysis",
+            "course_description": "Numerical method for structural analysis and simulation in aerospace design. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 407",
+            "course_title": "Spacecraft and Aircraft Sensors and Instrumentation",
+            "course_description": "Study of measurement devices and sensors for aerospace monitoring and control. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 408",
+            "course_title": "Aerodynamics",
+            "course_description": "Study of air behavior and its interaction with solid objects in motion. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 409",
+            "course_title": "Design of Aerospace Structures",
+            "course_description": "Structural analysis and design of wings, fuselages, and other aerospace components. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeEE 401",
+            "course_title": "AeE Elective 1",
+            "course_description": "First specialized elective course in the aerospace engineering track. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Cultural and literary traditions of the ASEAN nations. [cite: 100]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 410",
+            "course_title": "Civil Air Laws, Regulations and Professional Ethics",
+            "course_description": "Legal and ethical frameworks governing the aviation industry and profession. [cite: 104]",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 411",
+            "course_title": "Aerospace Materials Analysis",
+            "course_description": "Investigation of materials properties and performance in aerospace environments. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 412",
+            "course_title": "Computational Fluid Dynamics",
+            "course_description": "Use of numerical analysis to solve problems involving fluid flows. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 413",
+            "course_title": "Structural Dynamics and Aeroelasticity",
+            "course_description": "Analysis of the interaction between aerodynamic forces and structural flexibility. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 414",
+            "course_title": "Aerospace Vehicle Design 1",
+            "course_description": "Preliminary design phase including configuration and mission analysis. [cite: 104]",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 415",
+            "course_title": "Aerospace Vehicle Stability and Control",
+            "course_description": "Criteria and mechanisms for aircraft stability and flight control systems. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 416",
+            "course_title": "Research Methods",
+            "course_description": "Techniques for scientific research and technical reporting in engineering. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeEE 402",
+            "course_title": "AeE Elective 2",
+            "course_description": "Second specialized elective course in the aerospace engineering track. [cite: 104]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 416",
+            "course_title": "Wind Engineering",
+            "course_description": "Analysis of wind effects on structures and aerodynamic systems. [cite: 106]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 417",
+            "course_title": "Flight and Aviation Management",
+            "course_description": "Principles of managing aviation operations and maintenance. [cite: 106]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "GEd 110",
+            "course_title": "People and the Earth's Ecosystems",
+            "course_description": "Study of the interaction between human societies and natural ecological systems. [cite: 106]",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Study of technical innovation and business management for engineering ventures. [cite: 108]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 418",
+            "course_title": "Human Systems Engineering",
+            "course_description": "Design of systems considering human interaction, ergonomics, and safety. [cite: 108]",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "Supervised industry internship for practical engineering experience. [cite: 108]",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 419",
+            "course_title": "Unmanned Aerospace Vehicle Design",
+            "course_description": "Design and development of drone and remotely piloted vehicle systems. [cite: 112]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 420",
+            "course_title": "Aerospace Vehicle Design 2",
+            "course_description": "Final detailed design and systems integration of an aerospace project. [cite: 112]",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 421",
+            "course_title": "Engineering Acoustics and Noise Control",
+            "course_description": "Study of sound behavior and noise reduction in aerospace environments. [cite: 112]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 422",
+            "course_title": "Rocket Design",
+            "course_description": "Technical design and development of rocket systems. [cite: 112]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 423",
+            "course_title": "Global Value Chain",
+            "course_description": "Analysis of the global aerospace manufacturing and supply network. [cite: 112]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 424",
+            "course_title": "Aerodome Engineering",
+            "course_description": "Principles of designing and managing airport and landing facilities. [cite: 112]",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 425",
+            "course_title": "Integrative Studies",
+            "course_description": "Capstone evaluation or comprehensive review of aerospace engineering. [cite: 112]",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeE 426",
+            "course_title": "Special Topics in Aerospace Engineering",
+            "course_description": "Advanced lectures on current and emerging technologies in the field. [cite: 112]",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          },
+          {
+            "course_code": "AeEE 403",
+            "course_title": "AeE Elective 3",
+            "course_description": "Third specialized elective course in the aerospace engineering track. [cite: 112]",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSACE"
+          }
+        ]
+      }
+    ]
+  }
+]

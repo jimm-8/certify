@@ -1,0 +1,1340 @@
+[
+  {
+    "old": [
+      {
+        "program_code": "BSEE",
+        "curriculum_name": "BSEE Curriculum",
+        "academic_year": "2018-2019",
+        "total_courses": 72,
+        "total_units": 200,
+        "courses": [
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics in the Modern World",
+            "course_description": "This course explores the nature of mathematics as a tool for analyzing patterns and making informed decisions in contemporary life.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "An analysis of Philippine history through primary sources, fostering a deeper understanding of the nation's political and social evolution.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "An interdisciplinary investigation into identity and the various factors that shape personal development.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Covers fundamental chemical laws, atomic structures, and chemical bonding essential for engineering material analysis.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Develops advanced communication skills for professional and global interactions across diverse audiences.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "Provides an overview of the engineering profession, focusing on professional ethics and foundational problem-solving.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Explores the principles of limits, continuity, and derivatives for solving rate problems in engineering.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PE 101",
+            "course_title": "Physical Fitness, Gymnastics and Aerobics",
+            "course_description": "Introduces physical literacy and fitness foundations through gymnastics and cardiovascular exercises.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Focuses on civic consciousness and defense preparedness to enhance the role of youth in community welfare.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Covers integration techniques and their application in calculating areas, volumes, and work for physical systems.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Investigates classical mechanics, heat, and sound, focusing on Newton's laws and their engineering applications.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Examines the complexities of globalization and its socio-political and economic impacts on the modern world.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "Explores the dynamic relationship between scientific progress, technology, and their influence on human society.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Builds the capacity to analyze and value various art forms and their cultural and aesthetic importance.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Focuses on basic logic formulation and high-level programming languages for engineering tasks.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Teaches technical sketching and orthographic projections necessary for communicating engineering designs.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PE 102",
+            "course_title": "Rhythmic Activities",
+            "course_description": "Emphasizes coordination and movement through structured rhythmic activities and traditional dance.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Applies civic training principles through the execution of community-based service projects.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Covers essential biological principles focusing on cellular structure, genetics, and ecology relevant to engineers.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "A study of the history, literary contributions, and nationalistic influence of Jose Rizal on the Philippines.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Discusses moral frameworks and ethical theories that guide professional conduct and human behavior.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "Employs statistical methods and probability theory to analyze data sets in engineering research.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Explains the methods for solving equations used to model dynamic physical engineering and electrical systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "Investigates the behavior of bodies subjected to forces, covering both static equilibrium and dynamics.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 401",
+            "course_title": "Electrical Circuits 1",
+            "course_description": "Analyzes fundamental DC circuit laws, components, and network theorems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Refines communication skills in Filipino across various professional and contextualized scenarios.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 401",
+            "course_title": "Electromagnetics",
+            "course_description": "Covers electric and magnetic fields, Maxwell's equations, and their applications in electrical systems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ΜΕ 431",
+            "course_title": "Thermodynamics",
+            "course_description": "Investigates energy conversion, heat transfer, and the laws of thermodynamics in mechanical and electrical systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Design",
+            "course_description": "Mastery of CAD software for creating precise digital representations of engineering components.",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PE 103",
+            "course_title": "Individual and Dual Sports",
+            "course_description": "Training in the skills and strategies of various individual and partner-based sports.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 402",
+            "course_title": "Advanced Mathematics for EE",
+            "course_description": "Integrates complex variables and transforms to solve advanced models in electrical engineering.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 410",
+            "course_title": "Fundamentals of Deformable Bodies",
+            "course_description": "Studies the relationship between external loads and the internal effects on deformable structures.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 403",
+            "course_title": "Electrical Circuits 2",
+            "course_description": "Explains AC circuit analysis, phasors, resonance, and three-phase power systems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 421",
+            "course_title": "Electronic Circuits: Devices and Analysis",
+            "course_description": "Covers semiconductor devices and the design and analysis of fundamental electronic circuits.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "Promotes the specialized use of Filipino in academic research across different disciplines.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 404",
+            "course_title": "Electrical Machines 1",
+            "course_description": "Investigates the theory and operation of DC machines and transformers.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 405",
+            "course_title": "Discrete Mathematics",
+            "course_description": "Covers mathematical structures that are discrete, such as logic, sets, and graph theory.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PE 104",
+            "course_title": "Team Sports",
+            "course_description": "Focuses on teamwork and strategy through participation in competitive group sports.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 415",
+            "course_title": "Numerical Methods and Analysis",
+            "course_description": "Introduces computational algorithms for solving engineering problems numerically.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 409",
+            "course_title": "Logic Circuits and Switching Theory",
+            "course_description": "Covers digital logic design, focusing on combinational and sequential hardware circuits.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 406",
+            "course_title": "Electrical Machines 2",
+            "course_description": "Examines the principles and operation of AC machinery and industrial motor systems.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 412",
+            "course_title": "Materials Science and Engineering",
+            "course_description": "Studies the properties and selection of engineering materials based on atomic structure.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Provides tools to evaluate the economic feasibility and financial return of engineering projects.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 423",
+            "course_title": "Fundamentals of Electronic Communications",
+            "course_description": "Introduces the transmission of information over electronic media and communication protocols.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 407",
+            "course_title": "EE Laws, Contacts and Professional Ethics",
+            "course_description": "Explores the legal requirements and ethical standards for the electrical engineering profession.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 405",
+            "course_title": "Electrical Apparatus and Devices",
+            "course_description": "Covers the operation and maintenance of electrical distribution equipment and protection devices.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Explores the diverse literary traditions and cultural identities of the ASEAN region.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 416",
+            "course_title": "Research Methods",
+            "course_description": "Outlines scientific research methodologies, data gathering, and technical report writing.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 410",
+            "course_title": "Power System Analysis",
+            "course_description": "Focuses on the modeling and steady-state analysis of large-scale power generation and grids.",
+            "units": 5,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "Evaluates engineering's impact on nature and investigates sustainable management technologies.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 424",
+            "course_title": "Industrial Electronics",
+            "course_description": "Covers power semiconductor devices and electronic controls for industrial motor systems.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 408",
+            "course_title": "Feedback Control System",
+            "course_description": "Analyzes the modeling and stability of automated control systems used in electrical design.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 409",
+            "course_title": "Electrical Standards and Practices",
+            "course_description": "Focuses on the Philippine Electrical Code and industry standards for electrical installations.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 416",
+            "course_title": "Microprocessor Systems",
+            "course_description": "Examines the internal architecture and assembly programming of microprocessor-based controllers.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EEE 401",
+            "course_title": "EE Elective 1",
+            "course_description": "Technical elective focusing on specialized tracks such as Renewable Energy or Automation.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 406",
+            "course_title": "Engineering Management",
+            "course_description": "Discusses leadership and organizational management principles tailored for engineering projects.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ΜΕ 406",
+            "course_title": "Fluid Mechanics",
+            "course_description": "Covers the properties and behavior of fluids at rest and in motion relevant to power systems.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 411",
+            "course_title": "Basic Occupational Safety and Health",
+            "course_description": "Identifies workplace hazards and teaches safety protocols for industrial electrical environments.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "Immersive 320-hour industry experience applying electrical engineering knowledge in real-world settings.",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Intersection of innovation and business to prepare students for tech-driven venture creation.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EEE 402",
+            "course_title": "Elective 2",
+            "course_description": "Advanced specialized study following the chosen elective track.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 411",
+            "course_title": "EE Design Project I",
+            "course_description": "Initial phase of the capstone project focusing on conceptualization and technical feasibility.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 412",
+            "course_title": "Electrical Systems and Illumination Design",
+            "course_description": "Covers the design of interior and exterior lighting systems and electrical distribution for buildings.",
+            "units": 5,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 413",
+            "course_title": "Fundamentals of Power Plant Engineering Design",
+            "course_description": "Investigates the design and operation of various types of electrical power generating stations.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 414",
+            "course_title": "Transmission, Distribution Systems and Substation Design",
+            "course_description": "Focuses on the engineering of high-voltage transmission lines and substation layout.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 415",
+            "course_title": "EE Design Project 2",
+            "course_description": "Final implementation, testing, and presentation of the capstone electrical engineering project.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 416",
+            "course_title": "Electrical Maintenance and Operations",
+            "course_description": "Studies the strategies for maintaining electrical power systems and equipment longevity.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 417",
+            "course_title": "Seminars/Colloquia",
+            "course_description": "Exposure to industry trends through technical seminars and professional discussions.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 418",
+            "course_title": "Electrical Engineering Practice with Comprehensive Examination",
+            "course_description": "A review course concluding with a comprehensive examination of all EE core knowledge area.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ICE 420",
+            "course_title": "Instrumentation and Control",
+            "course_description": "Focuses on measuring instruments and the sensors used in process control systems.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 1.1",
+            "course_title": "Renewable Energy for Sustainable Development",
+            "course_description": "Overview of clean energy technologies and their role in sustainable infrastructure.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 1.2",
+            "course_title": "Solar Energy",
+            "course_description": "Specialized study in photovoltaic systems, solar thermal energy, and installation design.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 1.3",
+            "course_title": "Biogas/Biomass Energy",
+            "course_description": "Explores energy generation from organic waste and biological materials.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 2.1",
+            "course_title": "Machine Automation and Process Control",
+            "course_description": "Focuses on the automation of industrial machinery and complex process monitoring.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 2.2",
+            "course_title": "Pneumatic and Electropneumatics",
+            "course_description": "Covers the use of pressurized air systems and electronic control in industrial automation.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "TRACK 2.3",
+            "course_title": "Programmable Logic Controllers in Manufacturing & Power Systems",
+            "course_description": "Hands-on training in PLC programming for manufacturing and power grid control.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "Elective",
+            "program": "BSEE"
+          }
+        ]
+      }
+    ],
+    "new": [
+      {
+        "program_code": "BSEE",
+        "curriculum_name": "Bachelor of Science in Electrical Engineering",
+        "academic_year": "2023-2024",
+        "total_courses": 70,
+        "total_units": 200,
+        "courses": [
+          {
+            "course_code": "GEd 102",
+            "course_title": "Mathematics in the Modern World",
+            "course_description": "A core general education course exploring the nature and application of mathematics in contemporary life.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 105",
+            "course_title": "Readings in Philippine History",
+            "course_description": "Examines Philippine history through primary sources from various perspectives.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 101",
+            "course_title": "Understanding the Self",
+            "course_description": "Investigates the nature of identity and the factors that shape the self.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 401",
+            "course_title": "General Chemistry",
+            "course_description": "Fundamental chemical principles and practice for engineering students.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 106",
+            "course_title": "Purposive Communication",
+            "course_description": "Develops communicative competence and critical awareness through various contexts.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 401",
+            "course_title": "Introduction to Engineering",
+            "course_description": "An introductory course on the engineering profession and basic engineering concepts.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 401",
+            "course_title": "Differential Calculus",
+            "course_description": "Study of limits, continuity, and derivatives and their applications.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PATHFit 1",
+            "course_title": "Movement Competency Training",
+            "course_description": "Fundamental movement patterns and physical activity for health and fitness.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "NSTP 111",
+            "course_title": "National Service Training Program 1",
+            "course_description": "Civic consciousness and defense preparedness training.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 402",
+            "course_title": "Integral Calculus",
+            "course_description": "Methods of integration and their applications in physical problems.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 403",
+            "course_title": "Physics 1",
+            "course_description": "Fundamental principles of mechanics, heat, and sound for engineers.",
+            "units": 4,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 104",
+            "course_title": "The Contemporary World",
+            "course_description": "Examines the economic, social, political, and technological globalization.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 109",
+            "course_title": "Science, Technology and Society",
+            "course_description": "The interaction between scientific/technological developments and society.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 108",
+            "course_title": "Art Appreciation",
+            "course_description": "Cultivates the ability to appreciate, analyze, and value works of art.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 401",
+            "course_title": "Computer Programming 1",
+            "course_description": "Introduction to logic formulation and high-level programming for engineering.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 402",
+            "course_title": "Engineering Drawing",
+            "course_description": "Basic technical drawing, sketching, and orthographic projections.",
+            "units": 1,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PATHFit 2",
+            "course_title": "Exercise-based Fitness Activities",
+            "course_description": "Physical fitness development through structured exercise programs.",
+            "units": 2,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "NSTP 121",
+            "course_title": "National Service Training Program 2",
+            "course_description": "Community-based service projects applying civic training principles.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "SCI 402",
+            "course_title": "Modern Biology",
+            "course_description": "Essential biological principles relevant to engineering and sustainability.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 103",
+            "course_title": "Life and Works of Rizal",
+            "course_description": "Study of Jose Rizal's life, works, and contributions to Philippine nationalism.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "GEd 107",
+            "course_title": "Ethics",
+            "course_description": "Exploration of moral frameworks and professional ethical standards.",
+            "units": 3,
+            "year_level": 1,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 403",
+            "course_title": "Engineering Data Analysis",
+            "course_description": "Probability and statistical methods applied to engineering data.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "MATH 404",
+            "course_title": "Differential Equations",
+            "course_description": "Solutions to equations used to model physical and electrical systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 409",
+            "course_title": "Engineering Mechanics",
+            "course_description": "Analysis of forces on bodies in static and dynamic states.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 401",
+            "course_title": "Electrical Circuits 1",
+            "course_description": "Fundamental DC circuit analysis and network theorems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Fili 101",
+            "course_title": "Kontekstwalisadong Komunikasyon sa Filipino",
+            "course_description": "Advanced communication skills in Filipino for various contexts.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 401",
+            "course_title": "Electromagnetics",
+            "course_description": "Electric and magnetic field theory and Maxwell's equations.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ΜΕ 431",
+            "course_title": "Thermodynamics",
+            "course_description": "Study of heat and energy conversion in engineering systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 403",
+            "course_title": "Computer-Aided Design",
+            "course_description": "Digital drafting and design using industry-standard CAD software.",
+            "units": 1,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PATHFit 3",
+            "course_title": "Traditional and Recreational Games",
+            "course_description": "Focuses on skill development in sports, games, or martial arts.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 402",
+            "course_title": "Engineering Mathematics for EE",
+            "course_description": "Complex variables and transforms for modeling electrical systems.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 410",
+            "course_title": "Fundamentals of Deformable Bodies",
+            "course_description": "Study of internal effects of external loads on materials.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 403",
+            "course_title": "Electrical Circuits 2",
+            "course_description": "Analysis of AC circuits, phasors, and three-phase systems.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 421",
+            "course_title": "Electronic Circuits: Devices and Analysis",
+            "course_description": "Semiconductor theory and basic electronic circuit design.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Fili 102",
+            "course_title": "Filipino sa Iba't Ibang Disiplina",
+            "course_description": "Use of Filipino in research across academic disciplines.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 404",
+            "course_title": "Electrical Machines 1",
+            "course_description": "Operation and theory of DC machines and transformers.",
+            "units": 4,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 405",
+            "course_title": "Discrete Mathematics",
+            "course_description": "Mathematical logic, sets, and graph theory for engineering.",
+            "units": 3,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "PATHFit 4",
+            "course_title": "Team Sports",
+            "course_description": "Development of teamwork and strategy through group sports.",
+            "units": 2,
+            "year_level": 2,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 415",
+            "course_title": "Numerical Methods and Analysis",
+            "course_description": "Computational algorithms for solving engineering problems.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 409",
+            "course_title": "Logic Circuits and Switching Theory",
+            "course_description": "Design of digital combinational and sequential circuits.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 406",
+            "course_title": "Electrical Machines 2",
+            "course_description": "Theory and application of AC machinery and industrial motors.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 412",
+            "course_title": "Materials Science and Engineering",
+            "course_description": "Atomic structure and selection of engineering materials.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 404",
+            "course_title": "Engineering Economics",
+            "course_description": "Financial evaluation and feasibility of engineering projects.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 423",
+            "course_title": "Fundamentals of Electronic Communications",
+            "course_description": "Basic transmission theory and electronic communication media.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 407",
+            "course_title": "EE Laws, Contracts and Professional Ethics",
+            "course_description": "Legal and ethical requirements for electrical engineering practice.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 405",
+            "course_title": "Electrical Apparatus and Devices",
+            "course_description": "Distribution equipment and electrical protection devices.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "Litr 102",
+            "course_title": "ASEAN Literature",
+            "course_description": "Literary traditions and cultural identities of the ASEAN region.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 416",
+            "course_title": "Research Methods",
+            "course_description": "Scientific methodologies and technical report writing.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 410",
+            "course_title": "Power System Analysis",
+            "course_description": "Modeling and steady-state analysis of power grids.",
+            "units": 5,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 413",
+            "course_title": "Environmental Science and Engineering",
+            "course_description": "Sustainability and management of engineering's impact on nature.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ECE 424",
+            "course_title": "Industrial Electronics",
+            "course_description": "Power semiconductors and industrial motor control systems.",
+            "units": 4,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 408",
+            "course_title": "Feedback Control System",
+            "course_description": "Stability and modeling of automated electrical systems.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 409",
+            "course_title": "Electrical Standards and Practices",
+            "course_description": "Philippine Electrical Code and industry installation standards.",
+            "units": 1,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "CpE 416",
+            "course_title": "Microprocessor Systems",
+            "course_description": "Architecture and programming of microprocessor-based controllers.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EEE 401",
+            "course_title": "EE Elective 1",
+            "course_description": "Technical elective focusing on specialized tracks like Renewable Energy.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 406",
+            "course_title": "Engineering Management",
+            "course_description": "Leadership and organizational principles for engineering projects.",
+            "units": 2,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ΜΕ 406",
+            "course_title": "Fluid Mechanics",
+            "course_description": "Behavior of fluids at rest and in motion for power systems.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 411",
+            "course_title": "Basic Occupational Safety and Health",
+            "course_description": "Workplace hazard identification and industrial safety protocols.",
+            "units": 3,
+            "year_level": 3,
+            "semester_offered": "Midterm",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 417",
+            "course_title": "On-the-Job Training",
+            "course_description": "320-hour industry experience applying engineering knowledge.",
+            "units": 4,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ENGG 405",
+            "course_title": "Technopreneurship",
+            "course_description": "Intersection of innovation and business for tech-driven ventures.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EEE 402",
+            "course_title": "EE Elective 2",
+            "course_description": "Advanced technical study following the chosen specialized track.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 411",
+            "course_title": "EE Design Project 1",
+            "course_description": "First phase of capstone focusing on design and feasibility.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "1st",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 412",
+            "course_title": "Electrical Systems and Illumination Design",
+            "course_description": "Interior and exterior lighting and distribution system design.",
+            "units": 5,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 413",
+            "course_title": "Fundamentals of Power Plant Engineering Design",
+            "course_description": "Engineering and operation of electrical power generating stations.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 414",
+            "course_title": "Transmission, Distribution Systems and Substation Design",
+            "course_description": "Engineering of high-voltage transmission and substation layout.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 415",
+            "course_title": "EE Design Project 2",
+            "course_description": "Final implementation and testing of the capstone project.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 416",
+            "course_title": "Electrical Maintenance and Operations",
+            "course_description": "Maintenance strategies for electrical systems and equipment.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 417",
+            "course_title": "Seminars/Colloquia",
+            "course_description": "Exposure to industry trends through technical seminars.",
+            "units": 1,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "EE 418",
+            "course_title": "EE Practice with Comprehensive Examination",
+            "course_description": "Comprehensive review and final qualifying exam of core EE areas.",
+            "units": 2,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          },
+          {
+            "course_code": "ICE 420",
+            "course_title": "Instrumentation and Control",
+            "course_description": "Measuring instruments and sensors used in process control.",
+            "units": 3,
+            "year_level": 4,
+            "semester_offered": "2nd",
+            "program": "BSEE"
+          }
+        ]
+      }
+    ]
+  }
+]

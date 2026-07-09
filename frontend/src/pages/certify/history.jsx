@@ -1,14 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
 import DataTable from "react-data-table-component";
 import requestService from "../../services/requestService";
+import paymentService from "../../services/paymentService";
 import {
   BsSearch,
   BsCalendar3,
   BsChevronDown,
   BsEye,
   BsDownload,
-  BsX,
 } from "react-icons/bs";
+import { FaXmark } from "react-icons/fa6";
+import { filterCertifyEligibleRequests } from "../../utils/certifyRequestGuard";
+import FeedbackDialog from "../../components/common/feedbackDialog";
 
 const filterOptions = [
   { label: "Today", days: 0 },
@@ -31,7 +34,7 @@ const customStyles = {
       backgroundColor: "#f9fafb",
       borderBottomWidth: "1px",
       borderBottomColor: "#e5e7eb",
-      fontSize: "0.75rem",
+      fontSize: "12px",
       fontWeight: "600",
       color: "#6b7280",
       textTransform: "uppercase",
@@ -39,7 +42,7 @@ const customStyles = {
   },
   rows: {
     style: {
-      fontSize: "0.875rem",
+      fontSize: "13px",
       color: "#374151",
       "&:hover": { backgroundColor: "#f9fafb", cursor: "pointer" },
     },
@@ -54,6 +57,13 @@ const customStyles = {
   },
 };
 
+const LoadingState = () => (
+  <div className="py-10 text-xs text-gray-400 flex items-center justify-center gap-2">
+    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+    Loading requests...
+  </div>
+);
+
 const History = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,15 +77,56 @@ const History = () => {
   const [certificateTypes, setCertificateTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [feedbackModal, setFeedbackModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "default",
+  });
+  const [paymentMap, setPaymentMap] = useState({});
+
+  const showFeedback = (title, message, tone = "default") => {
+    setFeedbackModal({
+      open: true,
+      title,
+      message,
+      tone,
+    });
+  };
+
+  useEffect(
+    () => setCurrentPage(1),
+    [search, selectedFilter, selectedType, selectedProgram],
+  );
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await requestService.getAllRequests({ page: 1, limit: 100 });
-      const all = Array.isArray(data) ? data : data.items || [];
-      setRequests(all.filter((r) => r.status === "COMPLETED"));
+      const data = await requestService.getAllRequests({
+        page: 1,
+        limit: 100,
+      });
+      const all = filterCertifyEligibleRequests(
+        Array.isArray(data) ? data : data.items || [],
+      );
+      const releasedRequests = all.filter((r) => r.status === "RELEASED");
+      const refs = releasedRequests
+        .map((r) => r.reference_number)
+        .filter(Boolean);
+      const paymentInfo =
+        refs.length > 0
+          ? await paymentService.getPaymentsByReferences(refs)
+          : { items: [] };
+      const nextPaymentMap = {};
+      (paymentInfo?.items || []).forEach((item) => {
+        nextPaymentMap[item.reference_number] = item;
+      });
+      setPaymentMap(nextPaymentMap);
+      setRequests(releasedRequests);
     } catch (error) {
-      console.error("Failed to fetch completed requests:", error);
+      console.error("Failed to fetch released requests:", error);
     } finally {
       setLoading(false);
     }
@@ -131,7 +182,11 @@ const History = () => {
       setPdfUrl(url);
     } catch (error) {
       console.error("Failed to load certificate:", error);
-      alert("Failed to load certificate preview.");
+      showFeedback(
+        "Preview Failed",
+        "Failed to load certificate preview.",
+        "error",
+      );
     } finally {
       setPdfLoading(false);
     }
@@ -158,7 +213,11 @@ const History = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 3000);
     } catch (error) {
       console.error("Failed to download certificate:", error);
-      alert("Failed to download certificate. Please try again.");
+      showFeedback(
+        "Download Failed",
+        "Failed to download certificate. Please try again.",
+        "error",
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -169,29 +228,66 @@ const History = () => {
       name: "Reference No.",
       selector: (row) => row.reference_number,
       sortable: true,
+      width: "150px",
+    },
+    {
+      name: "OR No.",
+      selector: (row) => paymentMap[row.reference_number]?.or_number || "",
+      sortable: true,
+      cell: (row) => paymentMap[row.reference_number]?.or_number || "-",
+      width: "110px",
     },
     {
       name: "Certificate Type",
       selector: (row) => row.certificate_type_name,
       sortable: true,
+      width: "370px",
     },
     {
       name: "Student Name",
       selector: (row) => row.student_name,
       sortable: true,
+      width: "230px",
     },
-    { name: "Program", selector: (row) => row.program, sortable: true },
-    { name: "Purpose", selector: (row) => row.purpose, sortable: true },
+    {
+      name: "Program",
+      selector: (row) => {
+        let program = row.program;
+
+        program = program
+          .replace(/Bachelor of Science/gi, "BS")
+          .replace(/Bachelor of Arts/gi, "BA")
+          .replace(/Bachelor of/gi, ""); // remove completely
+
+        // Clean formatting
+        program = program
+          .replace(/\s*in\s*/i, " ") // remove "in"
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return program;
+      },
+      sortable: true,
+      width: "200px",
+    },
+    {
+      name: "Purpose",
+      selector: (row) => row.purpose,
+      sortable: true,
+      width: "220px",
+    },
     {
       name: "Date Requested",
       selector: (row) => new Date(row.created_at).toLocaleDateString(),
       sortable: true,
+      width: "150px",
     },
     {
-      name: "Date Completed",
+      name: "Date Released",
       selector: (row) =>
         row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "—",
       sortable: true,
+      width: "150px",
     },
     {
       name: "Action",
@@ -306,20 +402,99 @@ const History = () => {
 
       {/* Table */}
       <div className="border border-gray-200 rounded mt-2">
-        <DataTable
-          columns={columns}
-          data={filteredRequests}
-          progressPending={loading}
-          pagination
-          customStyles={customStyles}
-          highlightOnHover
-          responsive
-          noDataComponent={
-            <div className="py-10 text-xs text-gray-400">
-              No completed requests found.
+        <div className="overflow-auto">
+          <div style={{ minWidth: "1690px" }}>
+            <DataTable
+              columns={columns}
+              data={filteredRequests.slice(
+                (currentPage - 1) * rowsPerPage,
+                currentPage * rowsPerPage,
+              )}
+              progressPending={loading}
+              progressComponent={<LoadingState />}
+              pagination={false}
+              customStyles={{
+                ...customStyles,
+                headCells: {
+                  style: {
+                    "&:last-child": {
+                      position: "sticky",
+                      right: 0,
+                      backgroundColor: "#f9fafb",
+                      zIndex: 1,
+                      borderLeft: "1px solid #e5e7eb",
+                      boxShadow: "-4px 0 8px rgba(0,0,0,0.06)",
+                    },
+                  },
+                },
+                cells: {
+                  style: {
+                    "&:last-child": {
+                      position: "sticky",
+                      right: 0,
+                      backgroundColor: "#ffffff",
+                      zIndex: 1,
+                      borderLeft: "1px solid #e5e7eb",
+                      boxShadow: "-4px 0 8px rgba(0,0,0,0.06)",
+                    },
+                  },
+                },
+              }}
+              highlightOnHover
+              responsive={false}
+              fixedHeader
+              noDataComponent={
+                <div className="py-10 text-xs text-gray-400">
+                  No requests ready for releasing.
+                </div>
+              }
+            />
+          </div>
+        </div>
+
+        {/* Pagination outside scroll */}
+        {filteredRequests.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+            <span>{filteredRequests.length} total records</span>
+            <div className="flex items-center gap-2">
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-2 py-1 text-xs"
+              >
+                {[10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} rows
+                  </option>
+                ))}
+              </select>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ‹
+              </button>
+              <span>
+                Page {currentPage} of{" "}
+                {Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage))}
+              </span>
+              <button
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredRequests.length / rowsPerPage)
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              >
+                ›
+              </button>
             </div>
-          }
-        />
+          </div>
+        )}
       </div>
 
       {/* PDF Viewer Modal */}
@@ -332,15 +507,15 @@ const History = () => {
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-4xl h-[90vh] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100 shrink-0">
               <p className="text-sm font-semibold text-gray-800">
                 Certificate Preview
               </p>
               <button
                 onClick={handleClosePdf}
-                className="flex items-center justify-center w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                className="text-lg rounded-md  border-gray-200 hover:text-[#B22222] transition-colors"
               >
-                <BsX size={18} />
+                <FaXmark />
               </button>
             </div>
 
@@ -361,6 +536,15 @@ const History = () => {
           </div>
         </div>
       )}
+      <FeedbackDialog
+        open={feedbackModal.open}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        tone={feedbackModal.tone}
+        onClose={() =>
+          setFeedbackModal((current) => ({ ...current, open: false }))
+        }
+      />
     </div>
   );
 };

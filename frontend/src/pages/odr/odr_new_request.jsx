@@ -23,18 +23,62 @@ const FieldError = ({ message }) =>
     </p>
   ) : null;
 
+const officeToCampusMap = {
+  pablo_borbon: "Pablo Borbon",
+  alangilan: "Alangilan",
+  balayan: "Balayan",
+  lemery: "Lemery",
+  lipa: "Lipa",
+  rosario: "Rosario",
+  san_juan: "San Juan",
+  arasof_nasugbu: "ARASOF",
+  jplpc_malvar: "JPLPC",
+};
+
+const formatApiError = (error) => {
+  const detail = error?.response?.data?.detail;
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item?.msg) return item.msg;
+        return null;
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  if (typeof error?.response?.data?.message === "string") {
+    return error.response.data.message;
+  }
+
+  if (typeof error?.message === "string") {
+    return error.message;
+  }
+
+  return "Failed to submit request. Please try again.";
+};
+
 const OdrNewRequest = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedOffice, setSelectedOffice] = useState("");
   const [signatureData, setSignatureData] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedCertType, setSelectedCertType] = useState(null);
+  const [selectedUnitCost, setSelectedUnitCost] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [savedFormData, setSavedFormData] = useState(null);
   const formRef = useRef(null);
   const signatureRef = useRef(null);
+  const [programs, setPrograms] = useState([]);
 
   // Step 1 field errors (office + certType; form fields handled inside OdrRequestForm)
   const [step1Errors, setStep1Errors] = useState({ office: "", certType: "" });
@@ -51,9 +95,20 @@ const OdrNewRequest = () => {
     { number: 2, label: "Submit" },
   ];
 
+  const parseUnitCost = (value) => {
+    if (!value) return null;
+    const cleaned = value.replace(/,/g, "");
+    const match = cleaned.match(/[0-9]+(\.[0-9]+)?/);
+    if (!match) return null;
+    const numberValue = Number.parseFloat(match[0]);
+    return Number.isNaN(numberValue) ? null : numberValue;
+  };
+
+  const requiresCertificateType =
+    selectedDocument?.request_type === "certificate";
+
   const handleNext = () => {
     if (currentStep === 1) {
-      // Validate office + certType inline
       const errors = { office: "", certType: "" };
       let hasTopError = false;
 
@@ -61,21 +116,21 @@ const OdrNewRequest = () => {
         errors.office = "Please select an office to continue.";
         hasTopError = true;
       }
-      if (!selectedCertType) {
+      if (!selectedDocument) {
+        errors.certType = "Please select a document type to continue.";
+        hasTopError = true;
+      } else if (requiresCertificateType && !selectedCertType) {
         errors.certType = "Please select a certificate type to continue.";
         hasTopError = true;
       }
 
       setStep1Errors(errors);
 
-      // Validate the form fields (triggers visual errors inside OdrRequestForm)
       try {
         const formData = formRef.current?.getFormData();
         if (hasTopError) return;
         setSavedFormData(formData);
       } catch (err) {
-        // OdrRequestForm already highlights its own fields;
-        // show a brief banner to guide the user
         setError(err.message);
         return;
       }
@@ -122,9 +177,24 @@ const OdrNewRequest = () => {
 
     try {
       setLoading(true);
+      const parsedCost = parseUnitCost(selectedUnitCost);
+
+      if (parsedCost === null) {
+        setError("Please select a document type so the unit cost can be computed.");
+        setLoading(false);
+        return;
+      }
 
       const requestData = {
-        certificate_type_id: selectedCertType.id,
+        request_type: selectedDocument?.request_type || "document",
+        requested_document_name:
+          selectedDocument?.request_type === "document"
+            ? selectedDocument.requested_documents
+            : null,
+        certificate_type_id:
+          selectedDocument?.request_type === "certificate"
+            ? selectedCertType?.id || null
+            : null,
         requestor_name: savedFormData.name,
         requestor_address: savedFormData.currentAddress,
         requestor_relationship: savedFormData.relationshipToStudent,
@@ -137,6 +207,10 @@ const OdrNewRequest = () => {
         major: savedFormData.major || null,
         year_graduated: savedFormData.yearGraduated || null,
         signature_data: signatureData.split(",")[1],
+        course_description_selection:
+          savedFormData.courseDescriptionSelection || [],
+        grade_selection: savedFormData.gradeSelection || [],
+        request_cost: parsedCost,
       };
 
       const response = await requestService.createRequest(requestData);
@@ -144,7 +218,9 @@ const OdrNewRequest = () => {
       setSuccess(response);
       setCurrentStep(0);
       setSelectedOffice("");
+      setSelectedDocument(null);
       setSelectedCertType(null);
+      setSelectedUnitCost(null);
       setSavedFormData(null);
       setSignatureData(null);
       setIsConfirmed(false);
@@ -152,12 +228,7 @@ const OdrNewRequest = () => {
       setStep2Errors({ signature: "", confirmed: "" });
       if (signatureRef.current?.clear) signatureRef.current.clear();
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to submit request. Please try again.";
-      setError(errorMessage);
+      setError(formatApiError(err));
     } finally {
       setLoading(false);
     }
@@ -169,6 +240,33 @@ const OdrNewRequest = () => {
       return () => clearTimeout(timer); // cleanup if component unmounts early
     }
   }, [success]);
+
+  useEffect(() => {
+    if (!selectedOffice) {
+      setPrograms([]);
+      return;
+    }
+
+    setPrograms([]);
+
+    const fetchPrograms = async () => {
+      try {
+        const campusName = officeToCampusMap[selectedOffice];
+        if (!campusName) {
+          setPrograms([]);
+          return;
+        }
+
+        const data = await requestService.getPrograms(campusName);
+        setPrograms(data);
+      } catch (err) {
+        console.error(err);
+        setPrograms([]);
+      }
+    };
+
+    fetchPrograms();
+  }, [selectedOffice]);
 
   return (
     <>
@@ -449,19 +547,31 @@ const OdrNewRequest = () => {
               >
                 <OdrCertTypes
                   selectedOffice={selectedOffice}
+                  onDocumentSelect={(val) => {
+                    setSelectedDocument(val);
+                    if (step1Errors.certType)
+                      setStep1Errors((p) => ({ ...p, certType: "" }));
+                  }}
+                  selectedDocument={selectedDocument}
                   onCertTypeSelect={(val) => {
                     setSelectedCertType(val);
                     if (step1Errors.certType)
                       setStep1Errors((p) => ({ ...p, certType: "" }));
                   }}
                   selectedCertType={selectedCertType}
+                  onUnitCostSelect={setSelectedUnitCost}
                 />
               </div>
               <FieldError message={step1Errors.certType} />
             </div>
 
             <div className="w-full m-2 sm:m-5 -translate-y-8">
-              <OdrRequestForm ref={formRef} />
+              <OdrRequestForm
+                ref={formRef}
+                programs={programs}
+                selectedOffice={selectedOffice}
+                selectedCertType={selectedCertType}
+              />
             </div>
             <hr className="m-2 sm:m-5 -translate-y-10" />
           </>

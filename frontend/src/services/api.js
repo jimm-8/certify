@@ -1,8 +1,11 @@
 import axios from "axios";
+import { clearAuth, getStoredToken, isTokenExpired } from "../utils/auth";
+
+const defaultApiBaseUrl = `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,11 +15,13 @@ const api = axios.create({
 // Request interceptor (for adding auth tokens later)
 api.interceptors.request.use(
   (config) => {
-    // You can add auth tokens here later
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Attach token if available
+    const token = getStoredToken();
+    if (token && !isTokenExpired(token)) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else if (token && isTokenExpired(token)) {
+      clearAuth();
+    }
     return config;
   },
   (error) => {
@@ -34,6 +39,15 @@ api.interceptors.response.use(
     if (error.response) {
       // Server responded with error
       console.error("API Error:", error.response.data);
+      if (
+        error.response.status === 401 &&
+        !String(error.config?.url || "").includes("/auth/token")
+      ) {
+        clearAuth();
+        if (!window.location.pathname.startsWith("/odr")) {
+          window.location.assign("/login");
+        }
+      }
     } else if (error.request) {
       // Request made but no response
       console.error("Network Error:", error.message);

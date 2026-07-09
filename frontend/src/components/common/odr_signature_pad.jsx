@@ -2,17 +2,17 @@ import React, {
   useRef,
   useState,
   useEffect,
-  useImperativeHandle,
   forwardRef,
 } from "react";
 
 const OdrSignaturePad = React.forwardRef(({ onSignatureChange }, ref) => {
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
   const [hasSignature, setHasSignature] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
     // Get the device pixel ratio
@@ -35,48 +35,92 @@ const OdrSignaturePad = React.forwardRef(({ onSignatureChange }, ref) => {
     ctx.lineJoin = "round";
   }, []);
 
-  const startDrawing = (e) => {
+  const getPoint = (event) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
+    const source =
+      event.touches?.[0] ||
+      event.changedTouches?.[0] ||
+      event;
 
-    setIsDrawing(true);
-    setHasSignature(true);
+    if (
+      typeof source?.clientX !== "number" ||
+      typeof source?.clientY !== "number"
+    ) {
+      return null;
+    }
 
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    return {
+      x: source.clientX - rect.left,
+      y: source.clientY - rect.top,
+    };
   };
 
-  const draw = (e) => {
-    if (!isDrawing) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    ctx.lineTo(x, y);
-    ctx.stroke();
-
-    if (onSignatureChange) {
-      const signatureData = canvasRef.current.toDataURL("image/png");
-      onSignatureChange(signatureData);
+  const emitSignature = () => {
+    if (onSignatureChange && canvasRef.current) {
+      onSignatureChange(canvasRef.current.toDataURL("image/png"));
     }
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
+  const startDrawing = (event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const point = getPoint(event);
+    if (!point) return;
+
+    event.preventDefault?.();
+    isDrawingRef.current = true;
+    setHasSignature(true);
+
+    if (typeof event.pointerId === "number" && canvas.setPointerCapture) {
+      canvas.setPointerCapture(event.pointerId);
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    emitSignature();
+  };
+
+  const draw = (event) => {
+    if (!isDrawingRef.current) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const point = getPoint(event);
+    if (!point) return;
+
+    event.preventDefault?.();
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+    emitSignature();
+  };
+
+  const stopDrawing = (event) => {
+    if (!isDrawingRef.current) return;
+    event?.preventDefault?.();
+    isDrawingRef.current = false;
+
+    const canvas = canvasRef.current;
+    if (
+      canvas &&
+      typeof event?.pointerId === "number" &&
+      canvas.releasePointerCapture
+    ) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
   };
 
   const handleClear = () => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    isDrawingRef.current = false;
     setHasSignature(false);
     if (onSignatureChange) {
       onSignatureChange(null);
@@ -92,6 +136,7 @@ const OdrSignaturePad = React.forwardRef(({ onSignatureChange }, ref) => {
     ref,
     () => ({
       getSignatureData,
+      clear: handleClear,
     }),
     [hasSignature]
   );
@@ -101,12 +146,25 @@ const OdrSignaturePad = React.forwardRef(({ onSignatureChange }, ref) => {
       <div className="border-2 w-1/2 border-gray-300 p-4 bg-white">
         <canvas
           ref={canvasRef}
+          onPointerDown={startDrawing}
+          onPointerMove={draw}
+          onPointerUp={stopDrawing}
+          onPointerCancel={stopDrawing}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
           className="w-full h-48 cursor-crosshair bg-white"
-          style={{ touchAction: "none" }}
+          style={{
+            touchAction: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+            WebkitTouchCallout: "none",
+          }}
         />
       </div>
       <div className="flex gap-3 mt-4">

@@ -4,7 +4,32 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --school-crimson: #d2232a;
+  --school-red: #ed1b2f;
+  --school-vermilion: #f15a29;
+  --school-gold: #fbaf26;
+  --school-ivory: #e9e9d7;
+  --school-blue: #0071ae;
+  --school-teal: #0088cb;
+  --school-green: #23aa4a;
+  --school-gray: #939598;
+  --school-ink: #312322;
+  --school-surface: #f7f5ee;
+  --school-border: #ddd9c8;
+}
+
+html {
+  background: var(--school-surface);
+}
+
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
+  background: linear-gradient(180deg, #fffdf8 0%, var(--school-surface) 100%);
+  color: var(--school-ink);
+}
+
+#root {
+  min-height: 100vh;
 }

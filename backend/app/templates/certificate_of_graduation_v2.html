@@ -1,0 +1,464 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Certificate of Graduation</title>
+
+  <style>
+    @page {
+      size: 8.5in 11in;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      background: #e5e5e5;
+    }
+
+    .paper {
+      width: 8.5in;
+      min-height: 11in;
+      background: #fff;
+      padding: 0.5in;
+      box-sizing: border-box;
+      font-family: "Times New Roman", serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ================= HEADER ================= */
+
+    .header {
+      position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+    }
+
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      /* spreads them evenly */
+      font-family: "Times New Roman", serif;
+      font-size: 9pt;
+      margin-bottom: 15px;
+      margin-top: -20px;
+
+    }
+
+    .doc-meta p {
+      margin: 0;
+      font-style: italic;
+    }
+
+    .logo {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 141.12px;
+      height: 123.84px;
+    }
+
+    .republic {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .university {
+      font-size: 21.33px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #d10000;
+    }
+
+    .details {
+      font-size: 16px;
+      /* line-height: 1.35; */
+    }
+
+    .details .campus {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .details .address {
+      font-weight: bold;
+      font-size: 13.33px;
+    }
+
+    .telNo {
+      font-size: 13.33px;
+    }
+
+    .email {
+      font-size: 13.33px;
+    }
+
+    .divider {
+      border-top: 1pt solid #000;
+      margin: 5px 0 5px 0;
+    }
+
+    /* ================= TITLES ================= */
+
+    .registrar {
+      font-family: "Times New Roman", serif;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: left;
+      line-height: 1.15;
+      break-after: avoid;
+      page-break-after: avoid;
+      widows: 2;
+      orphans: 2;
+      margin-bottom: 32px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .cert-title {
+      text-align: center;
+      font-size: 17.33px;
+      font-weight: bold;
+      margin-bottom: 32px;
+    }
+
+    /* ================= BODY ================= */
+
+    .text-body {
+      margin-left: 0.4in;
+      margin-right: 0.4in;
+    }
+
+    .content {
+      font-size: 12pt;
+      line-height: 1.6;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+
+    .paragraph {
+      text-indent: 0.5in;
+      margin-bottom: 2px;
+    }
+
+    .second {
+      margin-top: 26px;
+    }
+
+    .third {
+      margin-top: 26px;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .name {
+      text-transform: uppercase;
+    }
+
+    .f {
+      display: inline;
+    }
+
+    .fill {
+      display: inline;
+    }
+
+    .f.blank {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      height: 0.9em;
+      vertical-align: bottom;
+    }
+
+    .f-short {
+      width: 0.8in;
+    }
+
+    .f-medium {
+      width: 1.3in;
+    }
+
+    .f-long {
+      width: 2in;
+    }
+
+    /* ================= SIGNATURE ================= */
+
+    .signature {
+      margin-top: 60px;
+      width: 3.5in;
+      margin-left: 3.5in;
+      text-align: center;
+      font-size: 12pt;
+      margin-bottom: 80px;
+    }
+
+    .dst {
+      border: 2px solid #000;
+      font-family: "Bahnschrift Condensed", "Bahnschrift", "Arial Narrow", Arial, sans-serif;
+      font-stretch: condensed;
+      padding: 4px;
+      width: 188.98px;
+      height: 75.59px;
+      box-sizing: border-box;
+      margin-left: 0.7in;
+    }
+
+    /* Title */
+    .dst-title {
+      text-align: center;
+      margin: 0;
+      font-size: 9.5pt;
+    }
+
+    .dst-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 15px;
+      gap: 12px;
+    }
+
+    /* Each column */
+    .gor,
+    .date {
+      width: 45%;
+      text-align: center;
+      font-size: 6.5pt;
+      font-style: italic;
+    }
+
+    .value {
+      font-size: 11pt;
+      font-weight: bold;
+    }
+
+    /* Value (number/date) */
+    .gor div:first-child,
+    .date div:first-child {
+      margin-bottom: 2px;
+    }
+
+    /* Label with line ABOVE it */
+    .gor-label,
+    .date-label {
+      display: block;
+      border-top: 1px solid #000;
+      padding-top: 2px;
+    }
+
+    .qr {
+      position: absolute;
+      left: 0.4in;
+      margin-top: 15px;
+    }
+
+    .footer-note {
+      margin-left: 1.2in;
+      margin-top: 10px;
+      font-size: 13.33px;
+      font-style: italic;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .ref {
+      font-size: 13.33px;
+      margin-left: 1.2in;
+      margin-top: 0;
+      margin-bottom: 0;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .footer {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 14.67px;
+      text-align: center;
+
+      font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+      font-size: 11pt;
+    }
+
+    .footer p {
+      margin: 0;
+      font-style: italic;
+      color: #d10000;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="paper">
+    <!-- Header -->
+    <div class="header">
+      <div class="doc-meta">
+        <div>
+          <p><i>BatStateU-CE-REG-03</i></p>
+        </div>
+        <div>
+          <p><i>Effectivity Date: February 23, 2026</i></p>
+        </div>
+        <div>
+          <p><i>Revision No. 03</i></p>
+        </div>
+      </div>
+      <div class="logo-cell">
+        <img src="bsu.png" class="logo" />
+      </div>
+      <div class="republic">Republic of the Philippines</div>
+      <div class="university">BATANGAS STATE UNIVERSITY</div>
+      <div class="subtitle">The National Engineering University</div>
+      <div class="details">
+        <div class="campus">
+          {{ campus_name }}{% if campus_name %} Campus{% endif %}
+        </div>
+        <div class="address">{{ campus_address }}</div>
+        <div class="telNo">Tel Nos.: {{ campus_telNo }}</div>
+        <div class="email">Email Address:
+          {{ campus_email }} | Website Address:
+          https://www.batstate-u.edu.ph
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="registrar">Registration Services Office</div>
+      <div class="cert-title">CERTIFICATE OF GRADUATION</div>
+
+      <div class="text-body">
+        <div class="content">
+          <div class="paragraph">
+            This is to certify that <strong>{{ student_honorific }}</strong>
+            <span class="f f-long{% if not student_name %} blank{% endif %} name bold">{{ student_name }}</span>
+            has successfully completed the requirements for the degree of
+            <span class="f f-long{% if not course_name %} blank{% endif %}">{{ course_name }}</span>
+            at Batangas State University, The National Engineering University, on
+            <span class="f f-medium{% if not graduated_date %} blank{% endif %}">{{ graduated_date }}</span>
+            as per BOR Res. No.
+            <span class="f f-medium{% if not board_resolution_num %} blank{% endif %}">{{ board_resolution_num
+              }}</span>.
+          </div>
+
+          <div class="paragraph second">
+            Futhermore, it is hereby certified that Batangas State University, The National Engineering University, is a
+            duly authorized educational institution operating under government authority, and its graduates are exempt
+            from the issuance of a Special Order of Graduation by virtue of Republic Act 11694.
+          </div>
+
+          <div class="paragraph third">
+            This certification is issued upon the request of <strong>{{ student_honorific }}</strong>
+            <span class="f f-long{% if not student_surname %} blank{% endif %} bold">{{ student_surname }}</span> on
+            this
+            <span id="dateDay" class="f f-short{% if not date_issued_day %} blank{% endif %}">{{ date_issued_day
+              }}</span>
+            day of
+            <span class="f f-medium{% if not date_issued_month %} blank{% endif %}">{{ date_issued_month }}</span>
+            <span class="f f-short{% if not date_issued_year %} blank{% endif %}">{{ date_issued_year }}</span>,
+            for whatever legal purpose it may serve.
+          </div>
+        </div>
+      </div>
+
+      <div class="signature">
+        {% if signature_path %}
+        <img src="{{ signature_path }}" alt="Signature"
+          style="max-width: 2.2in; height: 0.8in; object-fit: contain; display: block; margin: 0 auto -30px;" />
+        {% endif %}
+        <strong class="name">{{ name_official }}</strong><br />
+        {{ official_title }}
+      </div>
+
+      <div class="dst">
+        <p class="dst-title">"DOCUMENTARY STAMP TAX PAID"</p>
+
+        <div class="dst-row">
+          <div class="gor">
+            <span class="value">{{ or_number }}</span>
+            <span class="gor-label">(GOR SERIAL NUMBER)</span>
+          </div>
+          <div class="date">
+            <span id="payment-date" class="value">{{ date_of_payment }}</span>
+            <span class="date-label">(DATE OF PAYMENT)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="qr-cell">
+        <img src="qr_bsu.png" class="qr">
+      </div>
+
+      <div class="footer-note">Not valid without the official university dry seal<br /> or if contains erasures or
+        alterations</div>
+
+      <div>
+        <p class="ref">{{ campus_certCode }}</p>
+        <p class="ref">{{ control_num }}</p>
+      </div>
+      <div class="footer">
+        <p><i>Leading Innovations, Transforming Lives, Building the Nation</i></p>
+      </div>
+    </div>
+    <script>
+      function getOrdinalSuffix(day) {
+        if (day % 100 >= 11 && day % 100 <= 13) return 'th';
+
+        switch (day % 10) {
+          case 1: return 'st';
+          case 2: return 'nd';
+          case 3: return 'rd';
+          default: return 'th';
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const el = document.getElementById("dateDay");
+
+        if (!el) return;
+
+        const day = parseInt(el.textContent.trim());
+
+        if (!isNaN(day)) {
+          const suffix = getOrdinalSuffix(day);
+          el.innerHTML = `${day}<sup>${suffix}</sup>`;
+        }
+      });
+
+      const el = document.getElementById("payment-date");
+
+      if (el) {
+        const rawDate = el.textContent.trim();
+        const dateObj = new Date(rawDate);
+
+        if (!isNaN(dateObj)) {
+          const formatted = dateObj.toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "2-digit"
+          });
+
+          el.textContent = formatted;
+        }
+      }
+    </script>
+</body>
+
+</html>
